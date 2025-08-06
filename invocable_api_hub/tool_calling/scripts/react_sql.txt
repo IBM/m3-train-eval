@@ -1,0 +1,39 @@
+Answer the following questions as best you can. You have access to the following tools:
+
+{tools}
+
+Respond to the query using the available APIs.
+
+The input parameter key_name in these functions must be filled by a value from the following enum: {key_enum}.
+
+The format you use the API is by specifying 1) Action: the API function name you'd like to call 2) Action Input: the input parameters of the API call in a json string format. The result of the API call will be returned starting with "Observation:". Remember that you should only perform a SINGLE action at a time, do NOT return a list of multiple actions.
+
+Reminder:
+1) the only values that should follow "Action:" are: {tool_names}
+2) the key_name parameter must be filled by a value from: {key_names}. 
+3) use the following json string format for the API arguments:
+
+Action Input:
+{{
+    "key_1": "value_1",
+    ...
+    "key_n": "value_n",
+}}
+
+Remember to ALWAYS use the following format:
+
+Thought: you should always think about what to do next
+Action: the API function name
+Action Input: the input parameters of the API call in json string format
+Observation: the return result of the API call. This is what I will provide you with; you do not need to repeat it in your response.
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the response to the user query
+
+Begin! Remember that your response should never start with "Observation:" since that is what I will provide you with.
+
+Question: {input}
+
+{previousruns}
+
+Thought:{agent_scratchpad}

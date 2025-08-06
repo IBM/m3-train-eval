@@ -1,0 +1,41 @@
+{
+  "template": "student_mistral",
+  "cutoff_len": 32768,
+  "dataset_dir": "./data/bird-dev/train/dpo_agent_informed_assist",
+  "dataset": ["both_api_rag-rag_before_api", "both_api_rag-api_before_rag"],
+  "mask_history": true,
+
+  "model_name_or_path": "mistralai/Mistral-7B-Instruct-v0.3",
+  "flash_attn": "fa2",
+  "disable_gradient_checkpointing": false,
+  "enable_liger_kernel": true,
+
+  "finetuning_type": "lora",
+  "lora_rank": 64,
+  "lora_alpha": 32,
+  "lora_dropout": 0.1,
+  "adapter_name_or_path": "./ckpts/bird-dev_train/Mistral-7B-Instruct-v0.3/sft/final/PEFT/",
+  "create_new_adapter": false,
+  "stage": "dpo",
+  "pref_loss": "sigmoid",
+  "pref_beta": 0.1,
+  "ref_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "ref_model_adapters": "./ckpts/bird-dev_train/Mistral-7B-Instruct-v0.3/sft/final/PEFT/",
+
+  "deepspeed": "./config_files/training/zero_stage3_offload_config.json",
+  "ddp_find_unused_parameters": null,
+  "do_eval": false,
+  "do_train": true,
+  "learning_rate": 1e-5,
+  "lr_scheduler_type": "cosine",
+  "logging_dir": "./logging",
+  "num_train_epochs": 1,
+  "per_device_train_batch_size": 1,
+  "report_to": ["wandb"],
+  "save_only_model": true,
+  "save_steps": -1,
+  "warmup_ratio": 0.1,
+
+  "do_sample": false,
+  "max_new_tokens": 4096
+}

@@ -1,0 +1,40 @@
+{
+  "template": "student_qwen3",
+  "cutoff_len": 40960,
+  "dataset_dir": "./data/bird-dev/train/pairwise_pref",
+  "dataset": ["both_api_rag-rag_before_api", "both_api_rag-api_before_rag"],
+  "max_samples": 8,
+  "mask_history": false,
+
+  "model_name_or_path": "Qwen/Qwen3-0.6B",
+  "flash_attn": "fa2",
+
+  "finetuning_type": "lora",
+  "lora_rank": 64,
+  "lora_alpha": 32,
+  "lora_dropout": 0.1,
+  "adapter_name_or_path": "./ckpts/bird-dev/Qwen3-0.6B/sft/final/PEFT/",
+  "create_new_adapter": false,
+  "stage": "dpo",
+  "pref_loss": "sigmoid",
+  "pref_beta": 0.1,
+  "ref_model": "Qwen/Qwen3-0.6B",
+  "ref_model_adapters": "./ckpts/bird-dev/Qwen3-0.6B/sft/final/PEFT/",
+
+  "deepspeed": "./config_files/training/zero_stage2_config.json",
+  "ddp_find_unused_parameters": false,
+  "do_eval": false,
+  "do_train": true,
+  "learning_rate": 1e-5,
+  "lr_scheduler_type": "cosine",
+  "logging_dir": "./logging",
+  "num_train_epochs": 5,
+  "per_device_train_batch_size": 1,
+  "report_to": [],
+  "save_only_model": true,
+  "save_steps": -1,
+  "warmup_ratio": 0.1,
+
+  "do_sample": false,
+  "max_new_tokens": 4096
+}

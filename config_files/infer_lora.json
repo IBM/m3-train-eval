@@ -1,0 +1,5 @@
+{
+  "flash_attn": "fa2",
+  "finetuning_type": "lora",
+  "adapter_name_or_path": "ckpts/bird-dev_train/Mistral-7B-Instruct-v0.3/dpo_agent_informed_assist/final/PEFT/"
+}

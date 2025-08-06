@@ -1,0 +1,38 @@
+{
+  "path_to_env_vars": "./.env",
+  "path_to_env_data": "ground_truth/bird/final/books_multiturn_bird_final.json",
+  "db_config": {
+    "cert": "./es_cert",
+    "host_name": "https://7f25eae6-4320-4daa-b5ce-58193a338255.974550db55eb4ec0983f023940bf637f.databases.appdomain.cloud:31575",
+    "index_name": "api-before-rag-dev",
+    "top_k": 1
+  },
+  "api_config": {
+    "end_point": "https://invocable-api-hub.1gxwxi8kos9y.us-east.codeengine.appdomain.cloud"
+  },
+  "horizon": 10,
+  "env_subdomain_mode": "rest",
+
+  "resume_instance": null,
+  "path_to_prev_run_dir": null,
+
+  "temperature": 0.0,
+  "overseer_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
+  "overseer_max_new_tokens": 4096,
+  "scorer_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
+  "scorer_max_new_tokens": 4096,
+  "expert_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
+  "expert_max_new_tokens": 4096,
+
+  "agent_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
+  "max_new_tokens": 4096,
+  "agent_template": "teacher_rits",
+  "is_hf_agent": false,
+  "path_to_hf_config": "./config_files/infer_base.json",
+
+  "expert_assist_mode": "ground_truth",
+  "save_alternate_trace": true,
+  "expert_assist_init_limit": 2,
+  "expert_assist_recent_limit": -2,
+  "expert_assist_random_epsilon": 1.0
+}
