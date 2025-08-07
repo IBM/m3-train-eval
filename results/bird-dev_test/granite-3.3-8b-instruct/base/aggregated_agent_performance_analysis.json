@@ -1,0 +1,86 @@
+{
+    "agent_performance": {
+        "avg_agent_run_length": 8.65079365079365,
+        "completion_rate": 0.0,
+        "truncation_rate": 0.8412698412698413,
+        "termination_rate": 0.15873015873015872,
+        "perf_str": "Total=63, Success=0, Truncated=53, Terminated=10"
+    },
+    "actionic_performance": {
+        "api_before_rag": {
+            "scenario_followed": {
+                "all_trajectories": 0.0,
+                "successful_trajectories": NaN
+            },
+            "action_stats": {
+                "all_trajectories": {
+                    "RETRIEVE": {
+                        "mean": 0.0,
+                        "std": 0.0
+                    },
+                    "FINAL": {
+                        "mean": 0.16666666666666666,
+                        "std": 0.37267799624996495
+                    },
+                    "API": {
+                        "mean": 0.0,
+                        "std": 0.0
+                    },
+                    "OTHER": {
+                        "mean": 8.38888888888889,
+                        "std": 3.6076906877898267
+                    }
+                },
+                "successful_trajectories": {}
+            }
+        },
+        "rag_before_api": {
+            "scenario_followed": {
+                "all_trajectories": 0.0,
+                "successful_trajectories": NaN
+            },
+            "action_stats": {
+                "all_trajectories": {
+                    "RETRIEVE": {
+                        "mean": 0.0,
+                        "std": 0.0
+                    },
+                    "FINAL": {
+                        "mean": 0.15555555555555556,
+                        "std": 0.36243347622889094
+                    },
+                    "API": {
+                        "mean": 0.0,
+                        "std": 0.0
+                    },
+                    "OTHER": {
+                        "mean": 8.533333333333333,
+                        "std": 3.44222150491349
+                    }
+                },
+                "successful_trajectories": {}
+            }
+        }
+    },
+    "expert_assistance": {
+        "avg_first_help_timestep": null,
+        "avg_total_helps": 0.0,
+        "avg_non_help_stretch": 8.65079365079365
+    },
+    "error_recovery": {
+        "all_trajectories": {
+            "num_recoveries": 56,
+            "steps_taken": {
+                "mean": 8.607142857142858,
+                "std": 1.6656034023372885
+            }
+        },
+        "successful_trajectories": {
+            "num_recoveries": 0,
+            "steps_taken": {
+                "mean": NaN,
+                "std": NaN
+            }
+        }
+    }
+}

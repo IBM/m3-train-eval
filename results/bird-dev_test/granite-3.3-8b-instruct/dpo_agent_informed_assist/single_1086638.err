@@ -1,0 +1,761 @@
+2025-07-17 22:10:40.391 | INFO     | __main__:run_agent:52 - Loaded the agent run config from config_files/infer_agent.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,580 >> loading file vocab.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/vocab.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,581 >> loading file merges.txt from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/merges.txt
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,581 >> loading file tokenizer.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/tokenizer.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,581 >> loading file added_tokens.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/added_tokens.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,581 >> loading file special_tokens_map.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/special_tokens_map.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,581 >> loading file tokenizer_config.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/tokenizer_config.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,581 >> loading file chat_template.jinja from cache at None
+[INFO|tokenization_utils_base.py:2299] 2025-07-17 22:10:40,662 >> Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+[INFO|configuration_utils.py:698] 2025-07-17 22:10:40,891 >> loading configuration file config.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/config.json
+[INFO|configuration_utils.py:770] 2025-07-17 22:10:40,899 >> Model config GraniteConfig {
+  "architectures": [
+    "GraniteForCausalLM"
+  ],
+  "attention_bias": false,
+  "attention_dropout": 0.0,
+  "attention_multiplier": 0.0078125,
+  "bos_token_id": 0,
+  "embedding_multiplier": 12.0,
+  "eos_token_id": 0,
+  "hidden_act": "silu",
+  "hidden_size": 4096,
+  "initializer_range": 0.02,
+  "intermediate_size": 12800,
+  "logits_scaling": 16.0,
+  "max_position_embeddings": 131072,
+  "mlp_bias": false,
+  "model_type": "granite",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 40,
+  "num_key_value_heads": 8,
+  "pad_token_id": 0,
+  "residual_multiplier": 0.22,
+  "rms_norm_eps": 1e-05,
+  "rope_scaling": null,
+  "rope_theta": 10000000.0,
+  "tie_word_embeddings": true,
+  "torch_dtype": "bfloat16",
+  "transformers_version": "4.52.4",
+  "use_cache": true,
+  "vocab_size": 49159
+}
+
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,969 >> loading file vocab.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/vocab.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,969 >> loading file merges.txt from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/merges.txt
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,970 >> loading file tokenizer.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/tokenizer.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,970 >> loading file added_tokens.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/added_tokens.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,971 >> loading file special_tokens_map.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/special_tokens_map.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,971 >> loading file tokenizer_config.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/tokenizer_config.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-17 22:10:40,971 >> loading file chat_template.jinja from cache at None
+[INFO|tokenization_utils_base.py:2299] 2025-07-17 22:10:41,041 >> Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+[INFO|configuration_utils.py:698] 2025-07-17 22:10:41,100 >> loading configuration file config.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/config.json
+[INFO|configuration_utils.py:770] 2025-07-17 22:10:41,100 >> Model config GraniteConfig {
+  "architectures": [
+    "GraniteForCausalLM"
+  ],
+  "attention_bias": false,
+  "attention_dropout": 0.0,
+  "attention_multiplier": 0.0078125,
+  "bos_token_id": 0,
+  "embedding_multiplier": 12.0,
+  "eos_token_id": 0,
+  "hidden_act": "silu",
+  "hidden_size": 4096,
+  "initializer_range": 0.02,
+  "intermediate_size": 12800,
+  "logits_scaling": 16.0,
+  "max_position_embeddings": 131072,
+  "mlp_bias": false,
+  "model_type": "granite",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 40,
+  "num_key_value_heads": 8,
+  "pad_token_id": 0,
+  "residual_multiplier": 0.22,
+  "rms_norm_eps": 1e-05,
+  "rope_scaling": null,
+  "rope_theta": 10000000.0,
+  "tie_word_embeddings": true,
+  "torch_dtype": "bfloat16",
+  "transformers_version": "4.52.4",
+  "use_cache": true,
+  "vocab_size": 49159
+}
+
+[INFO|modeling_utils.py:1151] 2025-07-17 22:10:41,901 >> loading weights file model.safetensors from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/model.safetensors.index.json
+[INFO|modeling_utils.py:2241] 2025-07-17 22:10:41,905 >> Instantiating GraniteForCausalLM model under default dtype torch.bfloat16.
+[INFO|configuration_utils.py:1135] 2025-07-17 22:10:41,907 >> Generate config GenerationConfig {
+  "bos_token_id": 0,
+  "eos_token_id": 0,
+  "pad_token_id": 0
+}
+
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:07<00:22,  7.55s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:14<00:14,  7.45s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:22<00:07,  7.35s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:24<00:00,  5.29s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:24<00:00,  6.07s/it]
+[INFO|modeling_utils.py:5131] 2025-07-17 22:11:07,807 >> All model checkpoint weights were used when initializing GraniteForCausalLM.
+
+[INFO|modeling_utils.py:5139] 2025-07-17 22:11:07,807 >> All the weights of GraniteForCausalLM were initialized from the model checkpoint at ibm-granite/granite-3.3-8b-instruct.
+If your task is similar to the task the model of the checkpoint was trained on, you can already use GraniteForCausalLM for predictions without further training.
+[INFO|configuration_utils.py:1090] 2025-07-17 22:11:07,893 >> loading configuration file generation_config.json from cache at /u/aj05/project/hf_cache/hub/models--ibm-granite--granite-3.3-8b-instruct/snapshots/51dd4bc2ade4059a6bd87649d68aa11e4fb2529b/generation_config.json
+[INFO|configuration_utils.py:1135] 2025-07-17 22:11:07,893 >> Generate config GenerationConfig {
+  "bos_token_id": 0,
+  "eos_token_id": 0,
+  "pad_token_id": 0
+}
+
+Environment instance:   0%|          | 0/27 [00:00<?, ?it/s]Environment instance:   4%|▎         | 1/27 [00:00<00:09,  2.66it/s]Environment instance:   7%|▋         | 2/27 [00:00<00:07,  3.26it/s]Environment instance:  11%|█         | 3/27 [00:00<00:06,  3.58it/s]Environment instance:  15%|█▍        | 4/27 [00:01<00:05,  4.21it/s]Environment instance:  19%|█▊        | 5/27 [00:01<00:04,  4.61it/s]Environment instance:  22%|██▏       | 6/27 [00:01<00:05,  3.58it/s][WARNING|configuration_utils.py:839] 2025-07-17 22:11:26,048 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:11:26,048 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:11:34,129 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:11:34,129 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:11:43,658 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:11:43,658 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  26%|██▌       | 7/27 [00:26<02:44,  8.20s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:11:51,014 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:11:51,014 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:11:58,947 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:11:58,947 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:12:04,994 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:12:04,994 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  30%|██▉       | 8/27 [00:47<03:52, 12.25s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:12:11,627 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:12:11,627 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:12:25,733 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:12:25,733 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  33%|███▎      | 9/27 [01:12<04:52, 16.23s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:12:36,436 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:12:36,436 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:12:45,995 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:12:45,995 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  37%|███▋      | 10/27 [01:36<05:17, 18.68s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:13:00,717 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:13:00,717 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:13:10,312 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:13:10,312 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:13:20,390 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:13:20,391 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:13:28,679 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:13:28,679 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:13:36,341 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:13:36,341 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:13:46,763 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:13:46,763 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  41%|████      | 11/27 [02:31<07:56, 29.76s/it]Environment instance:  44%|████▍     | 12/27 [02:31<05:12, 20.81s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:13:55,885 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:13:55,885 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:14:04,197 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:14:04,198 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  48%|████▊     | 13/27 [02:51<04:49, 20.70s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:14:16,293 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:14:16,293 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:14:27,953 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:14:27,954 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:14:34,687 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:14:34,688 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:14:40,534 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:14:40,534 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:14:49,035 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:14:49,036 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  52%|█████▏    | 14/27 [03:35<05:57, 27.52s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:14:59,761 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:14:59,761 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:15:10,073 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:15:10,074 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:15:17,760 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:15:17,760 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  56%|█████▌    | 15/27 [04:01<05:24, 27.08s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:15:25,623 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:15:25,623 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:15:34,233 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:15:34,233 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:15:45,499 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:15:45,499 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:15:57,481 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:15:57,481 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:16:09,075 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:16:09,075 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  59%|█████▉    | 16/27 [05:13<07:27, 40.67s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:16:37,905 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:16:37,906 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:16:48,599 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:16:48,600 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:16:55,467 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:16:55,467 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  63%|██████▎   | 17/27 [05:38<06:01, 36.11s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:17:03,355 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:17:03,355 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:17:15,232 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:17:15,232 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:17:26,980 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:17:26,980 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  67%|██████▋   | 18/27 [06:10<05:11, 34.60s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:17:34,465 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:17:34,465 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:17:40,617 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:17:40,617 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:17:51,086 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:17:51,087 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:17:57,794 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:17:57,794 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  70%|███████   | 19/27 [06:42<04:30, 33.84s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:18:06,561 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:18:06,561 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:18:14,729 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:18:14,729 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:18:23,435 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:18:23,436 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:18:33,988 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:18:33,989 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  74%|███████▍  | 20/27 [07:20<04:06, 35.22s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:18:44,980 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:18:44,980 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:18:54,185 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:18:54,185 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:19:10,234 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:19:10,234 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  78%|███████▊  | 21/27 [07:53<03:28, 34.68s/it]Environment instance:  81%|████████▏ | 22/27 [07:54<02:01, 24.33s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:19:18,585 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:19:18,585 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:19:25,682 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:19:25,682 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  85%|████████▌ | 23/27 [08:08<01:25, 21.38s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:19:33,073 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:19:33,074 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:19:40,426 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:19:40,426 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:19:50,891 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:19:50,891 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:19:58,869 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:19:58,869 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  89%|████████▉ | 24/27 [08:47<01:19, 26.53s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:20:11,629 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:20:11,629 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:20:19,817 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:20:19,817 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:20:26,981 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:20:26,981 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  93%|█████████▎| 25/27 [09:08<00:49, 24.91s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:20:32,763 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:20:32,763 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:20:42,549 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:20:42,549 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:20:51,249 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:20:51,249 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  96%|█████████▋| 26/27 [09:35<00:25, 25.62s/it]Environment instance: 100%|██████████| 27/27 [09:35<00:00, 18.00s/it]Environment instance: 100%|██████████| 27/27 [09:35<00:00, 21.33s/it]
+Environment instance:   0%|          | 0/76 [00:00<?, ?it/s]Environment instance:   1%|▏         | 1/76 [00:00<00:13,  5.58it/s]Environment instance:   3%|▎         | 2/76 [00:00<00:12,  5.80it/s]Environment instance:   4%|▍         | 3/76 [00:00<00:12,  5.68it/s]Environment instance:   5%|▌         | 4/76 [00:00<00:12,  5.76it/s]Environment instance:   7%|▋         | 5/76 [00:00<00:12,  5.78it/s]Environment instance:   8%|▊         | 6/76 [00:01<00:12,  5.83it/s]Environment instance:   9%|▉         | 7/76 [00:01<00:11,  5.83it/s]Environment instance:  11%|█         | 8/76 [00:01<00:11,  5.84it/s]Environment instance:  12%|█▏        | 9/76 [00:01<00:11,  5.85it/s]Environment instance:  13%|█▎        | 10/76 [00:01<00:11,  5.70it/s]Environment instance:  14%|█▍        | 11/76 [00:01<00:11,  5.72it/s]Environment instance:  16%|█▌        | 12/76 [00:02<00:11,  5.77it/s]Environment instance:  17%|█▋        | 13/76 [00:02<00:10,  5.76it/s]Environment instance:  18%|█▊        | 14/76 [00:02<00:10,  5.79it/s]Environment instance:  20%|█▉        | 15/76 [00:02<00:10,  5.77it/s]Environment instance:  21%|██        | 16/76 [00:02<00:10,  5.80it/s]Environment instance:  22%|██▏       | 17/76 [00:02<00:10,  5.76it/s]Environment instance:  24%|██▎       | 18/76 [00:03<00:09,  5.83it/s]Environment instance:  25%|██▌       | 19/76 [00:03<00:09,  5.85it/s]Environment instance:  26%|██▋       | 20/76 [00:03<00:09,  5.82it/s]Environment instance:  28%|██▊       | 21/76 [00:03<00:09,  5.73it/s]Environment instance:  29%|██▉       | 22/76 [00:03<00:09,  5.81it/s][WARNING|configuration_utils.py:839] 2025-07-17 22:21:04,085 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:21:04,086 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:21:13,216 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:21:13,216 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:21:29,115 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:21:29,116 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:21:47,817 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:21:47,817 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  30%|███       | 23/76 [00:59<14:45, 16.70s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:21:59,444 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:21:59,444 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:22:08,092 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:22:08,092 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:22:22,442 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:22:22,443 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:22:38,643 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:22:38,643 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  32%|███▏      | 24/76 [01:43<21:44, 25.08s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:22:44,050 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:22:44,050 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:22:54,813 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:22:54,813 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:23:03,688 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:23:03,688 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:23:14,417 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:23:14,417 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  33%|███▎      | 25/76 [02:19<24:09, 28.43s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:23:20,297 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:23:20,297 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:23:29,532 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:23:29,532 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:23:40,174 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:23:40,174 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:23:48,724 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:23:48,724 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:24:00,682 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:24:00,682 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:24:16,067 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:24:16,067 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  34%|███▍      | 26/76 [03:21<32:05, 38.51s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:24:22,322 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:24:22,322 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:24:31,369 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:24:31,369 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:24:38,189 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:24:38,189 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  36%|███▌      | 27/76 [03:46<28:05, 34.40s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:24:47,058 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:24:47,058 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:24:55,351 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:24:55,352 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:25:03,163 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:25:03,163 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  37%|███▋      | 28/76 [04:07<24:21, 30.44s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:25:08,291 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:25:08,291 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:25:14,681 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:25:14,681 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:25:20,876 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:25:20,876 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:25:26,814 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:25:26,814 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:25:39,827 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:25:39,827 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  38%|███▊      | 29/76 [04:53<27:30, 35.11s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:25:54,260 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:25:54,261 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:26:01,138 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:26:01,138 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:26:08,942 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:26:08,942 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  39%|███▉      | 30/76 [05:13<23:19, 30.43s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:26:13,765 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:26:13,765 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:26:30,010 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:26:30,010 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:26:43,916 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:26:43,916 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  41%|████      | 31/76 [05:49<24:07, 32.16s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:26:49,988 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:26:49,988 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:26:57,172 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:26:57,172 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:27:05,794 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:27:05,794 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  42%|████▏     | 32/76 [06:10<21:10, 28.87s/it]Environment instance:  43%|████▎     | 33/76 [06:11<14:31, 20.26s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:27:11,330 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:27:11,330 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:27:20,020 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:27:20,020 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  45%|████▍     | 34/76 [06:25<12:58, 18.53s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:27:25,848 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:27:25,848 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:27:34,866 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:27:34,866 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:27:45,391 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:27:45,392 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  46%|████▌     | 35/76 [07:00<15:58, 23.37s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:28:00,604 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:28:00,604 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:28:09,541 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:28:09,541 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:28:25,097 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:28:25,097 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  47%|████▋     | 36/76 [07:35<17:53, 26.84s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:28:35,426 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:28:35,426 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:28:44,801 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:28:44,801 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:28:53,499 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:28:53,499 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:29:02,410 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:29:02,410 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  49%|████▊     | 37/76 [08:12<19:30, 30.01s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:29:12,817 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:29:12,817 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:29:21,990 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:29:21,990 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:29:32,148 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:29:32,148 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  50%|█████     | 38/76 [08:39<18:28, 29.17s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:29:40,045 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:29:40,045 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:29:50,076 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:29:50,076 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:29:59,355 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:29:59,355 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:30:06,808 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:30:06,808 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  51%|█████▏    | 39/76 [09:13<18:51, 30.59s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:30:14,041 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:30:14,041 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:30:24,331 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:30:24,331 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:30:32,773 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:30:32,773 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  53%|█████▎    | 40/76 [09:38<17:23, 28.98s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:30:39,197 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:30:39,197 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:30:48,609 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:30:48,609 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:31:01,967 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:31:01,968 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  54%|█████▍    | 41/76 [10:13<17:52, 30.63s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:31:13,662 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:31:13,662 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:31:20,880 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:31:20,880 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:31:28,475 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:31:28,476 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  55%|█████▌    | 42/76 [10:34<15:41, 27.68s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:31:34,516 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:31:34,516 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:31:49,124 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:31:49,124 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:31:57,320 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:31:57,320 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:32:13,324 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:32:13,324 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  57%|█████▋    | 43/76 [11:30<19:54, 36.19s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:32:30,574 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:32:30,574 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:32:39,418 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:32:39,418 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:32:48,297 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:32:48,297 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  58%|█████▊    | 44/76 [11:58<17:58, 33.72s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:32:58,522 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:32:58,522 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:33:06,216 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:33:06,216 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:33:15,366 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:33:15,366 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  59%|█████▉    | 45/76 [12:20<15:43, 30.45s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:33:21,279 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:33:21,279 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:33:30,580 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:33:30,580 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:33:41,656 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:33:41,656 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  61%|██████    | 46/76 [12:50<15:02, 30.07s/it]Environment instance:  62%|██████▏   | 47/76 [12:50<10:12, 21.13s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:33:50,707 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:33:50,707 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:33:59,633 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:33:59,633 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:34:07,586 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:34:07,587 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  63%|██████▎   | 48/76 [13:13<10:10, 21.79s/it]Environment instance:  64%|██████▍   | 49/76 [13:13<06:53, 15.31s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:34:14,239 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:34:14,239 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:34:24,221 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:34:24,221 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:34:38,228 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:34:38,228 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  66%|██████▌   | 50/76 [13:44<08:37, 19.91s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:34:44,874 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:34:44,874 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:34:53,546 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:34:53,546 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:35:04,453 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:35:04,453 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:35:13,105 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:35:13,105 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  67%|██████▋   | 51/76 [14:19<10:12, 24.48s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:35:20,058 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:35:20,058 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:35:30,282 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:35:30,282 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:35:43,175 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:35:43,175 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  68%|██████▊   | 52/76 [15:01<11:54, 29.78s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:36:02,188 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:02,188 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:36:08,273 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:08,273 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:36:14,577 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:14,578 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  70%|██████▉   | 53/76 [15:19<10:03, 26.25s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:36:20,207 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:20,207 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:36:30,728 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:30,729 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:36:38,739 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:38,739 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  71%|███████   | 54/76 [15:45<09:31, 25.96s/it]Environment instance:  72%|███████▏  | 55/76 [15:45<06:22, 18.22s/it]Environment instance:  74%|███████▎  | 56/76 [15:45<04:16, 12.81s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:36:45,810 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:45,810 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:36:53,395 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:36:53,395 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:37:06,117 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:37:06,117 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:37:13,373 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:37:13,373 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  75%|███████▌  | 57/76 [16:25<06:37, 20.94s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:37:25,763 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:37:25,763 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:37:33,651 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:37:33,651 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:37:46,623 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:37:46,623 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:38:00,287 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:00,287 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  76%|███████▋  | 58/76 [17:11<08:31, 28.41s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:38:11,693 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:11,693 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:38:19,281 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:19,281 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:38:27,793 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:27,793 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  78%|███████▊  | 59/76 [17:34<07:35, 26.77s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:38:34,530 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:34,530 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:38:44,065 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:44,065 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:38:54,130 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:54,130 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:38:59,939 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:38:59,939 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:39:13,457 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:39:13,457 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:39:24,043 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:39:24,043 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:39:38,595 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:39:38,595 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:39:56,581 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:39:56,581 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:40:16,659 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:40:16,659 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:40:38,983 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:40:38,983 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  79%|███████▉  | 60/76 [20:03<16:55, 63.49s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:41:03,726 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:03,726 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:41:11,641 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:11,641 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:41:18,589 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:18,589 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  80%|████████  | 61/76 [20:24<12:42, 50.83s/it]Environment instance:  82%|████████▏ | 62/76 [20:24<08:19, 35.64s/it]Environment instance:  83%|████████▎ | 63/76 [20:25<05:25, 25.01s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:41:25,430 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:25,430 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:41:34,958 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:34,958 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:41:41,379 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:41,379 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:41:50,210 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:50,210 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  84%|████████▍ | 64/76 [20:57<05:25, 27.13s/it]Environment instance:  86%|████████▌ | 65/76 [20:57<03:29, 19.05s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:41:57,653 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:41:57,653 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:42:04,980 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:04,980 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:42:14,981 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:14,981 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  87%|████████▋ | 66/76 [21:19<03:20, 20.09s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:42:20,173 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:20,173 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:42:28,255 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:28,255 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:42:37,293 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:37,293 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  88%|████████▊ | 67/76 [21:42<03:07, 20.85s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:42:42,816 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:42,816 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:42:51,906 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:51,906 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:42:59,184 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:42:59,184 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  89%|████████▉ | 68/76 [22:04<02:49, 21.23s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:43:04,916 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:43:04,916 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:43:11,634 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:43:11,634 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:43:20,082 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:43:20,082 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:43:29,400 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:43:29,400 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  91%|█████████ | 69/76 [22:40<02:58, 25.54s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:43:40,540 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:43:40,541 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:43:50,010 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:43:50,010 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:44:01,567 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:44:01,568 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  92%|█████████▏| 70/76 [23:07<02:36, 26.06s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:44:07,795 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:44:07,795 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:44:15,858 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:44:15,858 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:44:29,382 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:44:29,383 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  93%|█████████▎| 71/76 [23:45<02:28, 29.61s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:44:45,695 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:44:45,695 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:44:53,344 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:44:53,344 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  95%|█████████▍| 72/76 [23:58<01:38, 24.61s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:44:58,710 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:44:58,710 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:45:08,619 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:45:08,619 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:45:15,984 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:45:15,984 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  96%|█████████▌| 73/76 [24:26<01:17, 25.76s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:45:27,081 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:45:27,081 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:45:35,258 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:45:35,259 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:45:47,222 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:45:47,222 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  97%|█████████▋| 74/76 [24:54<00:52, 26.35s/it][WARNING|configuration_utils.py:839] 2025-07-17 22:45:54,808 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:45:54,809 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:46:02,350 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:46:02,350 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:46:10,462 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:46:10,463 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:46:17,199 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:46:17,199 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-17 22:46:31,316 >> The following generation flags are not valid and may be ignored: ['temperature'].
+[INFO|configuration_utils.py:840] 2025-07-17 22:46:31,316 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  99%|█████████▊| 75/76 [25:35<00:30, 30.88s/it]Environment instance: 100%|██████████| 76/76 [25:36<00:00, 21.69s/it]Environment instance: 100%|██████████| 76/76 [25:36<00:00, 20.21s/it]

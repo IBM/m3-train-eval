@@ -1,0 +1,74 @@
+{
+    "agent_performance": {
+        "avg_agent_run_length": 3.7777777777777777,
+        "completion_rate": 0.5,
+        "truncation_rate": 0.05555555555555555,
+        "termination_rate": 0.9444444444444444,
+        "perf_str": "Total=18, Success=9, Truncated=1, Terminated=17"
+    },
+    "actionic_performance": {
+        "scenario_followed": {
+            "all_trajectories": 0.5,
+            "successful_trajectories": 0.8888888888888888
+        },
+        "action_stats": {
+            "all_trajectories": {
+                "FINAL": {
+                    "mean": 0.9444444444444444,
+                    "std": 0.2290614236454256
+                },
+                "API": {
+                    "mean": 1.7222222222222223,
+                    "std": 2.076470176781196
+                },
+                "RETRIEVE": {
+                    "mean": 1.1111111111111112,
+                    "std": 0.5665577237325317
+                },
+                "OTHER": {
+                    "mean": 0.0,
+                    "std": 0.0
+                }
+            },
+            "successful_trajectories": {
+                "FINAL": {
+                    "mean": 1.0,
+                    "std": 0.0
+                },
+                "API": {
+                    "mean": 1.2222222222222223,
+                    "std": 0.41573970964154905
+                },
+                "RETRIEVE": {
+                    "mean": 1.1111111111111112,
+                    "std": 0.3142696805273545
+                },
+                "OTHER": {
+                    "mean": 0.0,
+                    "std": 0.0
+                }
+            }
+        }
+    },
+    "expert_assistance": {
+        "avg_first_help_timestep": null,
+        "avg_total_helps": 0.0,
+        "avg_non_help_stretch": 3.7777777777777777
+    },
+    "error_recovery": {
+        "all_trajectories": {
+            "num_recoveries": 9,
+            "steps_taken": {
+                "mean": 1.0,
+                "std": 0.0
+            }
+        },
+        "successful_trajectories": {
+            "num_recoveries": 3,
+            "steps_taken": {
+                "mean": 1.0,
+                "std": 0.0
+            }
+        }
+    }
+}

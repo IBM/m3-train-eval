@@ -1,6 +1,6 @@
 {
   "path_to_env_vars": "./.env",
-  "path_to_env_data": "ground_truth/bird/final/books_multiturn_bird_final.json",
+  "path_to_env_data": "sample/bird-dev-old/api_before_rag_gt.json",
   "db_config": {
     "cert": "./es_cert",
     "host_name": "https://7f25eae6-4320-4daa-b5ce-58193a338255.974550db55eb4ec0983f023940bf637f.databases.appdomain.cloud:31575",

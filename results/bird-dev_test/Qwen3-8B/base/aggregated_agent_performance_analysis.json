@@ -1,0 +1,120 @@
+{
+    "agent_performance": {
+        "avg_agent_run_length": 3.6507936507936507,
+        "completion_rate": 0.20634920634920634,
+        "truncation_rate": 0.1111111111111111,
+        "termination_rate": 0.8888888888888888,
+        "perf_str": "Total=63, Success=13, Truncated=7, Terminated=56"
+    },
+    "actionic_performance": {
+        "api_before_rag": {
+            "scenario_followed": {
+                "all_trajectories": 0.2777777777777778,
+                "successful_trajectories": 1.0
+            },
+            "action_stats": {
+                "all_trajectories": {
+                    "FINAL": {
+                        "mean": 0.8888888888888888,
+                        "std": 0.3142696805273545
+                    },
+                    "RETRIEVE": {
+                        "mean": 0.3888888888888889,
+                        "std": 0.4874980215217846
+                    },
+                    "API": {
+                        "mean": 1.8333333333333333,
+                        "std": 1.1666666666666667
+                    },
+                    "OTHER": {
+                        "mean": 0.7777777777777778,
+                        "std": 2.0427529234278037
+                    }
+                },
+                "successful_trajectories": {
+                    "FINAL": {
+                        "mean": 1.0,
+                        "std": 0.0
+                    },
+                    "RETRIEVE": {
+                        "mean": 1.0,
+                        "std": 0.0
+                    },
+                    "API": {
+                        "mean": 1.3333333333333333,
+                        "std": 0.4714045207910317
+                    },
+                    "OTHER": {
+                        "mean": 0.0,
+                        "std": 0.0
+                    }
+                }
+            }
+        },
+        "rag_before_api": {
+            "scenario_followed": {
+                "all_trajectories": 0.06666666666666667,
+                "successful_trajectories": 0.1
+            },
+            "action_stats": {
+                "all_trajectories": {
+                    "FINAL": {
+                        "mean": 0.8888888888888888,
+                        "std": 0.3142696805273545
+                    },
+                    "RETRIEVE": {
+                        "mean": 0.24444444444444444,
+                        "std": 0.42975732457363813
+                    },
+                    "API": {
+                        "mean": 1.6444444444444444,
+                        "std": 1.5225060562631683
+                    },
+                    "OTHER": {
+                        "mean": 0.7777777777777778,
+                        "std": 1.8121673811444543
+                    }
+                },
+                "successful_trajectories": {
+                    "FINAL": {
+                        "mean": 1.0,
+                        "std": 0.0
+                    },
+                    "RETRIEVE": {
+                        "mean": 0.2,
+                        "std": 0.4000000000000001
+                    },
+                    "API": {
+                        "mean": 1.1,
+                        "std": 0.3
+                    },
+                    "OTHER": {
+                        "mean": 0.0,
+                        "std": 0.0
+                    }
+                }
+            }
+        }
+    },
+    "expert_assistance": {
+        "avg_first_help_timestep": null,
+        "avg_total_helps": 0.0,
+        "avg_non_help_stretch": 3.6507936507936507
+    },
+    "error_recovery": {
+        "all_trajectories": {
+            "num_recoveries": 39,
+            "steps_taken": {
+                "mean": 1.6153846153846154,
+                "std": 1.425327395865364
+            }
+        },
+        "successful_trajectories": {
+            "num_recoveries": 2,
+            "steps_taken": {
+                "mean": 1.0,
+                "std": 0.0
+            }
+        }
+    }
+}

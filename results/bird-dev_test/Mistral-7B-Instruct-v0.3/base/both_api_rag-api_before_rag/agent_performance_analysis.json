@@ -1,0 +1,57 @@
+{
+    "agent_performance": {
+        "avg_agent_run_length": 10.0,
+        "completion_rate": 0.0,
+        "truncation_rate": 1.0,
+        "termination_rate": 0.0,
+        "perf_str": "Total=18, Success=0, Truncated=18, Terminated=0"
+    },
+    "actionic_performance": {
+        "scenario_followed": {
+            "all_trajectories": 0.0,
+            "successful_trajectories": NaN
+        },
+        "action_stats": {
+            "all_trajectories": {
+                "API": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "RETRIEVE": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "FINAL": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "OTHER": {
+                    "mean": 10.0,
+                    "std": 0.0
+                }
+            },
+            "successful_trajectories": {}
+        }
+    },
+    "expert_assistance": {
+        "avg_first_help_timestep": null,
+        "avg_total_helps": 0.0,
+        "avg_non_help_stretch": 10.0
+    },
+    "error_recovery": {
+        "all_trajectories": {
+            "num_recoveries": 18,
+            "steps_taken": {
+                "mean": 9.0,
+                "std": 0.0
+            }
+        },
+        "successful_trajectories": {
+            "num_recoveries": 0,
+            "steps_taken": {
+                "mean": NaN,
+                "std": NaN
+            }
+        }
+    }
+}

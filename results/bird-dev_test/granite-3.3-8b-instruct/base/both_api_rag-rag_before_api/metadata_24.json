@@ -1,0 +1,25 @@
+{
+  "sample_id": 114,
+  "truncated": true,
+  "terminated": false,
+  "success": false,
+  "total_time_steps": 10,
+  "expert_assistance": {
+    "mode": null,
+    "init_limit": 2,
+    "recent_limit": -2,
+    "random_epsilon": 1.0,
+    "tracker": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+}

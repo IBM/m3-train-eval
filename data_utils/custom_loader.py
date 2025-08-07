@@ -684,8 +684,8 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             data_args: "DataArguments",
             train_setting: str
     ):
-        self.preference_granularity: str = 'trajectory'  # 'step' (collected using single agent) or 'trajectory' (collected using multiple agents)
-        self.mask_suboptimal_traces: bool = True  # Used only with trajectory-level preference granularity
+        # self.preference_granularity: str = 'step'  # 'step' (collected using single agent) or 'trajectory' (collected using multiple agents)
+        # self.mask_suboptimal_traces: bool = True  # Used with trajectory-level preference granularity
 
         super().__init__(
             template=template,
@@ -791,7 +791,7 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             for curr_turn in traj:
                 flatten_traj.append(curr_turn["input"])
                 flatten_traj.append(curr_turn["output"])
-                if not self.mask_suboptimal_traces:
+                if not self.data_args.mask_suboptimal_traces:
                     _mask_turn.append(False)
                 else:
                     turn_penalised = False
@@ -862,14 +862,14 @@ class AgentTrajectoryPreferenceData(BaseDataset):
         return total_trajectories, task_idxs, data
 
     def read_data(self):
-        if self.preference_granularity == 'step':
+        if self.data_args.preference_granularity == 'step':
             try:
                 assert self.data_args.mask_history == True
             except AssertionError:
                 raise ValueError("For step level DPO training, mask_history must be set to True.")
             total_trajectories, task_idxs, data = self.read_step_preferences()
 
-        elif self.preference_granularity == 'trajectory':
+        elif self.data_args.preference_granularity == 'trajectory':
             try:
                 assert self.data_args.mask_history == False
             except AssertionError:
@@ -878,7 +878,7 @@ class AgentTrajectoryPreferenceData(BaseDataset):
 
         else:
             raise NotImplementedError("Parsing of preference granularity must be set to 'step' or 'trajectory'. "
-                                      "It is currently set to {}".format(self.preference_granularity))
+                                      "It is currently set to {}".format(self.data_args.preference_granularity))
 
         try:
             assert len(data) > 0

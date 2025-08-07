@@ -1,0 +1,74 @@
+{
+    "agent_performance": {
+        "avg_agent_run_length": 4.222222222222222,
+        "completion_rate": 0.3888888888888889,
+        "truncation_rate": 0.16666666666666666,
+        "termination_rate": 0.8333333333333334,
+        "perf_str": "Total=18, Success=7, Truncated=3, Terminated=15"
+    },
+    "actionic_performance": {
+        "scenario_followed": {
+            "all_trajectories": 0.5,
+            "successful_trajectories": 0.8571428571428571
+        },
+        "action_stats": {
+            "all_trajectories": {
+                "FINAL": {
+                    "mean": 0.8333333333333334,
+                    "std": 0.37267799624996495
+                },
+                "RETRIEVE": {
+                    "mean": 1.1111111111111112,
+                    "std": 0.87488976377909
+                },
+                "API": {
+                    "mean": 1.7777777777777777,
+                    "std": 2.322727217818541
+                },
+                "OTHER": {
+                    "mean": 0.5,
+                    "std": 2.0615528128088303
+                }
+            },
+            "successful_trajectories": {
+                "FINAL": {
+                    "mean": 1.0,
+                    "std": 0.0
+                },
+                "RETRIEVE": {
+                    "mean": 1.0,
+                    "std": 0.0
+                },
+                "API": {
+                    "mean": 0.8571428571428571,
+                    "std": 0.3499271061118826
+                },
+                "OTHER": {
+                    "mean": 0.0,
+                    "std": 0.0
+                }
+            }
+        }
+    },
+    "expert_assistance": {
+        "avg_first_help_timestep": null,
+        "avg_total_helps": 0.0,
+        "avg_non_help_stretch": 4.222222222222222
+    },
+    "error_recovery": {
+        "all_trajectories": {
+            "num_recoveries": 12,
+            "steps_taken": {
+                "mean": 1.9166666666666667,
+                "std": 2.2157893000513886
+            }
+        },
+        "successful_trajectories": {
+            "num_recoveries": 0,
+            "steps_taken": {
+                "mean": NaN,
+                "std": NaN
+            }
+        }
+    }
+}

@@ -1,6 +1,45 @@
 # Agentic Training/Inference Benchmarking for Tool-Calling LLMs on M3
 
-This project benchmarks large language models (LLMs) on their ability to use tools effectively in a **multi-hop, multi-turn, multi-source/tool question answering agentic setting**. The agent operates in a gym-style MDP environment, solving tasks by invoking tools at each step and producing a final answer through a `FINAL` action.
+This project benchmarks large language models (LLMs) on their ability to use tools effectively in a **multi-hop, multi-turn, multi-source/tool question answering agentic setting**. The agent operates in a gym-style MDP environment, solving tasks by invoking tools at each step and producing a final answer through a `FINAL` action. 
+
+## Releases
+<details>
+<summary>Existing</summary>
+We currently support SFT and DPO training. Specifically, for DPO we have step-level v/s trajectory-level preference data generation and training support. Additionally, by looking at step-level reward categories, we further have an option to mask suboptimal traces while creating trajectory-level preferences during training.
+</details>
+<details>
+<summary>Future</summary>
+</details>
+
+## 📚 Table of Contents
+- [Environment Setup](#-python-environment-setup)
+- [Agentic Inference Environment](#-agentic-inference-environment)
+- [Environment Scenarios](#-environment-scenarios)
+- [Supported Language Models](#-supported-language-models)
+- [Data Generation](#-data-generation)
+- [Training](#-training-lora-based-fine-tuning-of-agentic-language-models)
+- [Evaluation](#-evaluation)
+
+---
+
+## 🧱 Python Environment Setup
+
+To get started, create a Python environment and install the necessary dependencies.
+
+### 🔧 Step 1: Create Conda Environment
+
+```bash
+conda create -n AgenticAI python=3.11
+conda activate AgenticAI
+```
+
+### 📦 Step 2: Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+This will install all required packages for running the agentic pipeline, including support for LoRA training, multi-turn inference, DeepSpeed, and more.
 
 ---
 
@@ -60,6 +99,8 @@ The parameters for governing the structure and behavior of the agent and its tas
 ---
 
 ### 🧠 Expert Intervention/Assistance Modes
+Here's how the expert intervention mechanism works:
+![Expert Intervention](sample/expert_intervention.jpg)
 
 The framework supports various expert-assisted settings for supervising or augmenting agent decisions. 
 Controls if and how the expert (which has access to ground-truth trajectories) is used. Set via `expert_mode`:
@@ -107,7 +148,7 @@ Specifies which tools are available to the agent during inference:
 
 ### 🚫 Tool Usage Policy (`tool_usage`)
 
-A **textual constraint** that defines policies on tool invocation for specific **sub-domains** or **document collections**. For example, it can restrict the agent from using the retriever on certain collections or the API in specific sub-domains.
+A **textual constraint** that defines policies on tool invocation for specific **subdomains** or **document collections**. For example, it can restrict the agent from using the retriever on certain collections or the API in specific subdomains.
 
 * **Default:** `""` (no restrictions)
 * **Example:** `"Do not use the tool $retrieve_documents$ for the domain dealing with company documents."`
@@ -165,7 +206,7 @@ Here’s a clear and well-structured **“📦 Data Generation”** section for 
 
 Before generating any data, begin by parsing the raw environment data into a **pipeline-consumable format**.
 
-📄 Refer to the README in the [`ground_truth`](./ground_truth/) directory for details on how to generate this preprocessed format.
+📄 Refer to the README in the [`ground_truth`](./ground_truth) directory for details on how to generate this preprocessed format.
 
 
 ### 🧭 Stage 1: Generating Expert Trajectories (SFT Data)
@@ -189,20 +230,26 @@ Set the following configuration in `configs/infer_agent.json`:
 {"expert_mode": "informed"}
 ```
 
-In this mode, the **agent interacts with the environment**, and the **expert intervenes** when necessary (e.g., if the agent is stuck or making repeated errors). This generates **step-level preference data**, indicating whether the agent or the expert took the action.
+In this mode, the **agent interacts with the environment**, and the **expert intervenes** when necessary (e.g., if the agent is stuck or making repeated errors). This generates **step-level preference data**, based on whether the agent or the expert took the action.
 
 ⚙️ You must ensure the underlying LLM agent is set up correctly:
 
 * ✅ Either via **RITS** or a **local Hugging Face endpoint**
 * 🔗 See the [previous section](#-supported-language-models) on how to configure model-specific parameters like `model_name_or_path` and `chat_template`
 
+**[Future Work]:** Work in progress to generate preference data at trajectory level by comparing trajectories of two separate agents (one better than other) here at [create_pref_trajectories_for_dpo.py](create_pref_trajectories_for_dpo.py). For this we need trajectories from two separate agents.
 
 ### 🚀 Running the Pipeline
 
 * If using the **CCC cluster**, you can launch the data generation using the provided shell script:
 
   ```bash
-  ./scripts/infer_agent.lsf.sh
+  ./ccc_scripts/infer_agent.lsf.sh <ENV_NAME> <PROJECT_ROOT_DIR> <HF_CACHE_DIR>
+  ```
+
+  Example Usage:
+  ```bash
+  ./ccc_scripts/infer_agent.lsf.sh AgenticAI /u/aj05/project/Code /u/aj05/project/hf_cache
   ```
 
 * Otherwise, run the entry point directly:
@@ -211,7 +258,42 @@ In this mode, the **agent interacts with the environment**, and the **expert int
   python run.py
   ```
 
-Ensure that your `configs/infer_agent.json` is correctly populated before running.
+Ensure that your `configs/infer_agent.json` is correctly populated before running. The run results i.e. trajectories will be generated and saved in the `logging/<curr_date_time>/trajectories` with corresponding metadata.
+<details>
+<summary>Click to view example metadata</summary>
+```json
+{
+  "sample_id": 17,
+  "truncated": false,
+  "terminated": true,
+  "success": true,
+  "total_time_steps": 3,
+  "expert_assistance": {
+    "mode": "ground_truth",
+    "init_limit": 2,
+    "recent_limit": -2,
+    "random_epsilon": 1.0,
+    "tracker": [
+      1,
+      1,
+      1
+    ]
+  }
+}
+```
+
+
+| Field Name                  | Explanation                                                                          |
+|-----------------------------|--------------------------------------------------------------------------------------|
+| `sample_id`                 | sample ID of the environment instance (not the same as actual data's sample IDs)     |
+| `truncated`                 | Whether the agent run was truncated by the environment because it exceeded max steps |
+| `terminated`                | Whether the agent run was terminated by the environment                              |
+| `success`                   | Whether the agent successfully completed the task (determined by LLMasJudge)         |
+| `total_time_steps`          | Number of time-steps the agent ran for (across multi-turns)                          |
+| `expert_assistance`         | Parameters with which expert assistance was configured                               |
+| `expert_assistance/tracker` | For each step, whether the action was taken by expert (1) or agent (0)               |
+</details>
+
 
 ---
 
@@ -227,19 +309,54 @@ The training script is:
 
 ---
 
-### ⚙️ LoRA Configuration (`config_files/train_lora.json`)
+### ⚙️ Configure Training Parameters (`config_files/train_lora.json`)
 
-Example options in the training config include:
+Note the configuration parameters specified in `config_files/train_lora.json` overrides the default values specified for the same at [hparams](hparams) which is an extensive suite of hyper-params configuring the model training/evaluation.
 
-| Key                           | Description                                              |
-|-------------------------------|----------------------------------------------------------|
-| `model_name_or_path`          | Hugging Face model ID or local checkpoint path           |
-| `template`                    | The template used to prompt the model                    |
-| `deepspeed`                   | Path to the corresponding DeepSpeed stage config `.json` |
-| `per_device_train_batch_size` | Batch size per GPU                                       |
-| `gradient_accumulation_steps` | To simulate larger effective batch sizes                 |
-| `learning_rate`               | LoRA tuning learning rate                                |
-| `lora_rank`, `lora_alpha`     | LoRA rank and scaling factor                             |
+Below we discuss the key ones:-
+
+#### Model (overrides [model_args.py](hparams/model_args.py))
+
+| Key                    | Description                                                                                                                                                                      |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model_name_or_path`   | Hugging Face model ID or local checkpoint path                                                                                                                                   |
+| `adapter_name_or_path` | Path to the adapter weights. Use it to point to LoRA weights (typically the directory ending with `final/PEFT/`) warmed up with SFT to further resume training for DPO/GRPO etc. |
+
+To optimise memory footprint and training time, we have set the following additional params: `flash_attn = fa2`, `disable_gradient_checkpointing = false`, `enable_liger_kernel = true`
+
+#### Training Data (overrides [data_args.py](hparams/data_args.py))
+
+| Key            | Description                                                                                                                                                                                                 |
+|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `template`     | The template used to prompt the model                                                                                                                                                                       |
+| `cutoff_len`   | The max length before truncating the input length (set to max length model supports, refer [here](#-supported-language-models) )                                                                            |
+| `dataset_dir`  | Path to the folder containing the datasets. Point this to root directory where data from different domains are present                                                                                      |
+| `dataset`      | list of the name of dataset(s) to use for training. Point this to domain names present as separate folders in `dataset_dir`                                                                                 |
+| `mask_history` | Whether or not to mask the history and train on the last step only. For SFT set to False to train on complete trajectory. For DPO (step-level), set to True to train on preference pairs only at step-level |
+
+DPO-specific parameters that are unique to our use-case are:
+- `preference_granularity`: `step` (collected using single agent) or `trajectory` (collected using multiple agents). Default set to `step`
+- `mask_suboptimal_traces`: Whether to mask suboptimal traces in preference samples. Used with trajectory-level preference granularity
+
+#### Finetuning Method (overrides [finetuning_args.py](hparams/finetuning_args.py))
+
+| Key                                       | Description                                                                                                                                                                                                                                        |
+|-------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `finetuning_type`                         | Which fine-tuning method to use. `lora` preferred.                                                                                                                                                                                                 |
+| `lora_rank`, `lora_alpha`, `lora_dropout` | LoRA rank, scaling factor and dropout                                                                                                                                                                                                              |
+| `create_new_adapter`                      | Whether or not to create a new adapter with randomly initialized weight. Setting it to false will update the same adapter specified via `adapter_name_or_path`. For instance, do this when we want DPO to update same weights tuned by SFT warmup. |
+| `stage`                                   | Fine-tuning stage. We currently support `sft` and `dpo`                                                                                                                                                                                            |
+
+For DPO, the additional params that need to specified are `pref_loss`, `pref_beta`, `ref_model`, `ref_model_adapters`. We have implemented support for a wide range of preference losses.
+
+#### Training Hyper-params (overrides [training_args.py](hparams/training_args.py) and [built-in Transformer's](https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments))
+| Key                           | Description                                                                                                                                                                |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `deepspeed`                   | Path to the corresponding DeepSpeed stage config `.json`                                                                                                                   |
+| `per_device_train_batch_size` | Batch size per GPU                                                                                                                                                         |
+| `gradient_accumulation_steps` | To simulate larger effective batch sizes                                                                                                                                   |
+| `learning_rate`               | LoRA tuning learning rate                                                                                                                                                  |
+| `report_to`                   | The list of integrations to report the results. If set to `["wandb"]`, make sure you have logged into your wandb account (Refer [this](https://docs.wandb.ai/quickstart/)) |
 
 ---
 
@@ -252,32 +369,94 @@ We support **multi-GPU distributed training** via [Hugging Face Accelerate](http
 
 #### ✅ Required Files:
 
-| File Location                                   | Description                             |
-|-------------------------------------------------|-----------------------------------------|
-| `config_files/train_lora.json`                  | Main training configuration             |
-| `config_files/training/multi_gpu_ds_stage2.yml` | Accelerate config for DeepSpeed Stage 2 |
-| `config_files/training/zero_stage2_config.json` | DeepSpeed Stage 2 config file           |
-| `config_files/training/multi_gpu_ds_stage3.yml` | Accelerate config for DeepSpeed Stage 3 |
-| `config_files/training/zero_stage3_config.json` | DeepSpeed Stage 3 config file           |
+| File Location                                   | Description                                  |
+|-------------------------------------------------|----------------------------------------------|
+| `config_files/train_lora.json`                  | Main training configuration                  |
+| `config_files/training/multi_gpu_ds_stage2.yml` | Accelerate YAML config for DeepSpeed Stage 2 |
+| `config_files/training/zero_stage2_config.json` | DeepSpeed Stage 2 config file                |
+| `config_files/training/multi_gpu_ds_stage3.yml` | Accelerate YAML config for DeepSpeed Stage 3 |
+| `config_files/training/zero_stage3_config.json` | DeepSpeed Stage 3 config file                |
 
 ⚠️ **Important**:
-The **DeepSpeed config file path** must be provided **both** in:
 
-* the `deepspeed` key inside `train_lora.json`
-* the `--config_file` (Accelerate YAML) when launching training
+- The **DeepSpeed config file path** must be provided **both** in:
+  * the `deepspeed` key inside `train_lora.json`
+  * the `--config_file` (Accelerate YAML) when launching training
+- `num_processes` field in Accelerate YAML file must be set to number of available GPUs
 
 ---
 
 ### 💻 Example Training Command
 
 ```bash
-accelerate launch --config_file config_files/training/multi_gpu_ds_stage2.yml tune.py
+accelerate launch --config_file config_files/training/multi_gpu_ds_stage3.yml tune.py
 ```
----
 
 ### 📌 Notes
 
 * For faster debugging or single-GPU setups, set `deepspeed` to `null` and use a basic `accelerate config` setup
 
 ---
+
+## ✅ Evaluation
+
+To evaluate an agent on held-out test data, you can reuse the same pipeline used for training data generation.
+
+### 🚀 Run Evaluation
+
+Use the same entry point:
+
+```bash
+python run.py
+```
+
+But with the following configuration changes in
+📄 `configs/infer_agent.json`:
+
+
+### 🔧 Required Configuration
+
+| Parameter          | Description                                                                  |
+|--------------------|------------------------------------------------------------------------------|
+| `expert_mode`      | Set to `null` → agent operates **independently** without expert intervention |
+| `path_to_env_data` | Path to the **test dataset** JSON file                                       |
+
+
+### 🤖 Evaluating HF Base Models
+
+For evaluating a base Hugging Face model:
+
+* Set `is_hf_agent = true`
+* Point `path_to_hf_config` to:
+  📄 `./config_files/infer_base.json`
+
+### 🧠 Evaluating Fine-Tuned (LoRA) Models
+
+For evaluating trained models:
+
+* Set `is_hf_agent = true`
+* Point `path_to_hf_config` to:
+  📄 `./config_files/infer_lora.json`
+* In `infer_lora.json`, set:
+
+```json
+{"adapter_name_or_path": "<path_to_trained_model>"}
+```
+
+This loads your fine-tuned weights via PEFT LoRA.
+
+---
+
+### 📊 Output
+
+After evaluation, the following will be generated:
+
+* ✅ **Saved Trajectories** (full step-by-step tool calls)
+* 🧾 **Metadata** (intervention counts, turn-level info)
+* 📈 **Success Rate** of the agent across the test set
+
+The output format mirrors that of the training data generation pipeline, ensuring compatibility for post-hoc analysis or visualization.
+
+---
+
 

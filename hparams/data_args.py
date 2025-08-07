@@ -138,6 +138,16 @@ class DataArguments:
         metadata={"help": "Whether or not to use a shared file system for the datasets."},
     )
 
+    # My Custom parameters for DPO
+    preference_granularity: Optional[str] = field(
+        default='step',
+        metadata={"help": "One of `step` or `trajectory`. Whether to generate preference samples at step-level or trajectory level."},
+    )
+    mask_suboptimal_traces: bool = field(
+        default=True,
+        metadata={"help": "Whether or not to mask suboptimal traces in preference samples. Used with trajectory-level preference granularity"},
+    )
+
     def __post_init__(self):
         def split_arg(arg):
             if isinstance(arg, str):

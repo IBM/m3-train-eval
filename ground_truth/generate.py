@@ -134,7 +134,7 @@ def create_and_inject_thoughts(
         _save_data_at: str,
         model_name_or_path: str,
         range_tool_resp_cut_off: Tuple[int, int]= (5, 10),
-        max_tool_resp_cut_off: int = 500,
+        max_tool_resp_cut_off: int = 1024,
 ) -> dict:
     """Must run after parsing raw multi-turn data.
        Note: Inject scenarios here to control thought and final answers. Not implemented!
@@ -172,8 +172,8 @@ def create_and_inject_thoughts(
 
         logger.info(f"\n# ===================================== {domain_file} ===================================== #")
         final_domain_data, left_out_domain_data = [], []  # Segregate chosen and rejected (in orig format) samples
-        is_valid_sample = True
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
+            is_valid_sample = True
             orig_sample = copy.deepcopy(sample)
 
             sample_id = sample['sample_id']

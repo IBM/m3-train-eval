@@ -1,0 +1,457 @@
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,323 >> loading file vocab.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/vocab.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,323 >> loading file merges.txt from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/merges.txt
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,323 >> loading file tokenizer.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/tokenizer.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,323 >> loading file added_tokens.json from cache at None
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,323 >> loading file special_tokens_map.json from cache at None
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,323 >> loading file tokenizer_config.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/tokenizer_config.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,324 >> loading file chat_template.jinja from cache at None
+[INFO|tokenization_utils_base.py:2299] 2025-07-03 23:27:44,637 >> Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+[INFO|configuration_utils.py:698] 2025-07-03 23:27:44,864 >> loading configuration file config.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/config.json
+[INFO|configuration_utils.py:770] 2025-07-03 23:27:44,876 >> Model config Qwen3Config {
+  "architectures": [
+    "Qwen3ForCausalLM"
+  ],
+  "attention_bias": false,
+  "attention_dropout": 0.0,
+  "bos_token_id": 151643,
+  "eos_token_id": 151645,
+  "head_dim": 128,
+  "hidden_act": "silu",
+  "hidden_size": 4096,
+  "initializer_range": 0.02,
+  "intermediate_size": 12288,
+  "max_position_embeddings": 40960,
+  "max_window_layers": 36,
+  "model_type": "qwen3",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 36,
+  "num_key_value_heads": 8,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 1000000,
+  "sliding_window": null,
+  "tie_word_embeddings": false,
+  "torch_dtype": "bfloat16",
+  "transformers_version": "4.52.4",
+  "use_cache": true,
+  "use_sliding_window": false,
+  "vocab_size": 151936
+}
+
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,956 >> loading file vocab.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/vocab.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,956 >> loading file merges.txt from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/merges.txt
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,956 >> loading file tokenizer.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/tokenizer.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,956 >> loading file added_tokens.json from cache at None
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,956 >> loading file special_tokens_map.json from cache at None
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,956 >> loading file tokenizer_config.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/tokenizer_config.json
+[INFO|tokenization_utils_base.py:2023] 2025-07-03 23:27:44,956 >> loading file chat_template.jinja from cache at None
+[INFO|tokenization_utils_base.py:2299] 2025-07-03 23:27:45,243 >> Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+[INFO|configuration_utils.py:698] 2025-07-03 23:27:45,308 >> loading configuration file config.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/config.json
+[INFO|configuration_utils.py:770] 2025-07-03 23:27:45,311 >> Model config Qwen3Config {
+  "architectures": [
+    "Qwen3ForCausalLM"
+  ],
+  "attention_bias": false,
+  "attention_dropout": 0.0,
+  "bos_token_id": 151643,
+  "eos_token_id": 151645,
+  "head_dim": 128,
+  "hidden_act": "silu",
+  "hidden_size": 4096,
+  "initializer_range": 0.02,
+  "intermediate_size": 12288,
+  "max_position_embeddings": 40960,
+  "max_window_layers": 36,
+  "model_type": "qwen3",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 36,
+  "num_key_value_heads": 8,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 1000000,
+  "sliding_window": null,
+  "tie_word_embeddings": false,
+  "torch_dtype": "bfloat16",
+  "transformers_version": "4.52.4",
+  "use_cache": true,
+  "use_sliding_window": false,
+  "vocab_size": 151936
+}
+
+[INFO|modeling_utils.py:1151] 2025-07-03 23:27:46,434 >> loading weights file model.safetensors from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/model.safetensors.index.json
+[INFO|modeling_utils.py:2241] 2025-07-03 23:27:46,439 >> Instantiating Qwen3ForCausalLM model under default dtype torch.bfloat16.
+[INFO|configuration_utils.py:1135] 2025-07-03 23:27:46,443 >> Generate config GenerationConfig {
+  "bos_token_id": 151643,
+  "eos_token_id": 151645
+}
+
+Loading checkpoint shards:   0%|          | 0/5 [00:00<?, ?it/s]Loading checkpoint shards:  20%|██        | 1/5 [00:06<00:25,  6.26s/it]Loading checkpoint shards:  40%|████      | 2/5 [00:12<00:18,  6.25s/it]Loading checkpoint shards:  60%|██████    | 3/5 [00:18<00:12,  6.20s/it]Loading checkpoint shards:  80%|████████  | 4/5 [00:23<00:05,  5.73s/it]Loading checkpoint shards: 100%|██████████| 5/5 [00:25<00:00,  4.37s/it]Loading checkpoint shards: 100%|██████████| 5/5 [00:25<00:00,  5.12s/it]
+[INFO|modeling_utils.py:5131] 2025-07-03 23:28:12,313 >> All model checkpoint weights were used when initializing Qwen3ForCausalLM.
+
+[INFO|modeling_utils.py:5139] 2025-07-03 23:28:12,313 >> All the weights of Qwen3ForCausalLM were initialized from the model checkpoint at Qwen/Qwen3-8B.
+If your task is similar to the task the model of the checkpoint was trained on, you can already use Qwen3ForCausalLM for predictions without further training.
+[INFO|configuration_utils.py:1090] 2025-07-03 23:28:12,371 >> loading configuration file generation_config.json from cache at /u/aj05/project/hf_cache/hub/models--Qwen--Qwen3-8B/snapshots/9c925d64d72725edaf899c6cb9c377fd0709d9c5/generation_config.json
+[INFO|configuration_utils.py:1135] 2025-07-03 23:28:12,371 >> Generate config GenerationConfig {
+  "bos_token_id": 151643,
+  "do_sample": true,
+  "eos_token_id": [
+    151645,
+    151643
+  ],
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+
+Environment instance:   0%|          | 0/27 [00:00<?, ?it/s]Environment instance:   4%|▎         | 1/27 [00:00<00:04,  5.32it/s]Environment instance:   7%|▋         | 2/27 [00:00<00:04,  5.59it/s]Environment instance:  11%|█         | 3/27 [00:00<00:04,  5.53it/s]Environment instance:  15%|█▍        | 4/27 [00:00<00:04,  5.53it/s]Environment instance:  19%|█▊        | 5/27 [00:00<00:03,  5.59it/s]Environment instance:  22%|██▏       | 6/27 [00:01<00:03,  5.67it/s][WARNING|configuration_utils.py:839] 2025-07-03 23:28:13,719 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:28:13,719 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:28:40,468 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:28:40,469 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  26%|██▌       | 7/27 [00:40<04:17, 12.87s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:28:52,808 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:28:52,808 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:29:53,064 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:29:53,064 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:30:47,871 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:30:47,871 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:30:58,379 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:30:58,379 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  30%|██▉       | 8/27 [03:03<17:15, 54.50s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:31:16,371 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:31:16,371 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:32:17,814 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:32:17,814 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:32:49,097 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:32:49,097 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:33:16,224 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:33:16,224 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  33%|███▎      | 9/27 [05:20<24:02, 80.15s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:33:32,931 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:33:32,931 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:11,379 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:11,379 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:14,639 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:14,639 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:22,909 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:22,910 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:26,120 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:26,120 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:28,249 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:28,249 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:30,002 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:30,002 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:33,459 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:33,459 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:35,238 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:35,238 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:36:37,027 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:37,027 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  37%|███▋      | 10/27 [08:26<31:58, 112.85s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:36:39,086 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:36:39,086 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:17,957 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:17,957 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:22,337 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:22,337 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:26,652 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:26,652 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:31,339 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:31,340 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:35,659 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:35,659 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:38,390 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:38,390 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:40,994 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:40,994 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:45,356 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:45,356 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:39:47,971 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:47,971 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  41%|████      | 11/27 [11:38<36:32, 137.01s/it]Environment instance:  44%|████▍     | 12/27 [11:38<23:51, 95.41s/it] [WARNING|configuration_utils.py:839] 2025-07-03 23:39:51,058 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:39:51,058 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:40:12,846 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:40:12,846 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  48%|████▊     | 13/27 [12:14<18:04, 77.49s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:40:27,373 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:40:27,373 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:41:43,423 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:41:43,423 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  52%|█████▏    | 14/27 [13:57<18:27, 85.19s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:42:10,353 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:42:10,353 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:43:13,909 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:43:13,909 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  56%|█████▌    | 15/27 [15:25<17:12, 86.04s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:43:38,366 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:43:38,366 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:43:59,658 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:43:59,658 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  59%|█████▉    | 16/27 [16:07<13:21, 72.84s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:44:20,492 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:44:20,492 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:44:56,387 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:44:56,387 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:45:09,611 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:45:09,611 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:45:41,293 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:45:41,293 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  63%|██████▎   | 17/27 [17:40<13:07, 78.79s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:45:53,136 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:45:53,136 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:46:29,919 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:46:29,919 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  67%|██████▋   | 18/27 [18:38<10:52, 72.52s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:46:51,109 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:46:51,109 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:47:15,053 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:47:15,053 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:47:25,311 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:47:25,311 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  70%|███████   | 19/27 [19:27<08:44, 65.59s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:47:40,615 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:47:40,615 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:48:47,143 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:48:47,143 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:49:23,086 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:49:23,086 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:49:38,846 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:49:38,846 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:50:00,154 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:50:00,154 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  74%|███████▍  | 20/27 [22:12<11:07, 95.39s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:50:25,421 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:50:25,421 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:51:23,146 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:51:23,146 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:51:38,222 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:51:38,222 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  78%|███████▊  | 21/27 [23:38<09:14, 92.43s/it]Environment instance:  81%|████████▏ | 22/27 [23:38<05:23, 64.79s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:51:51,174 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:51:51,174 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:52:23,262 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:52:23,262 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:52:33,929 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:52:33,929 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:52:44,863 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:52:44,863 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  85%|████████▌ | 23/27 [25:01<04:40, 70.23s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:53:14,244 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:53:14,244 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:53:46,396 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:53:46,396 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:54:02,937 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:54:02,937 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:54:17,754 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:54:17,754 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  89%|████████▉ | 24/27 [26:40<03:56, 78.76s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:54:52,759 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:54:52,759 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:55:55,865 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:55:55,865 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  93%|█████████▎| 25/27 [27:59<02:38, 79.08s/it][WARNING|configuration_utils.py:839] 2025-07-03 23:56:12,600 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:56:12,600 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:57:46,212 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:57:46,212 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:58:13,995 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:58:13,995 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:58:26,070 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:58:26,070 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[WARNING|configuration_utils.py:839] 2025-07-03 23:58:29,860 >> The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k'].
+[INFO|configuration_utils.py:840] 2025-07-03 23:58:29,860 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+- `top_p`: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+- `top_k`: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+Environment instance:  96%|█████████▋| 26/27 [30:38<01:42, 102.94s/it]Environment instance: 100%|██████████| 27/27 [30:38<00:00, 72.16s/it] Environment instance: 100%|██████████| 27/27 [30:38<00:00, 68.11s/it]
