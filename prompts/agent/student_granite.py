@@ -1,6 +1,5 @@
 TOOL_AVAILABILITY_TEXT = """You have access to the following available_tools: {tool_text}"""
 
-
 TOOL_USAGE_TEXT = """This is how you should answer the user query:
 
     1. At each turn:
@@ -15,10 +14,10 @@ TOOL_USAGE_TEXT = """This is how you should answer the user query:
 
             - Final answer, a string wrapped as:
                 <FINAL>{final_answer}</FINAL>
-              Note: The 'final_answer' must be a string. Generate this if you believe that you have obtained enough information (which can be judged from the history of observations) that can answer the task. If you cannot gather sufficient information to answer the task, say 'I can not answer!
+              Note: The 'final_answer' must be a string. Generate this if you believe that you have obtained enough information (which can be judged from the history of observations) that can answer the task.{final_answer_instructions}
 
         - Wait for the tool response after each tool call since that is provided by the environment or the user.
-        
+
     2. If it is a multi-turn setting, the user may pose a sequence of queries over multiple turns.
 
         - In such a setting, once you have finally answered the user's current query, you will receive a new user query.
@@ -34,13 +33,13 @@ TOOL_CALL_USAGE = """
               Note: The 'tool_name' should be a valid name. All argument keys must be from the valid set of parameters that the tool accepts and their values must be of correct types. If tool does not expect any parameters, leave arguments dictionary empty."""
 
 API_CALL_USAGE = """
-            
+
             - An API call, a json object wrapped as:
                 <|tool_call|> {"name": <api_name>, "arguments": {<key_1>: <value_1>, ..., <key_n>: <value_n>}}
               Note: The 'api_name' should be a valid name. All argument keys must be from the valid set of parameters that the API accepts and their values must be of correct types. If API does not expect any parameters, leave arguments dictionary empty."""
 
 RETRIEVAL_CALL_USAGE = """
-            
+
             - A document retrieval call, a json object wrapped as:
                 <|tool_call|> {"name": "retrieve_documents", "arguments": {"database": <database_name>, "query": <retrieval_query>}}
               Note: The 'database_name' should be a valid name from the provided databases list. The 'retrieval_query' must be a string you derive from the user query and past interactions to collect necessary information."""

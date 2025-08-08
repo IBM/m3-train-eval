@@ -241,15 +241,22 @@ In this mode, the **agent interacts with the environment**, and the **expert int
 
 ### 🚀 Running the Pipeline
 
-* If using the **CCC cluster**, you can launch the data generation using the provided shell script:
+* If using the **CCC cluster**, set `ENV_NAME`, `ROOT_DIR` and `HF_CACHE_DIR` in the shell script, and then you can launch the data generation using the provided shell script:
 
   ```bash
-  ./ccc_scripts/infer_agent.lsf.sh <ENV_NAME> <PROJECT_ROOT_DIR> <HF_CACHE_DIR>
+  bsub < ./ccc_scripts/infer_agent.lsf.sh
   ```
 
   Example Usage:
+  ```shell
+  # Assign arguments to variables
+  ENV_NAME="AgenticAI"
+  ROOT_DIR="/u/aj05/project/Code"
+  HF_CACHE_DIR="/u/aj05/project/hf_cache"
+  ```
+
   ```bash
-  ./ccc_scripts/infer_agent.lsf.sh AgenticAI /u/aj05/project/Code /u/aj05/project/hf_cache
+  bsub < ./ccc_scripts/infer_agent.lsf.sh
   ```
 
 * Otherwise, run the entry point directly:
@@ -388,9 +395,16 @@ We support **multi-GPU distributed training** via [Hugging Face Accelerate](http
 
 ### 💻 Example Training Command
 
-```bash
-accelerate launch --config_file config_files/training/multi_gpu_ds_stage3.yml tune.py
-```
+* If using the **CCC cluster**, set `ENV_NAME`, `ROOT_DIR` and `HF_CACHE_DIR` in the shell script, and then you can launch the training using the provided shell script:
+
+  ```bash
+  bsub < ./ccc_scripts/train_multi_gpu.lsf.sh
+  ```
+
+* Otherwise, run the entry point directly
+  ```bash
+  accelerate launch --config_file config_files/training/multi_gpu_ds_stage3.yml tune.py
+  ```
 
 ### 📌 Notes
 

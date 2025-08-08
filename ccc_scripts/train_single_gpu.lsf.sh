@@ -16,16 +16,10 @@ nvidia-smi
 # Optional: Show CUDA-visible devices from environment
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
-# Check if all arguments are provided
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <ENV_NAME> <ROOT_DIR> <HF_CACHE_DIR>"
-    exit 1
-fi
-
 # Assign arguments to variables
-ENV_NAME="$1"
-ROOT_DIR="$2"
-HF_CACHE_DIR="$3"
+ENV_NAME="<YOUR_ENV_NAME>"
+ROOT_DIR="<PATH_TO_YOUR_PROJECT_ROOT_DIR>"
+HF_CACHE_DIR="<PATH_TO_YOUR_HF_CACHE_DIR>"
 
 # Activate your environment
 # Load conda (adjust path if necessary)

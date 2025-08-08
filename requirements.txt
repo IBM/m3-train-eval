@@ -3,6 +3,7 @@ av
 bitsandbytes
 datasets>=2.16.0
 deepdiff
+deepspeed==0.17.1
 elasticsearch==8.0.0
 fastapi
 fsspec
@@ -14,6 +15,7 @@ langchain_core
 langchain_ibm
 langchain_ollama
 librosa
+liger_kernel==0.6.0
 loguru
 matplotlib
 modelscope
