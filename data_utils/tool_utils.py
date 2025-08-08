@@ -53,7 +53,7 @@ class ToolUtils(ABC):
 
     @staticmethod
     @abstractmethod
-    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy = None) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy) -> str:
         r"""Generate the system message describing all the available tools."""
         ...
 
@@ -78,7 +78,7 @@ class DefaultToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]]) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy=None) -> str:
         tool_text = ""
         tool_names = []
         for tool in tools:
@@ -142,7 +142,7 @@ class GLM4ToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]]) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy=None) -> str:
         tool_text = ""
         for tool in tools:
             tool = tool.get("function", "") if tool.get("type") == "function" else tool
@@ -183,7 +183,7 @@ class Llama3ToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]]) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy=None) -> str:
         date = datetime.now().strftime("%d %b %Y")
         tool_text = ""
         for tool in tools:
@@ -218,7 +218,7 @@ class MistralToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]]) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy=None) -> str:
         wrapped_tools = []
         for tool in tools:
             wrapped_tools.append(tool if tool.get("type") == "function" else {"type": "function", "function": tool})
@@ -252,7 +252,7 @@ class QwenToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]]) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy=None) -> str:
         tool_text = ""
         for tool in tools:
             wrapped_tool = tool if tool.get("type") == "function" else {"type": "function", "function": tool}
@@ -297,24 +297,25 @@ class TeacherToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy = None) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy) -> str:
         from prompts.agent.teacher_monolithic import TOOL_AVAILABILITY_TEXT, TOOL_USAGE_TEXT, TOOL_CALL_USAGE
 
         # [1] Create the tool availability text
         # db_text = f"{get_available_databases_from_tools(tools)}"
-        if tool_policy is not None:
-            tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
+        tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
         tool_text = json.dumps(tools, ensure_ascii=False)
         tool_availability_text = TOOL_AVAILABILITY_TEXT.format(tool_text=tool_text)
 
         # [2] Create the tool usage text
-        if tool_policy is not None:
-            tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
-        else:
-            tool_use_constraints = ''
+        tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
+
+        # [3] Create the final answer guidance
+        final_answer_instructions: str = tool_policy.final_answer_policy
+
         slots = {
             "tool_call_usage": TOOL_CALL_USAGE,
             "tool_use_constraints": tool_use_constraints,
+            "final_answer_instructions": final_answer_instructions
         }
         tool_usage_text = TOOL_USAGE_TEXT
         for name, value in slots.items():
@@ -378,24 +379,24 @@ class StudentMistralToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy = None) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy) -> str:
         from prompts.agent.student_mistral import TOOL_AVAILABILITY_TEXT, TOOL_USAGE_TEXT, TOOL_CALL_USAGE
 
         # [1] Create the tool availability text
-        if tool_policy is not None:
-            tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
+        tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
         tool_text = json.dumps(tools, ensure_ascii=False)
         tool_availability_text = TOOL_AVAILABILITY_TEXT.format(tool_text=tool_text)
 
         # [2] Create the tool usage text
-        # [2] Create the tool usage text
-        if tool_policy is not None:
-            tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
-        else:
-            tool_use_constraints = ''
+        tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
+
+        # [3] Create the final answer guidance
+        final_answer_instructions: str = tool_policy.final_answer_policy
+
         slots = {
             "tool_call_usage": TOOL_CALL_USAGE,
             "tool_use_constraints": tool_use_constraints,
+            "final_answer_instructions": final_answer_instructions
         }
         tool_usage_text = TOOL_USAGE_TEXT
         for name, value in slots.items():
@@ -460,25 +461,26 @@ class StudentQwenToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy = None) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy) -> str:
         from prompts.agent.student_qwen import TOOL_AVAILABILITY_TEXT, TOOL_USAGE_TEXT, TOOL_CALL_USAGE
 
         # [1] Create the tool availability text
-        if tool_policy is not None:
-            tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
+        tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
         tool_text = ""
         for tool in tools:
             tool_text += "\n" + json.dumps(tool, ensure_ascii=False)
         tool_availability_text = TOOL_AVAILABILITY_TEXT.format(tool_text=tool_text)
 
         # [2] Create the tool usage text
-        if tool_policy is not None:
-            tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
-        else:
-            tool_use_constraints = ''
+        tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
+
+        # [3] Create the final answer guidance
+        final_answer_instructions: str = tool_policy.final_answer_policy
+
         slots = {
             "tool_call_usage": TOOL_CALL_USAGE,
             "tool_use_constraints": tool_use_constraints,
+            "final_answer_instructions": final_answer_instructions
         }
         tool_usage_text = TOOL_USAGE_TEXT
         for name, value in slots.items():
@@ -545,23 +547,24 @@ class StudentGraniteToolUtils(ToolUtils):
 
     @override
     @staticmethod
-    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy = None) -> str:
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy) -> str:
         from prompts.agent.student_granite import TOOL_AVAILABILITY_TEXT, TOOL_USAGE_TEXT, TOOL_CALL_USAGE
 
         # [1] Create the tool availability text
-        if tool_policy is not None:
-            tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
+        tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
         tool_text = json.dumps(tools, ensure_ascii=False)
         tool_availability_text = TOOL_AVAILABILITY_TEXT.format(tool_text=tool_text)
 
         # [2] Create the tool usage text
-        if tool_policy is not None:
-            tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
-        else:
-            tool_use_constraints = ''
+        tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
+
+        # [3] Create the final answer guidance
+        final_answer_instructions: str = tool_policy.final_answer_policy
+
         slots = {
             "tool_call_usage": TOOL_CALL_USAGE,
             "tool_use_constraints": tool_use_constraints,
+            "final_answer_instructions": final_answer_instructions
         }
         tool_usage_text = TOOL_USAGE_TEXT
         for name, value in slots.items():

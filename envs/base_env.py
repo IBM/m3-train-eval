@@ -8,18 +8,20 @@ class ToolPolicy:
     """A dataclass representing different policies that the agent must adhere to while calling tools"""
     tool_availability_policy: str = field(default="both_api_rag")
     tool_usage_policy: str = field(default="")
+    final_answer_policy: str = field(default="")
 
     def __post_init__(self):
         assert self.tool_availability_policy in {'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'}
         # assert self.tool_usage_policy in {'api_before_rag', 'rag_before_api', 'only_api', 'only_rag', 'no_policy'}
 
     def __str__(self):
-        return f"Tool Availability Policy: {self.tool_availability_policy}\nTool Usage Policy: {self.tool_usage_policy}"
+        return f"Tool Availability Policy: {self.tool_availability_policy}\nTool Usage Policy: {self.tool_usage_policy}\nFinal Answer Policy: {self.final_answer_policy}"
 
     def to_dict(self):
         return {
             "tool_availability_policy": self.tool_availability_policy,
             "tool_usage_policy": self.tool_usage_policy,
+            "final_answer_policy": self.final_answer_policy,
         }
 
 

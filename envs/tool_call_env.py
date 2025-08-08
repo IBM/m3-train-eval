@@ -167,12 +167,6 @@ class ToolCallEnv(BaseEnv):
         # Determine the tool text
         tool_text = self.agent_template.format_tools.apply(content=self.tools, tool_policy=self.tool_policy)[0]
 
-        # Determine the final answer instructions and replace the slot
-        final_answer_instructions = self.get_final_answer_instructions()
-        slot = "{final_answer_instructions}"
-        if slot in tool_text:
-            tool_text = tool_text.replace(slot, final_answer_instructions, 1)
-
         # Form the system prompt
         self.system: str = SYSTEM_PROMPT
         system_prompt = self.system + tool_text  # This becomes the overall system (imitates the template.encode)
@@ -625,6 +619,10 @@ class M3ToolCallEnv(ToolCallEnv):
                 tool_usage_policy=""
             )
 
+        # Determine the final answer instructions and replace the slot
+        final_answer_instructions = self.get_final_answer_instructions()
+        self.tool_policy.final_answer_policy = final_answer_instructions
+
     def get_final_answer_instructions(self) -> str:
         # Determine the guidance for generating final answer
         final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
@@ -641,7 +639,7 @@ class M3ToolCallEnv(ToolCallEnv):
         if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
             # This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
             # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
-            instr_resp_cutoff = curr_instance_data['resp_cutoff']
+            instr_resp_cutoff = curr_instance_data['resp_cutoff_inst']
             final_answer_instructions += "\n                  > " + instr_resp_cutoff
 
         return final_answer_instructions

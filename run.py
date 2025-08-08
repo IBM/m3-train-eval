@@ -188,7 +188,8 @@ def run_agent():
             'tools': env.tools,
             'interactions': {},
             'tool_availability_policy': env.tool_policy.tool_availability_policy,
-            'tool_usage_policy': env.tool_policy.tool_usage_policy
+            'tool_usage_policy': env.tool_policy.tool_usage_policy,
+            "final_answer_policy": env.tool_policy.final_answer_policy
         }
 
         if expert_agent.trajectory is None and expert_assist.mode in ['ground_truth', 'random', 'informed']:

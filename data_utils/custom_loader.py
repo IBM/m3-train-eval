@@ -521,15 +521,17 @@ class AgentTrajectorySFTData(BaseDataset):
 
                 system, tools = traj['system'], traj['tools']
                 # Determine the Tool Policy
-                if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj:
+                if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
                     tool_policy = ToolPolicy(
                         tool_availability_policy=traj['tool_availability_policy'],
-                        tool_usage_policy=traj['tool_usage_policy']
+                        tool_usage_policy=traj['tool_usage_policy'],
+                        final_answer_policy=traj['final_answer_policy']
                     )
                 else:
                     tool_policy = ToolPolicy(
                         tool_availability_policy="both_api_rag",
-                        tool_usage_policy=""
+                        tool_usage_policy="",
+                        final_answer_policy=""
                     )
 
                 time_steps = list(traj['interactions'].keys())
@@ -721,15 +723,17 @@ class AgentTrajectoryPreferenceData(BaseDataset):
 
                 system, tools = traj['system'], traj['tools']
                 # Determine the Tool Policy
-                if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj:
+                if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
                     tool_policy = ToolPolicy(
                         tool_availability_policy=traj['tool_availability_policy'],
-                        tool_usage_policy=traj['tool_usage_policy']
+                        tool_usage_policy=traj['tool_usage_policy'],
+                        final_answer_policy=traj['final_answer_policy']
                     )
                 else:
                     tool_policy = ToolPolicy(
                         tool_availability_policy="both_api_rag",
-                        tool_usage_policy=""
+                        tool_usage_policy="",
+                        final_answer_policy=""
                     )
 
                 time_steps = list(traj['interactions'].keys())
@@ -840,7 +844,8 @@ class AgentTrajectoryPreferenceData(BaseDataset):
                 rejected_input, rejected_output, rejected_turn_mask = split_traj_input_output(rejected_trajectory, False)
                 tool_policy = ToolPolicy(
                     tool_availability_policy = sample["tool_availability_policy"],
-                    tool_usage_policy = sample["tool_usage_policy"]
+                    tool_usage_policy = sample["tool_usage_policy"],
+                    final_answer_policy = sample["final_answer_policy"],
                 )
                 data.append(
                     {
