@@ -265,9 +265,12 @@ def run_agent():
             else:
                 expert_assistance_tracker.append(1)
 
-            # Trajectory contains the state-action pairs for training/evaluation
+            # # Trajectory contains the state-action pairs for training/evaluation
+            # - Store the state w/o system prompt.
+            # - The input should be stored before calling the step fn since in multi-turn setting, once the final answer
+            #   is generated, current state is reinit. to the summarised state after transitioning to next turn
             curr_interaction: Dict[str, Any] = {
-                "input": copy.deepcopy(state[1:]),  # Store the state w/o system prompt. The input should be stored before calling the step fn since in multi-turn setting, state can be reinit. based on the summarised state
+                "input": copy.deepcopy(state[1:]),
                 "metadata": {
                     "thought": parsed_response["thought"],
                     "action": parsed_response["type"],

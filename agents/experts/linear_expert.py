@@ -317,7 +317,7 @@ class M3Expert(LinearExpert):
                 action_arguments.append(
                     {
                         "thought": "I now know the final answer." if 'plan' not in item_1.keys() else item_1['plan'],
-                        "final_answer": item_1['answer'],
+                        "final_answer": item_1['answer'],  # For expert, have it return the wrapped answer always as it is being used for model training
                     }
                 )
             else:

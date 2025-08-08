@@ -220,16 +220,16 @@ def create_and_inject_thoughts(
                 logger.info(f"Final Raw Response [turn #{turn_idx}]: {curr_raw_answer}")
 
                 if isinstance(curr_raw_answer, list) and len(curr_raw_answer) > resp_cutoff_thresh:
-                    # Ignore samples for which tool responses are tool long
                     if len(curr_raw_answer) > max_tool_resp_cut_off:
+                        # Ignore samples for which tool response is tool long
                         logger.info(
                             f"    Discarding the sample since length of its tool response at end of turn #{turn_idx} {len(curr_raw_answer)} > {max_tool_resp_cut_off}")
                         is_valid_sample = False
                         break
 
                 else:
-                    # For the current turn's thought generation, we discard the instruction if the agent can pick all
-                    # the objects and construct the final answer around it. (No Compression/Truncation)
+                    # For the current turn's thought generation, we discard the resp_cutoff_inst instruction if the
+                    # agent can pick all the objects and construct the final answer around it. (No Truncation)
                     resp_cutoff_thresh = None
                     answer_generator_additional_instr = ''
 
@@ -311,14 +311,14 @@ def create_and_inject_thoughts(
 
                 # # Fill in the answer
                 curr_turn_trajectory[-1]['plan'] = parsed_response['thought']
-                curr_turn_trajectory[-1]['answer'] = parsed_response['answer']
+                curr_turn_trajectory[-1]['answer'] = parsed_response['answer']  # At turn-level trajectory, store the wrapped answer as it is being used for model training
                 curr_turn_trajectory[-1]['raw_answer'] = json.dumps(curr_raw_answer)
                 turns.append(
                     {
                         'query': curr_user_query,
                         'answer': parsed_response['answer'],
                         'raw_answer': json.dumps(curr_raw_answer),
-                        'was_raw_answer_compress': True if resp_cutoff_thresh is not None else False,
+                        'was_raw_answer_truncated': True if resp_cutoff_thresh is not None else False,
                         # Could be Useful to determine turn-level final answer match rewards
                     }
                 )

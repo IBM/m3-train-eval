@@ -101,9 +101,12 @@ class ToolCallEnv(BaseEnv):
         self.tools, self.system = '', ''
         self.history, self.curr_turn_history = [], []
         self.curr_turn: int = -1  # Turn in multi-turn QA
+
+        # Turn-wise data
         self.user_queries: List[str] = []
         self.raw_answers: Optional[List[str]] = None
         self.golden_answers: Optional[List[str]] = None
+        self.were_final_answers_truncated: Optional[List[bool]] = None  # Whether the raw answer truncated to create golden answer
         self.ordered_sub_ques_composition: Optional[List[str]] = None
 
         # For enabling expert_assist
@@ -270,9 +273,13 @@ class ToolCallEnv(BaseEnv):
 
         else:
             if action["type"] == "FINAL":
-                # TODO: Update the logic when agent was instructed to compress/truncate long tool response into the final answer.
-                #  Check for the current turn, if cutoff_instr_used is True, then match the raw_response with predicted
-                #  final answer else match the golden answer
+                # TODO: Update the logic:
+                #  Check for the current turn, if final_answer_is_truncated is True, then prediction should be matched
+                #  with the self.curr_raw_answer instead of self.curr_golden_answer. However, we train the model to
+                #  predict the truncated response.
+                #  IMP: Therefore in such cases, make the scorer_judge aware of the 'final_answer_policy' and
+                #  instruct that objects retained in `predicted_final_answer` with which a tool response is
+                #  truncated must be present in the self.curr_raw_answer
                 try:
                     assert self.scorer_llm is not None
                 except AssertionError:
@@ -326,9 +333,16 @@ class ToolCallEnv(BaseEnv):
         if action["type"] == "FINAL":  # Agent has reached the end of given turn
 
             if not self.is_a_live_agent and self.curr_golden_answer is not None:
-                final_answer = self.curr_golden_answer
+                if self.final_answer_is_truncated:
+                    # To condition future reasoning on un-truncated context-response pairs.
+                    # Otherwise, entities being referred to in future reasoning could seem hallucinated
+                    final_answer = self.curr_raw_answer
+                else:
+                    final_answer = self.curr_golden_answer
+
             else:
                 final_answer = action["value"]
+
             # Wrap the final answer
             final_answer = f"<FINAL>{final_answer}</FINAL>"
 
@@ -472,6 +486,7 @@ class ToolCallEnv(BaseEnv):
 
     @property
     def curr_golden_answer(self) -> Optional[str]:
+        """The answer the model/agent generates. It is properly wrapped into a sentence."""
         if self.golden_answers is not None:
             return self.golden_answers[self.curr_turn]
         else:
@@ -479,10 +494,19 @@ class ToolCallEnv(BaseEnv):
 
     @property
     def curr_raw_answer(self) -> Optional[str]:
+        """The answer the model/agent should have generated. It is unwrapped and json dumped structured object."""
         if self.raw_answers is not None:
             return self.raw_answers[self.curr_turn]
         else:
             return None
+
+    @property
+    def final_answer_is_truncated(self) -> bool:
+        """If the tool response was truncated and summarised into the final answer, return True."""
+        if self.were_final_answers_truncated is not None:
+            return self.were_final_answers_truncated[self.curr_turn]
+        else:
+            return False
 
     def __len__(self):
         return self.total_unique_instances
@@ -513,9 +537,11 @@ class M3ToolCallEnv(ToolCallEnv):
         self.tool_names, self.tool_info = [], {}
         self.callable_api_pool, self.initial_data_csv = None, None
         self.sql_db_name = 'bird'
-        self.base_sql_dir = '/Users/abhinavjain/Desktop/AgenticAI/data/'
-        self.path_to_sql_data = '/Users/abhinavjain/Desktop/AgenticAI/data/bird-dev/dev_databases'
-        self.path_for_sql_cache = '/Users/abhinavjain/Desktop/AgenticAI/data/bird-dev/cache'
+
+        # TODO: For sel-slot data updated these paths
+        self.base_sql_dir = None
+        self.path_to_sql_data = None
+        self.path_for_sql_cache = None
 
         # Init. the document database here
         self.doc_db, self.document_collections = None, None
@@ -545,10 +571,13 @@ class M3ToolCallEnv(ToolCallEnv):
             self.user_queries = [turn_data["query"] for turn_data in curr_instance_data["turns"]]
             self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
             self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
+            self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in curr_instance_data["turns"]]
         # For [Older] Single-turn data
         else:
             self.user_queries = [curr_instance_data['merged_query']]
             self.golden_answers = [curr_instance_data['answer']]
+            self.raw_answers = [curr_instance_data['answer']]
+            self.were_final_answers_truncated = [False]
 
         if 'trajectory' not in curr_instance_data:
             ordered_sub_ques_composition = None
