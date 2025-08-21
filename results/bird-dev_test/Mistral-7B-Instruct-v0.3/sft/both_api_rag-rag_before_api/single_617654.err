@@ -1,671 +1,0 @@
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,067 >> loading file tokenizer.model from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/tokenizer.model
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,067 >> loading file tokenizer.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/tokenizer.json
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,067 >> loading file added_tokens.json from cache at None
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,067 >> loading file special_tokens_map.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/special_tokens_map.json
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,067 >> loading file tokenizer_config.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/tokenizer_config.json
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,067 >> loading file chat_template.jinja from cache at None
-[INFO|configuration_utils.py:698] 2025-07-08 15:00:18,600 >> loading configuration file config.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/config.json
-[INFO|configuration_utils.py:770] 2025-07-08 15:00:18,608 >> Model config MistralConfig {
-  "architectures": [
-    "MistralForCausalLM"
-  ],
-  "attention_dropout": 0.0,
-  "bos_token_id": 1,
-  "eos_token_id": 2,
-  "head_dim": null,
-  "hidden_act": "silu",
-  "hidden_size": 4096,
-  "initializer_range": 0.02,
-  "intermediate_size": 14336,
-  "max_position_embeddings": 32768,
-  "model_type": "mistral",
-  "num_attention_heads": 32,
-  "num_hidden_layers": 32,
-  "num_key_value_heads": 8,
-  "rms_norm_eps": 1e-05,
-  "rope_theta": 1000000.0,
-  "sliding_window": null,
-  "tie_word_embeddings": false,
-  "torch_dtype": "bfloat16",
-  "transformers_version": "4.52.4",
-  "use_cache": true,
-  "vocab_size": 32768
-}
-
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,690 >> loading file tokenizer.model from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/tokenizer.model
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,690 >> loading file tokenizer.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/tokenizer.json
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,690 >> loading file added_tokens.json from cache at None
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,690 >> loading file special_tokens_map.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/special_tokens_map.json
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,690 >> loading file tokenizer_config.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/tokenizer_config.json
-[INFO|tokenization_utils_base.py:2023] 2025-07-08 15:00:18,690 >> loading file chat_template.jinja from cache at None
-[INFO|configuration_utils.py:698] 2025-07-08 15:00:18,981 >> loading configuration file config.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/config.json
-[INFO|configuration_utils.py:770] 2025-07-08 15:00:18,982 >> Model config MistralConfig {
-  "architectures": [
-    "MistralForCausalLM"
-  ],
-  "attention_dropout": 0.0,
-  "bos_token_id": 1,
-  "eos_token_id": 2,
-  "head_dim": null,
-  "hidden_act": "silu",
-  "hidden_size": 4096,
-  "initializer_range": 0.02,
-  "intermediate_size": 14336,
-  "max_position_embeddings": 32768,
-  "model_type": "mistral",
-  "num_attention_heads": 32,
-  "num_hidden_layers": 32,
-  "num_key_value_heads": 8,
-  "rms_norm_eps": 1e-05,
-  "rope_theta": 1000000.0,
-  "sliding_window": null,
-  "tie_word_embeddings": false,
-  "torch_dtype": "bfloat16",
-  "transformers_version": "4.52.4",
-  "use_cache": true,
-  "vocab_size": 32768
-}
-
-[INFO|modeling_utils.py:1151] 2025-07-08 15:00:20,119 >> loading weights file model.safetensors from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/model.safetensors.index.json
-[INFO|modeling_utils.py:2241] 2025-07-08 15:00:20,123 >> Instantiating MistralForCausalLM model under default dtype torch.bfloat16.
-[INFO|configuration_utils.py:1135] 2025-07-08 15:00:20,126 >> Generate config GenerationConfig {
-  "bos_token_id": 1,
-  "eos_token_id": 2
-}
-
-Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:08<00:17,  8.51s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:16<00:08,  8.40s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:24<00:00,  7.94s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:24<00:00,  8.08s/it]
-[INFO|modeling_utils.py:5131] 2025-07-08 15:00:44,880 >> All model checkpoint weights were used when initializing MistralForCausalLM.
-
-[INFO|modeling_utils.py:5139] 2025-07-08 15:00:44,880 >> All the weights of MistralForCausalLM were initialized from the model checkpoint at mistralai/Mistral-7B-Instruct-v0.3.
-If your task is similar to the task the model of the checkpoint was trained on, you can already use MistralForCausalLM for predictions without further training.
-[INFO|configuration_utils.py:1090] 2025-07-08 15:00:44,940 >> loading configuration file generation_config.json from cache at /u/aj05/project/hf_cache/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/e0bc86c23ce5aae1db576c8cca6f06f1f73af2db/generation_config.json
-[INFO|configuration_utils.py:1135] 2025-07-08 15:00:44,940 >> Generate config GenerationConfig {
-  "bos_token_id": 1,
-  "eos_token_id": 2
-}
-
-Environment instance:   0%|          | 0/76 [00:00<?, ?it/s]Environment instance:   1%|▏         | 1/76 [00:00<00:25,  2.88it/s]Environment instance:   3%|▎         | 2/76 [00:00<00:18,  3.95it/s]Environment instance:   4%|▍         | 3/76 [00:00<00:17,  4.23it/s]Environment instance:   5%|▌         | 4/76 [00:00<00:15,  4.57it/s]Environment instance:   7%|▋         | 5/76 [00:01<00:14,  4.80it/s]Environment instance:   8%|▊         | 6/76 [00:01<00:14,  4.94it/s]Environment instance:   9%|▉         | 7/76 [00:01<00:14,  4.86it/s]Environment instance:  11%|█         | 8/76 [00:01<00:13,  5.06it/s]Environment instance:  12%|█▏        | 9/76 [00:01<00:13,  5.00it/s]Environment instance:  13%|█▎        | 10/76 [00:02<00:12,  5.15it/s]Environment instance:  14%|█▍        | 11/76 [00:02<00:12,  5.16it/s]Environment instance:  16%|█▌        | 12/76 [00:02<00:12,  5.11it/s]Environment instance:  17%|█▋        | 13/76 [00:02<00:13,  4.82it/s]Environment instance:  18%|█▊        | 14/76 [00:02<00:12,  5.04it/s]Environment instance:  20%|█▉        | 15/76 [00:03<00:11,  5.14it/s]Environment instance:  21%|██        | 16/76 [00:03<00:11,  5.17it/s]Environment instance:  22%|██▏       | 17/76 [00:03<00:11,  5.30it/s]Environment instance:  24%|██▎       | 18/76 [00:03<00:11,  5.24it/s]Environment instance:  25%|██▌       | 19/76 [00:03<00:10,  5.41it/s]Environment instance:  26%|██▋       | 20/76 [00:04<00:10,  5.40it/s]Environment instance:  28%|██▊       | 21/76 [00:04<00:09,  5.52it/s]Environment instance:  29%|██▉       | 22/76 [00:04<00:09,  5.54it/s][WARNING|configuration_utils.py:839] 2025-07-08 15:01:02,787 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:01:02,788 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:01:02,791 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:01:11,345 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:01:11,346 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:01:11,346 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:01:22,387 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:01:22,387 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:01:22,388 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:01:31,122 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:01:31,122 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:01:31,122 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:01:40,212 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:01:40,212 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:01:40,212 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  30%|███       | 23/76 [01:06<16:27, 18.64s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:02:04,515 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:02:04,515 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:02:04,515 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:02:12,868 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:02:12,871 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:02:12,871 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:02:23,444 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:02:23,445 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:02:23,445 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  32%|███▏      | 24/76 [01:39<19:53, 22.95s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:02:37,510 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:02:37,510 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:02:37,511 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:02:44,975 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:02:44,976 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:02:44,976 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:02:57,290 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:02:57,290 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:02:57,290 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  33%|███▎      | 25/76 [02:11<21:50, 25.69s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:03:09,587 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:09,587 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:09,587 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:03:17,443 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:17,443 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:17,443 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:03:23,703 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:23,703 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:23,703 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  34%|███▍      | 26/76 [02:32<20:13, 24.28s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:03:30,656 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:30,656 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:30,657 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:03:36,927 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:36,927 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:36,928 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:03:44,017 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:44,017 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:44,018 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  36%|███▌      | 27/76 [02:50<18:28, 22.62s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:03:49,473 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:49,473 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:49,473 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:03:56,659 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:03:56,659 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:03:56,659 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:04:03,659 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:04:03,659 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:04:03,659 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  37%|███▋      | 28/76 [03:10<17:19, 21.66s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:04:08,747 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:04:08,747 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:04:08,747 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:04:15,013 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:04:15,013 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:04:15,013 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  38%|███▊      | 29/76 [03:32<16:59, 21.69s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:04:30,565 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:04:30,565 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:04:30,566 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:04:38,072 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:04:38,073 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:04:38,073 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:04:44,948 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:04:44,949 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:04:44,949 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  39%|███▉      | 30/76 [04:18<22:17, 29.08s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:05:16,805 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:05:16,805 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:05:16,806 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:05:25,650 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:05:25,651 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:05:25,651 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:05:37,485 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:05:37,486 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:05:37,486 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  41%|████      | 31/76 [04:47<21:50, 29.12s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:05:46,137 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:05:46,137 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:05:46,137 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:05:53,800 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:05:53,800 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:05:53,801 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:06:03,859 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:06:03,859 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:06:03,860 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  42%|████▏     | 32/76 [05:10<19:54, 27.16s/it]Environment instance:  43%|████▎     | 33/76 [05:10<13:39, 19.06s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:06:08,773 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:06:08,773 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:06:08,774 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:06:16,513 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:06:16,514 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:06:16,514 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:06:26,587 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:06:26,587 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:06:26,588 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  45%|████▍     | 34/76 [05:34<14:23, 20.56s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:06:32,842 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:06:32,842 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:06:32,843 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:06:42,320 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:06:42,320 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:06:42,320 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:06:51,980 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:06:51,980 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:06:51,981 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:07:03,241 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:07:03,241 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:07:03,241 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:07:17,654 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:07:17,654 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:07:17,654 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:07:34,291 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:07:34,291 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:07:34,291 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  46%|████▌     | 35/76 [06:54<26:10, 38.32s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:07:52,591 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:07:52,591 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:07:52,591 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:07:59,790 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:07:59,790 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:07:59,790 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:08:07,947 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:08:07,947 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:08:07,947 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  47%|████▋     | 36/76 [07:22<23:35, 35.39s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:08:21,148 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:08:21,148 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:08:21,149 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:08:29,857 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:08:29,857 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:08:29,858 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:08:43,817 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:08:43,818 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:08:43,818 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  49%|████▊     | 37/76 [07:54<22:12, 34.17s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:08:52,462 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:08:52,462 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:08:52,462 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:08:58,697 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:08:58,697 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:08:58,697 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:09:05,505 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:09:05,505 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:09:05,505 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  50%|█████     | 38/76 [08:13<18:50, 29.75s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:09:11,892 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:09:11,892 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:09:11,893 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:09:18,388 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:09:18,388 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:09:18,388 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:09:25,618 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:09:25,618 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:09:25,618 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  51%|█████▏    | 39/76 [08:33<16:31, 26.79s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:09:31,809 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:09:31,809 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:09:31,809 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:09:40,525 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:09:40,525 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:09:40,525 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:09:48,430 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:09:48,430 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:09:48,431 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  53%|█████▎    | 40/76 [09:04<16:50, 28.06s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:10:02,912 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:10:02,912 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:10:02,912 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:10:11,682 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:10:11,682 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:10:11,682 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:10:23,648 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:10:23,649 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:10:23,649 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  54%|█████▍    | 41/76 [09:40<17:51, 30.62s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:10:39,405 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:10:39,405 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:10:39,406 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:10:46,633 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:10:46,633 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:10:46,633 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:10:57,469 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:10:57,469 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:10:57,469 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  55%|█████▌    | 42/76 [10:05<16:16, 28.73s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:11:03,698 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:11:03,698 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:11:03,699 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:11:11,315 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:11:11,315 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:11:11,315 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:11:21,611 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:11:21,612 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:11:21,612 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:11:30,724 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:11:30,725 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:11:30,725 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  57%|█████▋    | 43/76 [10:44<17:32, 31.90s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:11:43,011 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:11:43,011 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:11:43,011 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:11:48,706 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:11:48,707 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:11:48,707 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:11:55,208 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:11:55,208 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:11:55,208 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:12:03,532 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:03,532 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:03,533 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:12:09,325 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:09,325 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:09,325 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:12:15,949 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:15,949 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:15,949 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  58%|█████▊    | 44/76 [11:29<19:07, 35.86s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:12:28,121 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:28,121 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:28,122 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:12:35,947 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:35,947 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:35,947 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:12:41,233 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:41,233 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:41,234 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:12:47,948 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:47,948 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:47,948 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:12:55,176 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:12:55,176 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:12:55,177 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:13:05,219 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:13:05,219 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:13:05,219 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  59%|█████▉    | 45/76 [12:18<20:35, 39.85s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:13:17,285 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:13:17,285 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:13:17,286 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:13:25,818 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:13:25,818 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:13:25,819 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:13:34,254 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:13:34,254 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:13:34,254 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:13:41,384 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:13:41,384 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:13:41,385 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:13:49,530 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:13:49,530 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:13:49,531 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  61%|██████    | 46/76 [13:02<20:31, 41.06s/it]Environment instance:  62%|██████▏   | 47/76 [13:02<13:55, 28.80s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:14:01,346 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:14:01,347 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:14:01,347 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:14:08,894 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:14:08,894 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:14:08,895 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:14:15,965 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:14:15,965 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:14:15,965 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  63%|██████▎   | 48/76 [13:31<13:27, 28.85s/it]Environment instance:  64%|██████▍   | 49/76 [13:32<09:06, 20.25s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:14:30,489 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:14:30,490 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:14:30,490 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:14:40,065 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:14:40,065 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:14:40,066 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:14:47,211 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:14:47,211 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:14:47,211 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:14:59,739 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:14:59,739 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:14:59,740 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:15:06,856 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:15:06,856 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:15:06,856 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:15:21,428 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:15:21,428 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:15:21,428 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:15:29,755 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:15:29,755 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:15:29,756 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  66%|██████▌   | 50/76 [14:41<15:10, 35.01s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:15:39,923 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:15:39,923 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:15:39,923 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:15:47,625 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:15:47,625 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:15:47,625 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:15:53,996 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:15:53,996 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:15:53,996 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  67%|██████▋   | 51/76 [15:03<12:54, 30.99s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:16:01,573 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:01,573 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:01,574 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:16:09,961 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:09,961 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:09,962 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:16:16,668 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:16,669 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:16,669 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  68%|██████▊   | 52/76 [15:29<11:53, 29.72s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:16:28,294 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:28,294 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:28,294 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:16:33,783 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:33,783 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:33,783 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:16:39,358 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:39,358 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:39,359 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  70%|██████▉   | 53/76 [15:51<10:28, 27.32s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:16:50,027 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:50,027 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:50,028 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:16:58,222 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:16:58,222 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:16:58,223 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:17:05,290 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:17:05,290 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:17:05,290 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:17:15,024 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:17:15,024 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:17:15,025 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  71%|███████   | 54/76 [16:30<11:14, 30.66s/it]Environment instance:  72%|███████▏  | 55/76 [16:30<07:32, 21.54s/it]Environment instance:  74%|███████▎  | 56/76 [16:30<05:02, 15.13s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:17:28,906 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:17:28,906 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:17:28,907 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:17:37,385 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:17:37,385 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:17:37,385 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:17:46,251 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:17:46,251 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:17:46,252 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  75%|███████▌  | 57/76 [16:55<05:45, 18.20s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:17:54,293 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:17:54,293 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:17:54,293 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:18:01,364 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:18:01,365 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:18:01,365 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:18:11,862 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:18:11,862 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:18:11,863 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:18:21,770 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:18:21,770 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:18:21,770 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  76%|███████▋  | 58/76 [17:34<07:18, 24.35s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:18:32,996 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:18:32,996 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:18:32,997 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:18:43,854 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:18:43,854 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:18:43,855 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:18:52,779 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:18:52,779 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:18:52,780 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  78%|███████▊  | 59/76 [18:01<07:07, 25.14s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:18:59,962 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:18:59,962 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:18:59,963 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:19:09,478 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:19:09,478 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:19:09,478 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:19:21,812 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:19:21,812 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:19:21,813 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  79%|███████▉  | 60/76 [18:34<07:20, 27.52s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:19:33,076 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:19:33,076 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:19:33,076 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:19:41,366 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:19:41,366 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:19:41,366 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:19:51,306 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:19:51,306 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:19:51,307 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  80%|████████  | 61/76 [19:00<06:44, 26.97s/it]Environment instance:  82%|████████▏ | 62/76 [19:00<04:25, 18.93s/it]Environment instance:  83%|████████▎ | 63/76 [19:00<02:52, 13.30s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:19:59,060 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:19:59,060 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:19:59,060 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:20:08,401 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:08,401 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:08,401 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:20:15,000 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:15,000 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:15,001 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  84%|████████▍ | 64/76 [19:22<03:10, 15.89s/it]Environment instance:  86%|████████▌ | 65/76 [19:22<02:03, 11.19s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:20:21,205 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:21,206 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:21,206 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:20:27,270 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:27,271 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:27,271 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:20:36,360 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:36,360 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:36,361 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  87%|████████▋ | 66/76 [19:45<02:25, 14.55s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:20:43,606 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:43,606 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:43,606 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:20:50,947 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:50,947 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:50,947 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:20:59,135 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:20:59,136 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:20:59,136 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  88%|████████▊ | 67/76 [20:09<02:38, 17.56s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:21:08,226 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:08,227 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:08,227 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:21:15,256 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:15,256 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:15,256 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:21:21,299 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:21,299 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:21,299 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  89%|████████▉ | 68/76 [20:27<02:20, 17.56s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:21:25,734 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:25,734 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:25,735 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:21:31,698 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:31,698 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:31,698 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:21:40,367 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:40,367 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:40,367 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:21:49,917 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:49,917 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:49,917 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:21:56,486 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:21:56,487 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:21:56,487 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:22:07,086 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:22:07,086 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:22:07,087 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  91%|█████████ | 69/76 [21:21<03:20, 28.63s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:22:20,230 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:22:20,230 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:22:20,230 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:22:28,943 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:22:28,943 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:22:28,943 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:22:37,021 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:22:37,021 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:22:37,022 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  92%|█████████▏| 70/76 [21:59<03:08, 31.46s/it][WARNING|configuration_utils.py:839] 2025-07-08 15:22:58,360 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:22:58,361 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:22:58,361 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:23:06,088 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:23:06,089 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:23:06,089 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:23:16,965 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:23:16,966 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:23:16,966 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-[WARNING|configuration_utils.py:839] 2025-07-08 15:23:25,295 >> The following generation flags are not valid and may be ignored: ['temperature'].
-[INFO|configuration_utils.py:840] 2025-07-08 15:23:25,295 >> - `temperature`: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
-If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
-[WARNING|utils.py:2150] 2025-07-08 15:23:25,296 >> Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.
-Environment instance:  92%|█████████▏| 70/76 [22:44<01:56, 19.49s/it]

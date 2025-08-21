@@ -70,7 +70,7 @@ Example tool call:
 ---
 
 ### 🔍 Inference Setup: Pre-requisites
-- **[Setup retriever]** To use database index, you need to acquire the username, password, host_name, certificate. Save the certificate in `es_cert` at the root directory. Set username, password as `ES_USERNAME` and `ES_PASSWORD` in the `.env` 
+- **[Setup retriever]** To use database index, you need to acquire the username, password, host_name, certificate. Save the certificate in `es_cert` at the root directory. Set username, password as `ES_USERNAME` , `ES_PASSWORD` and `ES_HOSTNAME` in the `.env` 
 - **[Setup API Endpoint]** To use and query APIs, gain access to api endpoint 
 - **[Setup LLMs]** Set the following parameters to use the Language Models and save them in the `.env` at the root directory 
   - `RITS_API_KEY`: API key to use language models via RITS

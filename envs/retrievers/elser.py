@@ -1,6 +1,7 @@
 import json
 
-from envs.retrievers.elastic import Elastic
+from envs.retrievers.elastic import 
+import os
 
 
 class ElserRetriever(Elastic):
@@ -51,10 +52,10 @@ class ElserRetriever(Elastic):
 if __name__ == '__main__':
     es_cert_path = "../../es_cert"
     es_config = {
-        "username": "ibm_cloud_c0f25c4b_3f84_4586_9b52_38b9e4b9f637",
-        "password": "5ef99c8538f435668e33e0d8abf7a2c62b2e5cd896bce073b2ee837ddac07997",
+        "username": os.getenv("ES_USERNAME", None),
+        "password": os.getenv("ES_PASSWORD", None),
         "cert": es_cert_path,
-        "host_name": "https://7f25eae6-4320-4daa-b5ce-58193a338255.974550db55eb4ec0983f023940bf637f.databases.appdomain.cloud:31575",
+        "host_name": os.getenv("ES_HOSTNAME", None),
         "index_name": "api-before-rag",
         "top_k": 1
     }
