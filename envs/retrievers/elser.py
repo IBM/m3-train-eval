@@ -1,6 +1,6 @@
 import json
 
-from envs.retrievers.elastic import 
+from envs.retrievers.elastic import Elastic
 import os
 
 
