@@ -16,7 +16,7 @@ from metrics.plot import plot_freq_dist
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
                           tool_response: str) -> str:
-    from prompt_thought_generator import QUERY_STEP_PROMPT as step_prompt
+    from ground_truth.prompt_thought_generator import QUERY_STEP_PROMPT as step_prompt
 
     # First replace the step number
     step_prompt = step_prompt.replace("{number}", str(step_idx))
@@ -29,7 +29,7 @@ def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: st
 
 def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str]) -> \
 List[dict]:
-    from prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT
+    from ground_truth.prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT
     prompt = []
     system_prompt = SYSTEM_PROMPT
     prompt.append(
@@ -66,7 +66,7 @@ List[dict]:
 
 
 def get_answer_generator_prompt(user_query: str, trajectory: str, additional_instruction: str = '') -> List[dict]:
-    from prompt_final_answer import SYSTEM_PROMPT, QUERY_PROMPT
+    from ground_truth.prompt_final_answer import SYSTEM_PROMPT, QUERY_PROMPT
     prompt = []
     system_prompt = SYSTEM_PROMPT
     system_prompt = system_prompt.replace("{additional_instruction}", additional_instruction, 1)
@@ -90,7 +90,8 @@ def get_answer_generator_prompt(user_query: str, trajectory: str, additional_ins
 def parse_thought_generator_response(response: str, num_steps: int) -> Optional[dict]:
     for step_idx in range(num_steps):
         try:
-            assert f"thought_{step_idx + 1}" in response.lower()
+            assert (f"thought_{step_idx + 1}" in response.lower() or
+                    f"thought_{{{step_idx + 1}}}" in response.lower())
         except AssertionError:
             logger.error(f"    Thought not found for step {step_idx + 1}")
             return None
@@ -216,6 +217,7 @@ def create_and_inject_thoughts(
             for turn_idx, curr_turn_trajectory in enumerate(sample['trajectory']):
                 curr_user_query: str = curr_turn_trajectory[0]['input']
                 curr_raw_answer = copy.deepcopy(curr_turn_trajectory[-1]['answer'])
+                turn_resp_cutoff_thresh = resp_cutoff_thresh
                 logger.info(f"\nQuery [turn #{turn_idx}]: {curr_user_query}")
                 logger.info(f"Final Raw Response [turn #{turn_idx}]: {curr_raw_answer}")
 
@@ -230,7 +232,7 @@ def create_and_inject_thoughts(
                 else:
                     # For the current turn's thought generation, we discard the resp_cutoff_inst instruction if the
                     # agent can pick all the objects and construct the final answer around it. (No Truncation)
-                    resp_cutoff_thresh = None
+                    turn_resp_cutoff_thresh = None
                     answer_generator_additional_instr = ''
 
                 # Collect hop-level data
@@ -318,7 +320,7 @@ def create_and_inject_thoughts(
                         'query': curr_user_query,
                         'answer': parsed_response['answer'],
                         'raw_answer': json.dumps(curr_raw_answer),
-                        'was_raw_answer_truncated': True if resp_cutoff_thresh is not None else False,
+                        'was_raw_answer_truncated': True if turn_resp_cutoff_thresh is not None else False,
                         # Could be Useful to determine turn-level final answer match rewards
                     }
                 )
@@ -495,13 +497,14 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                                 'query': hop_question,
                             }
                         }
-                        if isinstance(hop['rag_doc'], list) and len(hop['rag_doc']) > 1:
-                            logger.info(
-                                "    Ground-truth response contains multiple documents. Combining them into one.")
-                            hop_response = "\n".join(hop['rag_doc'])
-                        else:
-                            assert isinstance(hop['rag_doc'], str)
-                            hop_response = hop['rag_doc']
+
+                        if isinstance(hop['rag_doc'], str):
+                            hop['rag_doc'] = [hop['rag_doc']]
+                        assert isinstance(hop['rag_doc'], list)
+                        hop_response = {"documents": []}
+                        for doc_id, text in enumerate(hop['rag_doc']):
+                            hop_response['documents'].append({"id": f"{doc_id+1}", "text": text})
+                        hop_response = str(hop_response)
 
                     # Add n_t = tool call
                     single_turn_trajectory.append(
@@ -597,6 +600,9 @@ if __name__ == "__main__":
     _save_final_data_at = os.path.join(cwd, 'bird/final')
     dotenv_path = os.path.join(cwd, "../.env")
 
+    os.makedirs(_log_dir, exist_ok=True)
+    os.makedirs(_save_parsed_data_at, exist_ok=True)
+    os.makedirs(_save_final_data_at, exist_ok=True)
     load_dotenv(dotenv_path=os.path.join(cwd, "../.env"))
 
     logger.remove()

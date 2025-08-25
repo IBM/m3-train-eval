@@ -196,6 +196,7 @@ class LinearExpert(Agent):
             # The trajectories are being collected using the expert (no agent presence)
             act_idx = self.get_curr_action_idx()
             action, observation = self.map_idx_to_action(act_idx)
+            action["ground_truth_observation"] = observation
             num_transitions += 1
             # No need to update thought
             return action, num_transitions

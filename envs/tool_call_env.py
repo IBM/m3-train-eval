@@ -231,8 +231,11 @@ class ToolCallEnv(BaseEnv):
                 env_role = Role.USER.value
             else:
                 if action["type"] == "API" or action["type"] == "RETRIEVE":
-                    # Action is a tool call
-                    observation = self.run_tool_and_get_obs(action)
+                    if "ground_truth_observation" in action:
+                        observation = f"ToolCallSuccessful: {action['ground_truth_observation']}"
+                    else:
+                        # Action is a tool call since we are not taking from the ground truth
+                        observation = self.run_tool_and_get_obs(action)
                     env_role = Role.OBSERVATION.value
                 elif action["type"] == "FINAL":
                     # Action is the final answer
