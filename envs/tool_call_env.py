@@ -13,6 +13,7 @@ from envs.apis.rest.call import run_tool, extract_out_dict_from_res
 from envs.base_env import BaseEnv, SubDomain, ToolPolicy
 from envs.expert_assist import ExpertAssist
 from envs.retrievers.elser import ElserRetriever
+from envs.retrievers.m3_retrievers import *
 from envs.utils import reformat_tools
 from invocable_api_hub.tool_calling.sql_to_api.sql_sequencing_dataset_builder import SqlSequencingDatasetBuilder
 from invocable_api_hub.tool_calling.sql_to_api.sql_slot_filling_dataset_builder import SqlSlotFillingDatasetBuilder
