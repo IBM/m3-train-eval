@@ -16,14 +16,14 @@ ES_CONFIG={
     "top_k": 10
 }
 
-DOMIANS=["california_schools", "card_games", "codebase_community", "debit_card_specializing", "european_football_2", "financial", "formula_1", "student_club", "superhero", "thrombosis_prediction", "toxicology"
+DOMAINS=["california_schools", "card_games", "codebase_community", "debit_card_specializing", "european_football_2", "financial", "formula_1", "student_club", "superhero", "thrombosis_prediction", "toxicology"
             ,"music_platform_2", "shooting", "car_retails", "airline", "human_resources", "student_loan", "codebase_comments", "language_corpus", "bike_share_1", "cookbook", "software_company", "donor", "authors"
             , "shipping", "video_games", "sales", "olympics", "university", "talkingdata", "simpson_episodes", "movielens", "mondial_geo", "legislator", "regional_sales", "world_development_indicators", "food_inspection_2"
             , "retail_world", "citeseer", "computer_student", "college_completion", "synthea", "book_publishing_company", "trains", "retails", "soccer_2016", "law_episode", "food_inspection", "european_football_1", "mental_health_survey"
             , "hockey", "public_review_platform", "retail_complains", "ice_hockey_draft", "menu", "cs_semester", "beer_factory", "cars", "genes", "shakespeare", "image_and_language", "disney", "music_tracker", "works_cycles"
             , "movie_platform", "books", "social_media", "restaurant", "superstore", "address", "chicago_crime", "professional_basketball", "coinmarketcap", "movies_4", "sales_in_weather", "app_store", "craftbeer", "movie", "world","movie_3"]
 
-def set_retriver_index():
+def set_retriever_index():
     try:
         HOST_NAME = os.getenv('ES_HOSTNAME')
     except BaseException:
@@ -53,7 +53,7 @@ def set_retriver_index():
 
 def make_retriever(index_name: str = "api-before-rag"):
     def retriever_clapnq_domain(query: str) -> list:
-        retriever=set_retriver_index()
+        retriever=set_retriever_index()
         docs_lst = retriever.retrieve_passages(query, ES_CONFIG["top_k"], index_name=index_name)[1] # Currently kept constant to api-before-rag will be updated to clapnq-{domain_name}
         # Keep "document_id" and "text" feild only
         observation=[]
@@ -65,7 +65,7 @@ def make_retriever(index_name: str = "api-before-rag"):
         return {"documents": observation}
     return retriever_clapnq_domain
 
-for i in DOMIANS:
+for i in DOMAINS:
     func_name = f"retriever_clapnq_{i}"
     globals()[func_name] = make_retriever("api-before-rag")  # Functions added to global scope REPLACE domain name by clapnq-{domain_name}
 
