@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from agents.llm import invoke_llm, get_lm
 from metrics.plot import plot_freq_dist
+from extras import chunking
 
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
@@ -281,7 +282,13 @@ def create_and_inject_thoughts(
                     user_query=curr_user_query,
                     step_prompts=step_prompts,
                 )
-                response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
+                try:
+                    response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
+                except Exception as e:
+                    # If RITS generation fails, skip and continue to next trajectory
+                    left_out_domain_data.append(orig_sample)
+                    logger.error(f"Error invoking RITS LLM for Thought generation: {e}")
+                    continue
                 logger.info(f"\nThought generator response [turn #{turn_idx}]:\n{response}")
                 parsed_response = parse_thought_generator_response(response, len(hops))
                 if parsed_response is None:
@@ -364,6 +371,10 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
 
     final_tool_response_dist = dict()
     total_samples = 0
+
+    # Get model and tokenizer for chunking
+    tokenizer = chunking.get_tokenizer() 
+
     for domain_file in domain_files:
         with open(os.path.join(raw_data_dir, domain_file)) as f:
             domain_data = json.load(f)
@@ -455,6 +466,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
 
                 # Get the current turn's (golden) tool calls and responses at hop-level
                 turn_gold_seq = turn['gold_sequence']
+                chunk_info = {}
                 for hop_idx, hop in enumerate(turn_gold_seq):
 
                     # 1. Get the question at hop-level
@@ -498,13 +510,26 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                             }
                         }
 
-                        if isinstance(hop['rag_doc'], str):
-                            hop['rag_doc'] = [hop['rag_doc']]
-                        assert isinstance(hop['rag_doc'], list)
+                        text = "\n".join(hop["OUTPUT_AFTER_EXECUTING_API"])
+                        chunks, positions = chunking.split_text(tokenizer=tokenizer, text=text)
+                        chunk_indices = chunking.score_chunks(
+                            chunks=chunks,
+                            query=hop["question"],
+                            answer=hop["answer"],
+                        )
+                        chunk_indices_set = set(chunk_indices)  
+                        # Build chunk objects
+                        chunk_info["chunks"] = [
+                            {"text": chunk, "gold_chunk": i in chunk_indices_set}
+                            for i, chunk in enumerate(chunks)
+                        ]
+                        chunk_info["chunks_error"] = not chunk_indices
+
                         hop_response = {"documents": []}
-                        for doc_id, text in enumerate(hop['rag_doc']):
-                            hop_response['documents'].append({"id": f"{doc_id+1}", "text": text})
+                        for chunk_id, text in enumerate(chunk_info["chunks"]):
+                            hop_response["documents"].append({"id": f"doc_{chunk_id+1}", "text": text["text"]})
                         hop_response = str(hop_response)
+                        
 
                     # Add n_t = tool call
                     single_turn_trajectory.append(
@@ -515,11 +540,10 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                             'output': hop_tool_call
                         }
                     )
-                    single_turn_trajectory.append(  # Add n_t+1 = tool call response
-                        {
-                            'response': hop_response,
-                        }
-                    )
+                    response_dict = {'response': hop_response}
+                    if chunk_info:
+                        response_dict['chunk_info'] = chunk_info
+                    single_turn_trajectory.append(response_dict)
 
                 # Add n_T = final answer
                 single_turn_trajectory.append(
@@ -594,7 +618,8 @@ if __name__ == "__main__":
     # dotenv_path=os.path.join(cwd, "../.env")
 
     # # Local Paths
-    _raw_data_dir = os.path.join(cwd, '../../raw-data/bird-train/multi_turn/train_rest_v6_0730')
+    # _raw_data_dir = os.path.join(cwd, '../../raw-data/bird-train/multi_turn/train_rest_v6_0730')
+    _raw_data_dir = os.path.join('data/sample/')
     _log_dir = os.path.join(cwd, 'bird')
     _save_parsed_data_at = os.path.join(cwd, 'bird/parsed')
     _save_final_data_at = os.path.join(cwd, 'bird/final')
@@ -610,7 +635,7 @@ if __name__ == "__main__":
     logger.add(os.path.join(_log_dir, 'logs_{time}.log'), level="INFO", enqueue=True)
 
     # # 1. Parse the raw data
-    # create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
+    create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
 
     # # 2. Create the final training data
     _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"

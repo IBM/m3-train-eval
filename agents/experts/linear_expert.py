@@ -196,10 +196,14 @@ class LinearExpert(Agent):
             # The trajectories are being collected using the expert (no agent presence)
             act_idx = self.get_curr_action_idx()
             action, observation = self.map_idx_to_action(act_idx)
-            action["ground_truth_observation"] = observation
             num_transitions += 1
             # No need to update thought
             return action, num_transitions
+        elif self.env.expert_assist.mode == "ground_truth_non_live":
+            act_idx = self.get_curr_action_idx()
+            action, observation = self.map_idx_to_action(act_idx)
+            action["ground_truth_observation"] = observation
+            num_transitions += 1
         else:
             no_error_state = [item for item in state if 'error' not in item["observation"].lower()]
             if len(no_error_state) == 0:

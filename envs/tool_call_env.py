@@ -3,6 +3,7 @@ import json
 import os
 import random
 from typing import Dict, Any, List, Tuple, Optional
+from pathlib import Path
 
 from loguru import logger
 
@@ -563,7 +564,18 @@ class M3ToolCallEnv(ToolCallEnv):
         )
 
     def load_env_data(self):
-        data = json.load(open(self.path_to_env_data, 'r'))
+        path = Path(self.path_to_env_data)
+        if path.is_file() and path.suffix == '.json':
+            # Single JSON file
+            with open(path, 'r') as f:
+                data = json.load(f)
+        elif path.is_dir():
+            data = []
+            for json_file in path.glob('*.json'):
+                with open(json_file, 'r') as f:
+                    data.append(json.load(f))
+        else:
+            raise ValueError(f"Path {self.path_to_env_data} is neither a JSON file nor a directory")
         return data
 
     def setup_user_queries(self):
