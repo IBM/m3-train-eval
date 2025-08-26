@@ -57,7 +57,7 @@ ERRORS_BAD_TOOL_CALLS = [
 	'MissingKeysError',
 	'ToolDoesNotFoundError',
 	'ToolMissingArgumentError',
-	'DocumentCollectionNameNotFoundError',  # error specific to retriever tool
+	# 'DocumentCollectionNameNotFoundError',  # error specific to retriever tool
 	'ToolCallError'  # This is generic error returned for any issue in env.run_tool_and_get_obs()
 ]
 ERRORS_NO_PENALTY = [
