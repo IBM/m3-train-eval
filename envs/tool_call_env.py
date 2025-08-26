@@ -2,964 +2,1010 @@ import copy
 import json
 import os
 import random
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional, TYPE_CHECKING
 
 from loguru import logger
 
 from agents.llm import invoke_llm
-from data_utils.template import Template
 from data_utils.utils import Role
 from envs.apis.rest.call import run_tool, extract_out_dict_from_res
-from envs.base_env import BaseEnv, SubDomain, ToolPolicy
+from envs.base_env import BaseEnv, ToolPolicy
 from envs.expert_assist import ExpertAssist
-from envs.retrievers.elser import ElserRetriever
-from envs.retrievers.m3_retrievers import *
+from envs.retrievers.m3_retrievers import make_retriever
 from envs.utils import reformat_tools
 from invocable_api_hub.tool_calling.sql_to_api.sql_sequencing_dataset_builder import SqlSequencingDatasetBuilder
 from invocable_api_hub.tool_calling.sql_to_api.sql_slot_filling_dataset_builder import SqlSlotFillingDatasetBuilder
 from invocable_api_hub.tool_calling.sql_to_api.utils import execute_single_api
 from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT
 from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer_prompt, parse_overseer_response, \
-    get_parser_resolver_prompt
+	get_parser_resolver_prompt
+
+
+if TYPE_CHECKING:
+	from envs.base_env import SubDomain
+	from data_utils.template import Template
 
 ERRONEOUS_CATEGORIES: List[str] = [
-    "REWARD_PARSING_ERROR", "REWARD_BAD_TOOL_CALL", "REWARD_BAD_TOOL_CALL", "REWARD_ERROR_NO_CATEGORY",
-    "REWARD_AGENT_STUCK", "REWARD_FINAL_ANSWER_NO_MATCH"
+	"REWARD_PARSING_ERROR", "REWARD_BAD_TOOL_CALL", "REWARD_BAD_TOOL_CALL", "REWARD_ERROR_NO_CATEGORY",
+	"REWARD_AGENT_STUCK", "REWARD_FINAL_ANSWER_NO_MATCH"
 ]
 
 REWARD_MAPPING = {
-    "REWARD_PARSING_ERROR": 0,
-    "REWARD_BAD_TOOL_CALL": 0,
-    "REWARD_NO_PENALTY": 0,
-    "REWARD_ERROR_NO_CATEGORY": 0,
-    "REWARD_AGENT_STUCK": 0,
-    "REWARD_SUCCESS_TOOL_CALL": 0,
-    "REWARD_SUCCESS_RETRIEVAL_CALL": 0,
-    "REWARD_FINAL_ANSWER_MATCH": 0,
-    "REWARD_FINAL_ANSWER_NO_MATCH": 0,
-    "REWARD_SCENARIO_NOT_FOLLOWED": 0  # Todo: Give this at the end of agent-run
+	"REWARD_PARSING_ERROR": 0,
+	"REWARD_BAD_TOOL_CALL": 0,
+	"REWARD_NO_PENALTY": 0,
+	"REWARD_ERROR_NO_CATEGORY": 0,
+	"REWARD_AGENT_STUCK": 0,
+	"REWARD_SUCCESS_TOOL_CALL": 0,
+	"REWARD_SUCCESS_RETRIEVAL_CALL": 0,
+	"REWARD_FINAL_ANSWER_MATCH": 0,
+	"REWARD_FINAL_ANSWER_NO_MATCH": 0,
+	"REWARD_SCENARIO_NOT_FOLLOWED": 0  # Todo: Give this at the end of agent-run
 }
 
 # Define the errors which are unique to agent's tool calling template
 ERRORS_AGENT_SPECIFIC_PARSING = [
-    'NoThoughtError',
-    'MultipleThoughtsError',
-    'ParsingError',
-    'InvalidPredictedActionError',
-    'JSONDecodeError',
-    'ParallelToolCallingError',
+	'NoThoughtError',
+	'MultipleThoughtsError',
+	'ParsingError',
+	'InvalidPredictedActionError',
+	'JSONDecodeError',
+	'ParallelToolCallingError',
 ]
 ERRORS_BAD_TOOL_CALLS = [
-    'MissingKeyError',
-    'MissingKeysError',
-    'ToolDoesNotFoundError',
-    'ToolMissingArgumentError',
-    'DocumentCollectionNameNotFoundError',  # error specific to retriever tool
-    'ToolCallError'  # This is generic error returned for any issue in env.run_tool_and_get_obs()
+	'MissingKeyError',
+	'MissingKeysError',
+	'ToolDoesNotFoundError',
+	'ToolMissingArgumentError',
+	'DocumentCollectionNameNotFoundError',  # error specific to retriever tool
+	'ToolCallError'  # This is generic error returned for any issue in env.run_tool_and_get_obs()
 ]
 ERRORS_NO_PENALTY = [
-    'ToolCallQuotaExceededError'
+	'ToolCallQuotaExceededError'
 ]
 
 
 class ToolCallEnv(BaseEnv):
-    """
-        NLIE: Natural Language Interaction Environment with access to tools for integrated reasoning and prob solving
-                in multi-hop multi-turn QA settings
-    """
-
-    def __init__(
-            self,
-            horizon: int,
-            sub_domain: "SubDomain",
-            expert_assist: "ExpertAssist",
-            agent_template: "Template",
-            overseer_llm=None,
-            overseer_llm_parameters=None,
-            scorer_llm=None,
-            scorer_llm_parameters=None,
-            partial_credit: bool = False,
-            summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
-            is_a_live_agent: bool = False,
-    ):
-        self.tool_policy = None
-        self.sub_domain = sub_domain
-        super().__init__(horizon)
-
-        # Maintain a summarised state that will only contain context-response or QA pairs for multi-turn
-        self.curr_summarised_state = None
-        self.summarise_turns_for_multi_turn = summarise_turns_for_multi_turn
-        # Whether the agent is a live agent in which case its answer for a given turn will not be replaced by G.T. for the future turns to reason over
-        self.is_a_live_agent = is_a_live_agent
-        if self.is_a_live_agent:
-            raise NotImplementedError(
-                "Live Agent not supported. Will need actual user modeling or feedback from user on final answers generated by the agent.")
-
-        # Chat template for the agent. Required for parsing llm-backed agent-specific responses
-        self.agent_template = agent_template
-
-        # Other initial params
-        self.tools, self.system = '', ''
-        self.history, self.curr_turn_history = [], []
-        self.curr_turn: int = -1  # Turn in multi-turn QA
-
-        # Turn-wise data
-        self.user_queries: List[str] = []
-        self.raw_answers: Optional[List[str]] = None
-        self.golden_answers: Optional[List[str]] = None
-        self.were_final_answers_truncated: Optional[List[bool]] = None  # Whether the raw answer truncated to create golden answer
-        self.ordered_sub_ques_composition: Optional[List[str]] = None
-
-        # For enabling expert_assist
-        self.expert_assist: ExpertAssist = expert_assist
-
-        # For overseer
-        self.overseer_llm, self.overseer_llm_parameters = overseer_llm, overseer_llm_parameters
-
-        # For scoring
-        self.scorer_llm, self.scorer_llm_parameters = scorer_llm, scorer_llm_parameters
-        self.partial_credit = partial_credit
-
-    def setup_tools(self):
-        """Set up your environment specific tools here"""
-        raise NotImplementedError()
-
-    def run_tool_and_get_obs(self, action: Dict[str, Any]) -> str:
-        """Run the tool and return the response from running it as a string"""
-        raise NotImplementedError()
-
-    def setup_user_queries(self):
-        """Set up user queries here.
-            > self.user_queries: List[str]  # List of user queries across multiple turns in order
-            > self.golden_answers: Optional[List[str]]  # List of golden answers across for every query
-            > self.ordered_sub_ques_composition: Optional[List[str]]
-                # List of json(dumped) for every turn where each item is
-                > [{"sub_question": str, "expected_response": str}]
-                    # sub-question within each turn (from multi-hop) and its expected response
-        """
-        raise NotImplementedError()
-
-    def setup_scenarios(self) -> str:
-        """Set up scenarios here."""
-        raise NotImplementedError()
-
-    def get_final_answer_instructions(self) -> str:
-        """Specify any additional instructions here!"""
-        raise NotImplementedError()
-
-    def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
-        # To get the data for the current instance of the environment
-        if inst_idx is not None:
-            assert isinstance(inst_idx, int)
-            self.curr_instance_idx = inst_idx
-        else:
-            self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
-
-        # Set the init params
-        self.history, self.curr_turn_history = [], []
-        self.curr_turn = 0
-
-        # Setup user queries
-        self.setup_user_queries()
-
-        # Setup tools
-        self.setup_tools()
-
-        # Determine the Tool Policy.
-        self.setup_scenarios()
-
-        # Determine the tool text
-        tool_text = self.agent_template.format_tools.apply(content=self.tools, tool_policy=self.tool_policy)[0]
-
-        # Form the system prompt
-        self.system: str = SYSTEM_PROMPT
-        system_prompt = self.system + tool_text  # This becomes the overall system (imitates the template.encode)
-
-        # Form the query prompt
-        curr_query = self.user_queries[self.curr_turn]
-        query_prompt = QUERY_PROMPT.format(query=curr_query)
-
-        # #################################### Create the init state #################################### #
-        state = [{"role": Role.SYSTEM.value, "content": system_prompt},
-                 {"role": Role.USER.value, "content": query_prompt}]
-        self.curr_state = state
-        self.curr_summarised_state = copy.deepcopy(state)
-        self.curr_step = 0
-        return state, 0.0, False, {
-            "terminated": False,
-            "truncated": False,
-            "success": False,
-        }
-
-    def step(self, action):
-
-        # 1. Act and get the observation
-        env_role, observation, terminated, truncated = self.get_observation(action)
-
-        # 2. Compute reward
-        reward, success = self.get_reward(action, observation)
-        done = terminated or truncated  # Don't condition done on success since success here is at turn level
-
-        # 3. Transition to the next state
-        self.transition(observation, action, env_role)
-
-        return self.curr_state, reward, done, {
-            "terminated": terminated,
-            "truncated": truncated,
-            "success": success,
-        }
-
-    def get_observation(self, action):
-        terminated = False  # True when agent considers it is done
-        truncated = False  # True when max number of steps is reached
-        if self.curr_step + 1 >= self.horizon:  # For horizon=1, first action taken should bring to terminal state
-
-            # If the last step is the final in last turn, we call env instance terminated instead of truncated
-            if action["type"] == "FINAL" and self.curr_turn + 1 == len(self.user_queries):
-                terminated = True
-                observation = f"Done!"
-            else:
-                truncated = True
-                observation = f"Max Steps Reached!"
-            env_role = Role.USER.value
-
-        else:
-            # There was a parsing error
-            error = action["error"]
-            if error:
-                observation = f"{error}"
-                # Error could be a result of incorrect tool invocation
-                env_role = Role.USER.value
-            else:
-                if action["type"] == "API" or action["type"] == "RETRIEVE":
-                    # Action is a tool call
-                    observation = self.run_tool_and_get_obs(action)
-                    env_role = Role.OBSERVATION.value
-                elif action["type"] == "FINAL":
-                    # Action is the final answer
-                    if self.curr_turn + 1 < len(self.user_queries):  # Transition to the next query
-                        curr_query = self.user_queries[self.curr_turn + 1]
-                        observation = QUERY_PROMPT.format(query=curr_query)
-                    else:  # Transition to the terminal state
-                        terminated = True  # If the last step is the final, we call env instance terminated instead of truncated
-                        observation = f"Done!"
-                    env_role = Role.USER.value
-                else:
-                    raise NotImplementedError(f"Unknown predicted action: {action['type']}")
-
-        return env_role, observation, terminated, truncated
-
-    def get_reward(self, action, observation):
-        if 'error' in observation.lower():  # Don't penalise for server error
-
-            # Check for agent template specific errors
-            for e in ERRORS_AGENT_SPECIFIC_PARSING:
-                if e in observation:
-                    reward = "{REWARD_PARSING_ERROR}"
-                    return reward, False
-
-            # Check for bad tool calls
-            for e in ERRORS_BAD_TOOL_CALLS:
-                if e in observation:
-                    reward = "{REWARD_BAD_TOOL_CALL}"
-                    return reward, False
-
-            for e in ERRORS_NO_PENALTY:
-                if e in observation:
-                    reward = "{REWARD_NO_PENALTY}"
-                    return reward, False
-
-            reward = "{REWARD_ERROR_NO_CATEGORY}"
-            return reward, False
-
-        else:
-            if action["type"] == "FINAL":
-                # TODO: Update the logic:
-                #  Check for the current turn, if final_answer_is_truncated is True, then prediction should be matched
-                #  with the self.curr_raw_answer instead of self.curr_golden_answer. However, we train the model to
-                #  predict the truncated response.
-                #  IMP: Therefore in such cases, make the scorer_judge aware of the 'final_answer_policy' and
-                #  instruct that objects retained in `predicted_final_answer` with which a tool response is
-                #  truncated must be present in the self.curr_raw_answer
-                try:
-                    assert self.scorer_llm is not None
-                except AssertionError:
-                    raise NotImplementedError(f"Scorer LLM is not initialized. Initialise it to score responses.")
-
-                predicted_final_answer = action["value"]
-                scorer_prompt = get_scorer_prompt(
-                    user_query=self.curr_query,
-                    golden_answer=self.curr_golden_answer,
-                    predicted_final_answer=predicted_final_answer,
-                    partial_scoring=self.partial_credit,
-                    use_sample=False,
-                )
-                response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
-                try:
-                    parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
-                except ValueError as e:
-                    error_msg = str(e)
-                    logger.info("Trying one more time to score the response after initial parsing failed.")
-                    # Give one more try
-                    parser_resolver_prompt = get_parser_resolver_prompt(
-                        prompt=scorer_prompt,
-                        response=response,
-                        error=error_msg,
-                    )
-                    response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
-                    parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
-
-                logger.info(f"[External Agent Call] Agent = Final_Scorer")
-                logger.info(
-                    f"Asking (partial credit={self.partial_credit})ScorerJudge LLM to score:\nQuery: {self.curr_query}\nGolden Answer: {self.curr_golden_answer}\nAgent Final Answer: ({predicted_final_answer})")
-                logger.info(f"ScorerJudge LLM said: {json.dumps(parsed_response, indent=2)}")
-
-                if parsed_response["success"]:
-                    reward = "{REWARD_FINAL_ANSWER_MATCH}"
-                else:
-                    reward = "{REWARD_FINAL_ANSWER_NO_MATCH}"
-                return reward, parsed_response["success"]
-
-            else:
-                reward = "{REWARD_SUCCESS_TOOL_CALL}"
-                return reward, False
-
-    def transition(self, observation, action, env_role):
-
-        # ############################################ Update State ############################################ #
-        # Get the current state
-        next_state = self.curr_state
-        next_summarised_state = self.curr_summarised_state
-
-        if action["type"] == "FINAL":  # Agent has reached the end of given turn
-
-            if not self.is_a_live_agent and self.curr_golden_answer is not None:
-                if self.final_answer_is_truncated:
-                    # To condition future reasoning on un-truncated context-response pairs.
-                    # Otherwise, entities being referred to in future reasoning could seem hallucinated
-                    final_answer = self.curr_raw_answer
-                else:
-                    final_answer = self.curr_golden_answer
-
-            else:
-                final_answer = action["value"]
-
-            # Wrap the final answer
-            final_answer = f"<FINAL>{final_answer}</FINAL>"
-
-            next_summarised_state.extend(
-                [
-                    {
-                        "role": action["role"],
-                        "content": final_answer,  # No need to include thoughts
-                    },
-                    {
-                        "role": env_role,
-                        "content": observation,  # Is a Done signal if on last turn else a new user query
-                    }
-                ]
-            )
-            # NOTE: We update the turn if agent generates the final answer (even though it might be incorrect)
-            self.curr_turn += 1
-            self.curr_summarised_state = next_summarised_state
-
-            if self.summarise_turns_for_multi_turn:
-                # Agent will act on past turns summarised as context response pairs
-                self.curr_state = copy.deepcopy(next_summarised_state)
-
-            else:
-                # If we don't summarise, does not matter whether the agent is live or not, the actual predicted answer
-                # along with its thought in the state. Can't replace the predicted with golden since it won't naturally
-                # follow the agent's reasoning so far.
-                next_state.extend(
-                    [
-                        {
-                            "role": action["role"],
-                            "content": action["template_free_response"],
-                        },
-                        {
-                            "role": env_role,
-                            "content": observation,
-                        }
-                    ]
-                )
-                # Update the current state
-                self.curr_state = next_state
-
-        else:
-            next_state.extend(
-                [
-                    {
-                        "role": action["role"],
-                        "content": action["template_free_response"],
-                    },
-                    {
-                        "role": env_role,
-                        "content": observation,
-                    }
-                ]
-            )
-            # Update the current state
-            self.curr_state = next_state
-
-        # ############################################ Update History ############################################ #
-        self.curr_turn_history.append(
-            {
-                "action": action["type"],  # str, type of action
-                "action_arguments": action["value"],  # dict or str
-                "observation": observation,  # str
-            }
-        )
-        if action["type"] == "FINAL":
-            self.history.append(copy.deepcopy(self.curr_turn_history))
-            self.curr_turn_history = []
-        self.curr_step += 1
-
-    def get_agent_history_for_overseer(self):
-        """
-        Implement how far back into the agentic history overseer should look into to determine if agent is stuck.
-        Recommended: When summarising past turn's conversations as context-response pairs, look into current turn's.
-        :return:
-        """
-        agent_history = self.curr_turn_history
-        return agent_history
-
-    def is_expert_help_needed(self, last_action_was_experts: bool) -> bool:
-        """
-        Implements the overseer policy to determine if the agent requires expert help or not.
-        :param last_action_was_experts: If the last action taken by the agent was with expert help
-        :return: True if the agent is stuck and requires expert help.
-        """
-        agent_history = self.get_agent_history_for_overseer()
-
-        # Case 1. Overlook initial attempts
-        if len(agent_history) < self.expert_assist.init_limit:
-            return False
-
-        # Case 2. If last action was taken by the expert, we let the agent take the current action
-        if last_action_was_experts:
-            return False
-
-        recent_history = agent_history[self.expert_assist.recent_limit:][::-1]
-        recent_observations = [item["observation"] for item in recent_history]
-        recent_actions = [f"{item['action']}:{json.dumps(item['action_arguments'])}" for item in recent_history]
-
-        # Case 3. If all erroneous actions in recent interaction
-        if all([True if 'error' in obs.lower() else False for obs in recent_observations]):
-            logger.info(
-                f"[Expert Help] Provided for making consecutive errors in recent interactions: {recent_observations}")
-            return True
-
-        # Case 4. If the same action was taken consecutively
-        if len(set(recent_actions)) == 1:
-            logger.info(f"[Expert Help] Provided for getting stuck at the same action: {recent_actions}")
-            return True
-
-        overseer_prompt = get_overseer_prompt(
-            query=self.curr_query,
-            agent_history=agent_history,  # TODO: Should for multi-turn, we use the complete history or recent history?
-            ordered_sub_ques_composition=self.ordered_sub_ques_composition[self.curr_turn]
-        )
-        response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
-        parsed_response = parse_overseer_response(response)
-
-        logger.info(f"[External Agent Call] Agent = Overseer")
-        logger.info(f"Asking Overseer whether the agent is stuck with history: {json.dumps(agent_history, indent=2)}.")
-        logger.info(f"Overseer said: {json.dumps(parsed_response, indent=2)}")
-
-        if parsed_response["stuck"]:
-            logger.info(f"[Expert Help] Provided based on overseer feedback")
-            return True
-        else:
-            return False
-
-    def close(self):
-        self.history, self.curr_turn_history = [], []
-        self.curr_instance_idx = 0
-
-    @property
-    def curr_sample_idx(self) -> int:
-        raise NotImplementedError
-
-    @property
-    def curr_query(self) -> str:
-        return self.user_queries[self.curr_turn]
-
-    @property
-    def curr_golden_answer(self) -> Optional[str]:
-        """The answer the model/agent generates. It is properly wrapped into a sentence."""
-        if self.golden_answers is not None:
-            return self.golden_answers[self.curr_turn]
-        else:
-            return None
-
-    @property
-    def curr_raw_answer(self) -> Optional[str]:
-        """The answer the model/agent should have generated. It is unwrapped and json dumped structured object."""
-        if self.raw_answers is not None:
-            return self.raw_answers[self.curr_turn]
-        else:
-            return None
-
-    @property
-    def final_answer_is_truncated(self) -> bool:
-        """If the tool response was truncated and summarised into the final answer, return True."""
-        if self.were_final_answers_truncated is not None:
-            return self.were_final_answers_truncated[self.curr_turn]
-        else:
-            return False
-
-    def __len__(self):
-        return self.total_unique_instances
+	"""
+		NLIE: Natural Language Interaction Environment with access to tools for integrated reasoning and prob solving
+				in multi-hop multi-turn QA settings
+	"""
+	
+	def __init__(
+			self,
+			horizon: int,
+			sub_domain: "SubDomain",
+			expert_assist: "ExpertAssist",
+			agent_template: "Template",
+			overseer_llm=None,
+			overseer_llm_parameters=None,
+			scorer_llm=None,
+			scorer_llm_parameters=None,
+			partial_credit: bool = False,
+			summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
+			is_a_live_agent: bool = False,
+	):
+		self.tool_policy = None
+		self.sub_domain = sub_domain
+		super().__init__(horizon)
+		
+		# Maintain a summarised state that will only contain context-response or QA pairs for multi-turn
+		self.curr_summarised_state = None
+		self.summarise_turns_for_multi_turn = summarise_turns_for_multi_turn
+		# Whether the agent is a live agent in which case its answer for a given turn will not be replaced by G.T. for the future turns to reason over
+		self.is_a_live_agent = is_a_live_agent
+		if self.is_a_live_agent:
+			raise NotImplementedError(
+				"Live Agent not supported. Will need actual user modeling or feedback from user on final answers generated by the agent.")
+		
+		# Chat template for the agent. Required for parsing llm-backed agent-specific responses
+		self.agent_template = agent_template
+		
+		# Other initial params
+		self.tools, self.system = '', ''
+		self.history, self.curr_turn_history = [], []
+		self.curr_turn: int = -1  # Turn in multi-turn QA
+		
+		# Turn-wise data
+		self.user_queries: List[str] = []
+		self.raw_answers: Optional[List[str]] = None
+		self.golden_answers: Optional[List[str]] = None
+		self.were_final_answers_truncated: Optional[
+			List[bool]] = None  # Whether the raw answer truncated to create golden answer
+		self.ordered_sub_ques_composition: Optional[List[str]] = None
+		
+		# For enabling expert_assist
+		self.expert_assist: ExpertAssist = expert_assist
+		
+		# For overseer
+		self.overseer_llm, self.overseer_llm_parameters = overseer_llm, overseer_llm_parameters
+		
+		# For scoring
+		self.scorer_llm, self.scorer_llm_parameters = scorer_llm, scorer_llm_parameters
+		self.partial_credit = partial_credit
+	
+	def setup_tools(self):
+		"""Set up your environment specific tools here"""
+		raise NotImplementedError()
+	
+	def run_tool_and_get_obs(self, action: Dict[str, Any]) -> str:
+		"""Run the tool and return the response from running it as a string"""
+		raise NotImplementedError()
+	
+	def setup_user_queries(self):
+		"""Set up user queries here.
+			> self.user_queries: List[str]  # List of user queries across multiple turns in order
+			> self.golden_answers: Optional[List[str]]  # List of golden answers across for every query
+			> self.ordered_sub_ques_composition: Optional[List[str]]
+				# List of json(dumped) for every turn where each item is
+				> [{"sub_question": str, "expected_response": str}]
+					# sub-question within each turn (from multi-hop) and its expected response
+		"""
+		raise NotImplementedError()
+	
+	def setup_scenarios(self) -> str:
+		"""Set up scenarios here."""
+		raise NotImplementedError()
+	
+	def get_final_answer_instructions(self) -> str:
+		"""Specify any additional instructions here!"""
+		raise NotImplementedError()
+	
+	def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
+		# To get the data for the current instance of the environment
+		if inst_idx is not None:
+			assert isinstance(inst_idx, int)
+			self.curr_instance_idx = inst_idx
+		else:
+			self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
+		
+		# Set the init params
+		self.history, self.curr_turn_history = [], []
+		self.curr_turn = 0
+		
+		# Setup user queries
+		self.setup_user_queries()
+		
+		# Setup tools
+		self.setup_tools()
+		
+		# Determine the Tool Policy.
+		self.setup_scenarios()
+		
+		# Determine the tool text
+		tool_text = self.agent_template.format_tools.apply(content=self.tools, tool_policy=self.tool_policy)[0]
+		
+		# Form the system prompt
+		self.system: str = SYSTEM_PROMPT
+		system_prompt = self.system + tool_text  # This becomes the overall system (imitates the template.encode)
+		
+		# Form the query prompt
+		curr_query = self.user_queries[self.curr_turn]
+		query_prompt = QUERY_PROMPT.format(query=curr_query)
+		
+		# #################################### Create the init state #################################### #
+		state = [{"role": Role.SYSTEM.value, "content": system_prompt},
+				 {"role": Role.USER.value, "content": query_prompt}]
+		self.curr_state = state
+		self.curr_summarised_state = copy.deepcopy(state)
+		self.curr_step = 0
+		return state, 0.0, False, {
+			"terminated": False,
+			"truncated": False,
+			"success": False,
+		}
+	
+	def step(self, action):
+		
+		# 1. Act and get the observation
+		env_role, observation, terminated, truncated = self.get_observation(action)
+		
+		# 2. Compute reward
+		reward, success = self.get_reward(action, observation)
+		done = terminated or truncated  # Don't condition done on success since success here is at turn level
+		
+		# 3. Transition to the next state
+		self.transition(observation, action, env_role)
+		
+		return self.curr_state, reward, done, {
+			"terminated": terminated,
+			"truncated": truncated,
+			"success": success,
+		}
+	
+	def get_observation(self, action):
+		terminated = False  # True when agent considers it is done
+		truncated = False  # True when max number of steps is reached
+		if self.curr_step + 1 >= self.horizon:  # For horizon=1, first action taken should bring to terminal state
+			
+			# If the last step is the final in last turn, we call env instance terminated instead of truncated
+			if action["type"] == "FINAL" and self.curr_turn + 1 == len(self.user_queries):
+				terminated = True
+				observation = f"Done!"
+			else:
+				truncated = True
+				observation = f"Max Steps Reached!"
+			env_role = Role.USER.value
+		
+		else:
+			# There was a parsing error
+			error = action["error"]
+			if error:
+				observation = f"{error}"
+				# Error could be a result of incorrect tool invocation
+				env_role = Role.USER.value
+			else:
+				if action["type"] == "API" or action["type"] == "RETRIEVE":
+					# Action is a tool call
+					observation = self.run_tool_and_get_obs(action)
+					env_role = Role.OBSERVATION.value
+				elif action["type"] == "FINAL":
+					# Action is the final answer
+					if self.curr_turn + 1 < len(self.user_queries):  # Transition to the next query
+						curr_query = self.user_queries[self.curr_turn + 1]
+						observation = QUERY_PROMPT.format(query=curr_query)
+					else:  # Transition to the terminal state
+						terminated = True  # If the last step is the final, we call env instance terminated instead of truncated
+						observation = f"Done!"
+					env_role = Role.USER.value
+				else:
+					raise NotImplementedError(f"Unknown predicted action: {action['type']}")
+		
+		return env_role, observation, terminated, truncated
+	
+	def get_reward(self, action, observation):
+		if 'error' in observation.lower():  # Don't penalise for server error
+			
+			# Check for agent template specific errors
+			for e in ERRORS_AGENT_SPECIFIC_PARSING:
+				if e in observation:
+					reward = "{REWARD_PARSING_ERROR}"
+					return reward, False
+			
+			# Check for bad tool calls
+			for e in ERRORS_BAD_TOOL_CALLS:
+				if e in observation:
+					reward = "{REWARD_BAD_TOOL_CALL}"
+					return reward, False
+			
+			for e in ERRORS_NO_PENALTY:
+				if e in observation:
+					reward = "{REWARD_NO_PENALTY}"
+					return reward, False
+			
+			reward = "{REWARD_ERROR_NO_CATEGORY}"
+			return reward, False
+		
+		else:
+			if action["type"] == "FINAL":
+				# TODO: Update the logic:
+				#  Check for the current turn, if final_answer_is_truncated is True, then prediction should be matched
+				#  with the self.curr_raw_answer instead of self.curr_golden_answer. However, we train the model to
+				#  predict the truncated response.
+				#  IMP: Therefore in such cases, make the scorer_judge aware of the 'final_answer_policy' and
+				#  instruct that objects retained in `predicted_final_answer` with which a tool response is
+				#  truncated must be present in the self.curr_raw_answer
+				try:
+					assert self.scorer_llm is not None
+				except AssertionError:
+					raise NotImplementedError(f"Scorer LLM is not initialized. Initialise it to score responses.")
+				
+				predicted_final_answer = action["value"]
+				scorer_prompt = get_scorer_prompt(
+					user_query=self.curr_query,
+					golden_answer=self.curr_golden_answer,
+					predicted_final_answer=predicted_final_answer,
+					partial_scoring=self.partial_credit,
+					use_sample=False,
+				)
+				response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
+				try:
+					parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+				except ValueError as e:
+					error_msg = str(e)
+					logger.info("Trying one more time to score the response after initial parsing failed.")
+					# Give one more try
+					parser_resolver_prompt = get_parser_resolver_prompt(
+						prompt=scorer_prompt,
+						response=response,
+						error=error_msg,
+					)
+					response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
+					parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+				
+				logger.info(f"[External Agent Call] Agent = Final_Scorer")
+				logger.info(
+					f"Asking (partial credit={self.partial_credit})ScorerJudge LLM to score:\nQuery: {self.curr_query}\nGolden Answer: {self.curr_golden_answer}\nAgent Final Answer: ({predicted_final_answer})")
+				logger.info(f"ScorerJudge LLM said: {json.dumps(parsed_response, indent=2)}")
+				
+				if parsed_response["success"]:
+					reward = "{REWARD_FINAL_ANSWER_MATCH}"
+				else:
+					reward = "{REWARD_FINAL_ANSWER_NO_MATCH}"
+				return reward, parsed_response["success"]
+			
+			elif action["type"] == "RETRIEVE":
+				reward = "{REWARD_SUCCESS_RETRIEVAL_CALL}"
+				return reward, False
+			else:
+				reward = "{REWARD_SUCCESS_TOOL_CALL}"
+				return reward, False
+	
+	def transition(self, observation, action, env_role):
+		
+		# ############################################ Update State ############################################ #
+		# Get the current state
+		next_state = self.curr_state
+		next_summarised_state = self.curr_summarised_state
+		
+		if action["type"] == "FINAL":  # Agent has reached the end of given turn
+			
+			if not self.is_a_live_agent and self.curr_golden_answer is not None:
+				if self.final_answer_is_truncated:
+					# To condition future reasoning on un-truncated context-response pairs.
+					# Otherwise, entities being referred to in future reasoning could seem hallucinated
+					final_answer = self.curr_raw_answer
+				else:
+					final_answer = self.curr_golden_answer
+			
+			else:
+				final_answer = action["value"]
+			
+			# Wrap the final answer
+			final_answer = f"<FINAL>{final_answer}</FINAL>"
+			
+			next_summarised_state.extend(
+				[
+					{
+						"role": action["role"],
+						"content": final_answer,  # No need to include thoughts
+					},
+					{
+						"role": env_role,
+						"content": observation,  # Is a Done signal if on last turn else a new user query
+					}
+				]
+			)
+			# NOTE: We update the turn if agent generates the final answer (even though it might be incorrect)
+			self.curr_turn += 1
+			self.curr_summarised_state = next_summarised_state
+			
+			if self.summarise_turns_for_multi_turn:
+				# Agent will act on past turns summarised as context response pairs
+				self.curr_state = copy.deepcopy(next_summarised_state)
+			
+			else:
+				# If we don't summarise, does not matter whether the agent is live or not, the actual predicted answer
+				# along with its thought in the state. Can't replace the predicted with golden since it won't naturally
+				# follow the agent's reasoning so far.
+				next_state.extend(
+					[
+						{
+							"role": action["role"],
+							"content": action["template_free_response"],
+						},
+						{
+							"role": env_role,
+							"content": observation,
+						}
+					]
+				)
+				# Update the current state
+				self.curr_state = next_state
+		
+		else:
+			next_state.extend(
+				[
+					{
+						"role": action["role"],
+						"content": action["template_free_response"],
+					},
+					{
+						"role": env_role,
+						"content": observation,
+					}
+				]
+			)
+			# Update the current state
+			self.curr_state = next_state
+		
+		# ############################################ Update History ############################################ #
+		self.curr_turn_history.append(
+			{
+				"action": action["type"],  # str, type of action
+				"action_arguments": action["value"],  # dict or str
+				"observation": observation,  # str
+			}
+		)
+		if action["type"] == "FINAL":
+			self.history.append(copy.deepcopy(self.curr_turn_history))
+			self.curr_turn_history = []
+		self.curr_step += 1
+	
+	def get_agent_history_for_overseer(self):
+		"""
+		Implement how far back into the agentic history overseer should look into to determine if agent is stuck.
+		Recommended: When summarising past turn's conversations as context-response pairs, look into current turn's.
+		:return:
+		"""
+		agent_history = self.curr_turn_history
+		return agent_history
+	
+	def is_expert_help_needed(self, last_action_was_experts: bool) -> bool:
+		"""
+		Implements the overseer policy to determine if the agent requires expert help or not.
+		:param last_action_was_experts: If the last action taken by the agent was with expert help
+		:return: True if the agent is stuck and requires expert help.
+		"""
+		agent_history = self.get_agent_history_for_overseer()
+		
+		# Case 1. Overlook initial attempts
+		if len(agent_history) < self.expert_assist.init_limit:
+			return False
+		
+		# Case 2. If last action was taken by the expert, we let the agent take the current action
+		if last_action_was_experts:
+			return False
+		
+		recent_history = agent_history[self.expert_assist.recent_limit:][::-1]
+		recent_observations = [item["observation"] for item in recent_history]
+		recent_actions = [f"{item['action']}:{json.dumps(item['action_arguments'])}" for item in recent_history]
+		
+		# Case 3. If all erroneous actions in recent interaction
+		if all([True if 'error' in obs.lower() else False for obs in recent_observations]):
+			logger.info(
+				f"[Expert Help] Provided for making consecutive errors in recent interactions: {recent_observations}")
+			return True
+		
+		# Case 4. If the same action was taken consecutively
+		if len(set(recent_actions)) == 1:
+			logger.info(f"[Expert Help] Provided for getting stuck at the same action: {recent_actions}")
+			return True
+		
+		overseer_prompt = get_overseer_prompt(
+			query=self.curr_query,
+			agent_history=agent_history,  # TODO: Should for multi-turn, we use the complete history or recent history?
+			ordered_sub_ques_composition=self.ordered_sub_ques_composition[self.curr_turn]
+		)
+		response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
+		parsed_response = parse_overseer_response(response)
+		
+		logger.info(f"[External Agent Call] Agent = Overseer")
+		logger.info(f"Asking Overseer whether the agent is stuck with history: {json.dumps(agent_history, indent=2)}.")
+		logger.info(f"Overseer said: {json.dumps(parsed_response, indent=2)}")
+		
+		if parsed_response["stuck"]:
+			logger.info(f"[Expert Help] Provided based on overseer feedback")
+			return True
+		else:
+			return False
+	
+	def close(self):
+		self.history, self.curr_turn_history = [], []
+		self.curr_instance_idx = 0
+	
+	@property
+	def curr_sample_idx(self) -> int:
+		raise NotImplementedError
+	
+	@property
+	def curr_query(self) -> str:
+		return self.user_queries[self.curr_turn]
+	
+	@property
+	def curr_golden_answer(self) -> Any:
+		"""The answer the model/agent generates. It is properly wrapped into a sentence."""
+		if self.golden_answers is not None:
+			return self.golden_answers[self.curr_turn]
+		else:
+			return None
+	
+	@property
+	def curr_raw_answer(self) -> Any:
+		"""The answer the model/agent should have generated. It is unwrapped and json dumped structured object."""
+		if self.raw_answers is not None:
+			return self.raw_answers[self.curr_turn]
+		else:
+			return None
+	
+	@property
+	def final_answer_is_truncated(self) -> Any:
+		"""If the tool response was truncated and summarised into the final answer, return True."""
+		if self.were_final_answers_truncated is not None:
+			return self.were_final_answers_truncated[self.curr_turn]
+		else:
+			return False
+	
+	def __len__(self):
+		return self.total_unique_instances
 
 
 class M3ToolCallEnv(ToolCallEnv):
-    def __init__(
-            self,
-            path_to_env_data: str,
-            es_config: dict,
-            api_config: dict,
-            horizon: int,
-            sub_domain: "SubDomain",
-            expert_assist: "ExpertAssist",
-            agent_template: "Template",
-            overseer_llm=None,
-            overseer_llm_parameters=None,
-            scorer_llm=None,
-            scorer_llm_parameters=None,
-            partial_credit: bool = False,
-            summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
-    ):
-        self.path_to_env_data = path_to_env_data
-        self.es_config = es_config
-        self.api_config = api_config
+	def __init__(
+			self,
+			path_to_env_data: str,
+			es_config: dict,
+			api_config: dict,
+			horizon: int,
+			sub_domain: "SubDomain",
+			expert_assist: "ExpertAssist",
+			agent_template: "Template",
+			overseer_llm=None,
+			overseer_llm_parameters=None,
+			scorer_llm=None,
+			scorer_llm_parameters=None,
+			partial_credit: bool = False,
+			summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
+	):
+		self.path_to_env_data = path_to_env_data
+		self.es_config = es_config
+		self.api_config = api_config
+		
+		# Init. the API tools here
+		self.tool_names, self.tool_info = [], {}
+		self.callable_api_pool, self.initial_data_csv = None, None
+		self.sql_db_name = 'bird'
+		
+		# TODO: For sel-slot data updated these paths
+		self.base_sql_dir = None
+		self.path_to_sql_data = None
+		self.path_for_sql_cache = None
+		
+		# Init. the document database here
+		self.doc_db, self.document_collections = None, None
+		
+		super().__init__(
+			horizon,
+			sub_domain,
+			expert_assist,
+			agent_template,
+			overseer_llm,
+			overseer_llm_parameters,
+			scorer_llm,
+			scorer_llm_parameters,
+			partial_credit,
+			summarise_turns_for_multi_turn
+		)
+	
+	def load_env_data(self):
+		data = json.load(open(self.path_to_env_data, 'r'))
+		return data
+	
+	def setup_user_queries(self):
+		curr_instance_data = self.data[self.curr_instance_idx]
+		
+		# For Multi-turn data
+		if "turns" in curr_instance_data:
+			self.user_queries = [turn_data["query"] for turn_data in curr_instance_data["turns"]]
+			self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
+			self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
+			self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in
+												 curr_instance_data["turns"]]
+		# For [Older] Single-turn data
+		else:
+			self.user_queries = [curr_instance_data['merged_query']]
+			self.golden_answers = [curr_instance_data['answer']]
+			self.raw_answers = [curr_instance_data['answer']]
+			self.were_final_answers_truncated = [False]
+		
+		if 'trajectory' not in curr_instance_data:
+			ordered_sub_ques_composition = None
+		else:
+			trajectory = curr_instance_data['trajectory']
+			
+			# For Multi-turn data
+			if isinstance(trajectory[0], list):
+				
+				# Get the sub-questions (in order) that the agent/expert should try to answer
+				ordered_sub_ques_composition = []
+				for curr_turn_traj in trajectory:
+					curr_turn_ordered_sub_ques_composition = []
+					
+					hops = [(curr_turn_traj[i], curr_turn_traj[i + 1]) for i in
+							range(0, len(curr_turn_traj), 2)]  # (s, a)
+					for hop_idx, (item_0, item_1) in enumerate(hops):
+						if "answer" in item_1.keys():  # If action is a Final action
+							continue
+						else:
+							assert "agent" in item_1.keys()
+							assert "response" in hops[hop_idx + 1][0].keys()  # The next state should have the response
+							if item_1['agent'] in ["api_agent", "retriever_agent", "rag_agent"]:
+								curr_turn_ordered_sub_ques_composition.append(
+									{
+										"sub_question": item_1["question"],
+										"expected_response": hops[hop_idx + 1][0]['response']
+									}
+								)
+							else:
+								raise ValueError(f"Unknown agent of type {item_1['agent']}")
+					ordered_sub_ques_composition.append(json.dumps(curr_turn_ordered_sub_ques_composition))
+			
+			# For [Older] Single-turn data
+			else:
+				# Get the sub-questions (in order) that the agent/expert should try to answer
+				ordered_sub_ques_composition = []
+				hops = [(trajectory[i], trajectory[i + 1]) for i in range(0, len(trajectory), 2)]  # (s, a)
+				for hop_idx, (item_0, item_1) in enumerate(hops):
+					if "answer" in item_1.keys():  # If action is a Final action
+						continue
+					else:
+						assert "agent" in item_1.keys()
+						assert "response" in hops[hop_idx + 1][0].keys()  # The next state should have the response
+						if item_1['agent'] in ["api_agent", "retriever_agent", "rag_agent"]:
+							ordered_sub_ques_composition.append(
+								{
+									"sub_question": item_1["question"],
+									"expected_response": hops[hop_idx + 1][0]['response']
+								}
+							)
+						else:
+							raise ValueError(f"Unknown agent of type {item_1['agent']}")
+				ordered_sub_ques_composition = [json.dumps(ordered_sub_ques_composition)]
+		
+		self.ordered_sub_ques_composition = ordered_sub_ques_composition
+	
+	def setup_scenarios(self):
+		curr_instance_data = self.data[self.curr_instance_idx]
+		if 'tool_availability_policy' in curr_instance_data and 'tool_usage_policy' in curr_instance_data:
+			self.tool_policy = ToolPolicy(
+				tool_availability_policy=curr_instance_data['tool_availability_policy'],
+				tool_usage_policy=curr_instance_data['tool_usage_policy']
+			)
+		else:
+			self.tool_policy = ToolPolicy(
+				tool_availability_policy="both_api_rag",
+				tool_usage_policy=""
+			)
+		
+		# Determine the final answer instructions and replace the slot
+		final_answer_instructions = self.get_final_answer_instructions()
+		self.tool_policy.final_answer_policy = final_answer_instructions
+	
+	def get_final_answer_instructions(self) -> str:
+		# Determine the guidance for generating final answer
+		final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
+		
+		# [1] For the case when scenarios render the question unanswerable
+		from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
+		chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
+		chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
+		instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
+		final_answer_instructions += "\n                  > " + instr_insufficient_information
+		
+		# [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
+		curr_instance_data = self.data[self.curr_instance_idx]
+		if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
+			# This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
+			# to curr_instance_data['resp_cutoff'] determined during ground-truth generation
+			instr_resp_cutoff = curr_instance_data['resp_cutoff_inst']
+			final_answer_instructions += "\n                  > " + instr_resp_cutoff
+		
+		return final_answer_instructions
+	
+	def initialize_sel_slot_data(self, initialization_specs: dict, callable_api_pool: dict) -> str:
+		# Perform the initialization step
+		# runs the tool and returns the observation
+		# error is None if the action was successful
+		args = initialization_specs["arguments"]
+		try:
+			new_path = os.path.join(self.base_sql_dir, args["database_path"].split("invocable-api-hub")[1])
+			args["database_path"] = new_path
+		except:
+			logger.info(f'Sticking with database_path = {args["database_path"]}')
+		
+		try:
+			initial_data_csv = execute_single_api(
+				initialization_specs["name"],
+				args,
+				api_pool=self.callable_api_pool,
+			)
+		except BaseException as e:
+			raise Exception(f"Initialization step failed with error: {e}")
+		
+		try:
+			initial_data_csv = initial_data_csv.to_dict(orient="list")
+		except BaseException as e:
+			pass
+		return initial_data_csv
+	
+	def pre_setup_tools(self, tools, dataset_name=None, initialization_specs=None):
+		tool_names = []
+		tool_info = {}
+		for tool in tools:
+			if tool["name"] == "initialize_active_data":
+				continue  # Don't add this to the pool of available tools
+			
+			tool_names.append(tool['name'])
+			
+			# Identify the required arguments. Essential to set up the env response when args generated by agent are not sufficient.
+			# Must match the logic in reformat_tools() at envs/tool_call_env.py
+			_required: List[str] = []
+			if 'parameters' in tool:
+				if 'required' in tool["parameters"]:
+					_required = tool["parameters"]["required"]
+				else:
+					if tool["parameters"]:
+						_required = list(tool["parameters"].keys())
+			
+			tool_info[tool['name']] = {
+				"required_args": _required,
+			}
+		
+		self.tool_names = tool_names
+		self.tool_info = tool_info
+		logger.info(f"Agent has access to {len(self.tool_names)} tools: {self.tool_names}")
+		
+		# [Optionally] For Sel/Slot set up the callable api pool
+		if self.sub_domain.mode in ['slot_filling', 'selection']:
+			source_dataset_name = self.sql_db_name
+			database_location = self.path_to_sql_data
+			results_cache_path_unique = os.path.join(self.path_for_sql_cache, dataset_name)
+			if not os.path.isdir(results_cache_path_unique):
+				os.mkdir(results_cache_path_unique)
+			
+			if self.sub_domain.mode == "slot_filling":
+				builder = SqlSlotFillingDatasetBuilder(
+					dataset_name,
+					database_location,
+					str(results_cache_path_unique),
+					source_dataset_name,
+				)
+			else:
+				builder = SqlSequencingDatasetBuilder(
+					dataset_name,
+					database_location,
+					str(results_cache_path_unique),
+					source_dataset_name,
+				)
+			builder.build()
+			
+			try:
+				assert initialization_specs is not None
+			except AssertionError:
+				raise AssertionError(f"Initialization specs should not be None for {self.sub_domain.mode}")
+			
+			initialization_specs["arguments"]["database_path"] = os.path.join(str(results_cache_path_unique), f"{dataset_name}.sqlite")
+			self.callable_api_pool, _ = builder.set_query_specific_api_pool([initialization_specs])
+			self.initial_data_csv = self.initialize_sel_slot_data(initialization_specs, self.callable_api_pool)
+	
+	def setup_document_retrieval_tool(self):
+		"""Set up the retrieval tools here"""
+		
+		# # Old way of setting up
+		# self.es_config['username'] = os.getenv("ES_USERNAME", None)
+		# self.es_config['password'] = os.getenv("ES_PASSWORD", None)
+		# if self.es_config['username'] is None or self.es_config['password'] is None:
+		#     raise EnvironmentError("Elasticsearch credentials not configured. Provide ES_USERNAME and ES_PASSWORD.")
+		#
+		# self.doc_db = ElserRetriever(**self.es_config)  # index name not used here to init
+		#
+		# # provider_env = os.getenv("LLM_PROVIDER", "rits").lower()
+		# logger.info(f"Agent has access to {self.doc_db} document index")
+		
+		# # New way of setting up
+		self.doc_db = {}
+		for collection_name in self.document_collections:
+			domain_name = collection_name.replace("clapnq-", "") if collection_name.startswith(
+				"clapnq-") else collection_name
+			index_name = f"clapnq-{domain_name}"
+			fn_name = f"retriever_clapnq_{domain_name}"
+			try:
+				assert fn_name in self.tool_names
+			except AssertionError:
+				raise AssertionError(
+					f"Tool list does not have the retriever function {fn_name} for collection {collection_name}")
+			
+			# doc_db is now a list of executable retriever functions
+			self.doc_db[fn_name] = make_retriever(index_name=index_name)
+		
+		logger.info(
+			f"Agent has access to {len(self.doc_db)} document retrievers for collections: {self.document_collections}")
 
-        # Init. the API tools here
-        self.tool_names, self.tool_info = [], {}
-        self.callable_api_pool, self.initial_data_csv = None, None
-        self.sql_db_name = 'bird'
-
-        # TODO: For sel-slot data updated these paths
-        self.base_sql_dir = None
-        self.path_to_sql_data = None
-        self.path_for_sql_cache = None
-
-        # Init. the document database here
-        self.doc_db, self.document_collections = None, None
-
-        super().__init__(
-            horizon,
-            sub_domain,
-            expert_assist,
-            agent_template,
-            overseer_llm,
-            overseer_llm_parameters,
-            scorer_llm,
-            scorer_llm_parameters,
-            partial_credit,
-            summarise_turns_for_multi_turn
-        )
-
-    def load_env_data(self):
-        data = json.load(open(self.path_to_env_data, 'r'))
-        return data
-
-    def setup_user_queries(self):
-        curr_instance_data = self.data[self.curr_instance_idx]
-
-        # For Multi-turn data
-        if "turns" in curr_instance_data:
-            self.user_queries = [turn_data["query"] for turn_data in curr_instance_data["turns"]]
-            self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
-            self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
-            self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in curr_instance_data["turns"]]
-        # For [Older] Single-turn data
-        else:
-            self.user_queries = [curr_instance_data['merged_query']]
-            self.golden_answers = [curr_instance_data['answer']]
-            self.raw_answers = [curr_instance_data['answer']]
-            self.were_final_answers_truncated = [False]
-
-        if 'trajectory' not in curr_instance_data:
-            ordered_sub_ques_composition = None
-        else:
-            trajectory = curr_instance_data['trajectory']
-
-            # For Multi-turn data
-            if isinstance(trajectory[0], list):
-
-                # Get the sub-questions (in order) that the agent/expert should try to answer
-                ordered_sub_ques_composition = []
-                for curr_turn_traj in trajectory:
-                    curr_turn_ordered_sub_ques_composition = []
-
-                    hops = [(curr_turn_traj[i], curr_turn_traj[i + 1]) for i in
-                            range(0, len(curr_turn_traj), 2)]  # (s, a)
-                    for hop_idx, (item_0, item_1) in enumerate(hops):
-                        if "answer" in item_1.keys():  # If action is a Final action
-                            continue
-                        else:
-                            assert "agent" in item_1.keys()
-                            assert "response" in hops[hop_idx + 1][0].keys()  # The next state should have the response
-                            if item_1['agent'] in ["api_agent", "retriever_agent", "rag_agent"]:
-                                curr_turn_ordered_sub_ques_composition.append(
-                                    {
-                                        "sub_question": item_1["question"],
-                                        "expected_response": hops[hop_idx + 1][0]['response']
-                                    }
-                                )
-                            else:
-                                raise ValueError(f"Unknown agent of type {item_1['agent']}")
-                    ordered_sub_ques_composition.append(json.dumps(curr_turn_ordered_sub_ques_composition))
-
-            # For [Older] Single-turn data
-            else:
-                # Get the sub-questions (in order) that the agent/expert should try to answer
-                ordered_sub_ques_composition = []
-                hops = [(trajectory[i], trajectory[i + 1]) for i in range(0, len(trajectory), 2)]  # (s, a)
-                for hop_idx, (item_0, item_1) in enumerate(hops):
-                    if "answer" in item_1.keys():  # If action is a Final action
-                        continue
-                    else:
-                        assert "agent" in item_1.keys()
-                        assert "response" in hops[hop_idx + 1][0].keys()  # The next state should have the response
-                        if item_1['agent'] in ["api_agent", "retriever_agent", "rag_agent"]:
-                            ordered_sub_ques_composition.append(
-                                {
-                                    "sub_question": item_1["question"],
-                                    "expected_response": hops[hop_idx + 1][0]['response']
-                                }
-                            )
-                        else:
-                            raise ValueError(f"Unknown agent of type {item_1['agent']}")
-                ordered_sub_ques_composition = [json.dumps(ordered_sub_ques_composition)]
-
-        self.ordered_sub_ques_composition = ordered_sub_ques_composition
-
-    def setup_scenarios(self):
-        curr_instance_data = self.data[self.curr_instance_idx]
-        if 'tool_availability_policy' in curr_instance_data and 'tool_usage_policy' in curr_instance_data:
-            self.tool_policy = ToolPolicy(
-                tool_availability_policy=curr_instance_data['tool_availability_policy'],
-                tool_usage_policy=curr_instance_data['tool_usage_policy']
-            )
-        else:
-            self.tool_policy = ToolPolicy(
-                tool_availability_policy="both_api_rag",
-                tool_usage_policy=""
-            )
-
-        # Determine the final answer instructions and replace the slot
-        final_answer_instructions = self.get_final_answer_instructions()
-        self.tool_policy.final_answer_policy = final_answer_instructions
-
-    def get_final_answer_instructions(self) -> str:
-        # Determine the guidance for generating final answer
-        final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
-
-        # [1] For the case when scenarios render the question unanswerable
-        from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
-        chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
-        chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
-        instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
-        final_answer_instructions += "\n                  > " + instr_insufficient_information
-
-        # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
-        curr_instance_data = self.data[self.curr_instance_idx]
-        if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
-            # This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
-            # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
-            instr_resp_cutoff = curr_instance_data['resp_cutoff_inst']
-            final_answer_instructions += "\n                  > " + instr_resp_cutoff
-
-        return final_answer_instructions
-
-    def initialize_sel_slot_data(self, initialization_specs: dict, callable_api_pool: dict) -> str:
-        # Perform the initialization step
-        # runs the tool and returns the observation
-        # error is None if the action was successful
-        args = initialization_specs["arguments"]
-        try:
-            new_path = os.path.join(self.base_sql_dir, args["database_path"].split("invocable-api-hub")[1])
-            args["database_path"] = new_path
-        except:
-            logger.info(f'Sticking with database_path = {args["database_path"]}')
-
-        try:
-            initial_data_csv = execute_single_api(
-                initialization_specs["name"],
-                args,
-                api_pool=self.callable_api_pool,
-            )
-        except BaseException as e:
-            raise Exception(f"Initialization step failed with error: {e}")
-
-        try:
-            initial_data_csv = initial_data_csv.to_dict(orient="list")
-        except BaseException as e:
-            pass
-        return initial_data_csv
-
-    def pre_setup_tools(self, tools, dataset_name=None, initialization_specs=None):
-        tool_names = []
-        tool_info = {}
-        for tool in tools:
-            if tool["name"] == "initialize_active_data":
-                continue  # Don't add this to the pool of available tools
-
-            tool_names.append(tool['name'])
-
-            # Identify the required arguments. Essential to set up the env response when args generated by agent are not sufficient.
-            # Must match the logic in reformat_tools() at envs/tool_call_env.py
-            _required: List[str] = []
-            if 'parameters' in tool:
-                if 'required' in tool["parameters"]:
-                    _required = tool["parameters"]["required"]
-                else:
-                    if tool["parameters"]:
-                        _required = list(tool["parameters"].keys())
-
-            tool_info[tool['name']] = {
-                "required_args": _required,
-            }
-
-        self.tool_names = tool_names
-        self.tool_info = tool_info
-        logger.info(f"Agent has access to {len(self.tool_names)} tools: {self.tool_names}")
-
-        # [Optionally] For Sel/Slot set up the callable api pool
-        if self.sub_domain.mode in ['slot_filling', 'selection']:
-            source_dataset_name = self.sql_db_name
-            database_location = self.path_to_sql_data
-            results_cache_path_unique = os.path.join(self.path_for_sql_cache, dataset_name)
-            if not os.path.isdir(results_cache_path_unique):
-                os.mkdir(results_cache_path_unique)
-
-            if self.sub_domain.mode == "slot_filling":
-                builder = SqlSlotFillingDatasetBuilder(
-                    dataset_name,
-                    database_location,
-                    results_cache_path_unique,
-                    source_dataset_name,
-                )
-            else:
-                builder = SqlSequencingDatasetBuilder(
-                    dataset_name,
-                    database_location,
-                    results_cache_path_unique,
-                    source_dataset_name,
-                )
-            builder.build()
-
-            try:
-                assert initialization_specs is not None
-            except AssertionError:
-                raise AssertionError(f"Initialization specs should not be None for {self.sub_domain.mode}")
-
-            initialization_specs["arguments"]["database_path"] = os.path.join(
-                results_cache_path_unique, f"{dataset_name}.sqlite"
-            )
-            self.callable_api_pool, _ = builder.set_query_specific_api_pool([initialization_specs])
-            self.initial_data_csv = self.initialize_sel_slot_data(initialization_specs, self.callable_api_pool)
-
-    def setup_document_retrieval_tool(self):
-        self.es_config['username'] = os.getenv("ES_USERNAME", None)
-        self.es_config['password'] = os.getenv("ES_PASSWORD", None)
-        if self.es_config['username'] is None or self.es_config['password'] is None:
-            raise EnvironmentError("Elasticsearch credentials not configured. Provide ES_USERNAME and ES_PASSWORD.")
-
-        self.doc_db = ElserRetriever(**self.es_config)  # index name not used here to init
-
-        # provider_env = os.getenv("LLM_PROVIDER", "rits").lower()
-        logger.info(f"Agent has access to {self.doc_db} document index")
-
-    def setup_tools(self):
-        curr_instance_data = self.data[self.curr_instance_idx]
-
-        # 1. Get the tool list
-        # For Old data
-        if 'API_info' in curr_instance_data:
-            if 'tools' in curr_instance_data['API_info']:
-                tools: List[dict] = curr_instance_data['API_info']['tools']
-            else:
-                # Look for the tools using subdomain mode
-                if self.sub_domain.mode not in curr_instance_data['API_info'].keys():
-                    raise RuntimeError(
-                        f"Can't locate the available tools in {curr_instance_data['API_info']}. Implement the parsing logic for the same!")
-                if curr_instance_data['API_info'][self.sub_domain.mode] is None:
-                    raise RuntimeError("Tools not available in this domain.")
-                if 'tools' not in curr_instance_data['API_info'][self.sub_domain.mode]:
-                    raise RuntimeError("Tools not available in this domain.")
-                tools: List[dict] = curr_instance_data['API_info'][self.sub_domain.mode]['tools']
-            try:
-                assert self.es_config["index_name"] is not None
-            except AssertionError:
-                raise AssertionError("For older data, the index name must be set in the config file")
-
-            self.document_collections = [self.es_config["index_name"]]
-        # For New data
-        else:
-            tools: List[dict] = curr_instance_data['tools']
-            self.document_collections = curr_instance_data['doc_collections']
-
-        # 2. Configure the API usage for the env
-        if self.sub_domain.mode in ["slot_filling", "selection"]:
-            initialization_specs = curr_instance_data['API_info'][self.sub_domain.mode]['output'][0]
-            dataset_name = curr_instance_data['API_info'][self.sub_domain.mode]['dataset_name']
-        else:
-            initialization_specs = None
-            dataset_name = None
-        self.pre_setup_tools(tools, dataset_name, initialization_specs)
-
-        # 3. Configure the document retrieval tool for the env
-        self.setup_document_retrieval_tool()
-
-        # 4. Add the special tool for document retrieval
-        from envs.constants import RETRIEVE_FUNCTION_NAME
-        if RETRIEVE_FUNCTION_NAME not in self.tool_names:
-            retrieval_tool = {
-                "name": RETRIEVE_FUNCTION_NAME,
-                "description": "Retrieve document(s) from the collection that best matches the query.",
-                "parameters": {
-                    "type": "object",
-                    "required": ["collection", "query"],
-                    "properties": {
-                        "collection": {
-                            "description": "Name of the collection to retrieve documents from.",
-                            "type": "string",
-                            "enum": self.document_collections
-                        },
-                        "query": {
-                            "description": "Query for retrieving the document(s).",
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-            tools.append(retrieval_tool)
-
-        # 5. Format the list of final tools into the Google docstring format
-        tools = reformat_tools(tools)
-        self.tools: str = json.dumps(tools)
-
-    def run_doc_retrieval(self, extracted_tool: Dict[str, Any]) -> str:
-
-        retrieval_fn_name = extracted_tool['name']
-        collection_name = extracted_tool['arguments']['collection']
-        retrieval_query = extracted_tool['arguments']['query']
-        logger.info(
-            f"Trying to run tool ({retrieval_fn_name}): Document retrieval from the collection `{collection_name}` using query `{retrieval_query}`")
-
-        if collection_name not in self.document_collections:  # Here we can catch hallucinated collection names
-            error = f"DocumentCollectionNameNotFoundError: The provided collection name '{collection_name}' does not exist in the available collections list {self.document_collections}."
-            observation = f"{error}"
-            return observation
-
-        document_text, metadata = self.doc_db.retrieve_passages(retrieval_query, self.es_config["top_k"],
-                                                                collection_name)
-        logger.info(f"Retrieval Response Metadata: {json.dumps(metadata, indent=2)}")
-
-        # Cleanup document text
-        document_text = document_text.split("\n")
-        document_text = [line for line in document_text if len(line.strip()) > 0]
-        document_text = "\n".join(document_text)
-
-        observation = f"ToolCallSuccessful: {document_text}"
-
-        return observation
-
-    def run_api(self, extracted_tool: Dict[str, Any]) -> str:
-        tool_name = extracted_tool['name']
-        tool_args = extracted_tool['arguments']  # Can be extracted_tool['parameters']
-        logger.info(f"Trying to run tool: {tool_name} with arguments {tool_args}")
-
-        if tool_name not in self.tool_names:  # Here we can catch hallucinated Tool name
-            error = f"ToolDoesNotFoundError: The provided tool name '{tool_name}' does not exist in the tool list."
-            observation = f"{error}"
-            return observation
-
-        else:
-            # Check for the args the Tool expects
-            required_args: List[str] = self.tool_info[tool_name]['required_args']
-            missing_args: List[str] = []
-            for _arg in required_args:
-                if _arg not in tool_args.keys():
-                    missing_args.append(_arg)
-            if len(missing_args) > 0:
-                error = f"ToolMissingArgumentError: The provided tool name '{tool_name}' has the following missing arguments: {', '.join(missing_args)}"
-                observation = f"{error}"
-                return observation
-
-            # Check for parameter type mismatch
-            # Skipping: API Backend converts all parameter values to a string before querying the SQL DB
-            if self.sub_domain.mode == "rest":
-                try:
-                    tool_resp: dict = run_tool(
-                        tool_name,
-                        tool_args,
-                        base_url=self.api_config["end_point"]
-                    )
-                except BaseException as e:
-                    error = f"ToolCallError({type(e)}): {e}"
-                    observation = f"{error}"
-                    return observation
-            else:
-                try:
-                    tool_resp: dict = execute_single_api(
-                        tool_name,
-                        tool_args,
-                        api_pool=self.callable_api_pool,
-                    )
-                except BaseException as e:
-                    error = f"ToolCallError({type(e)}): {e}"
-                    observation = f"{error}"
-                    return observation
-
-                try:
-                    tool_resp = tool_resp.to_dict(orient="list")
-                except BaseException:
-                    pass
-            logger.info(f"Tool response: {tool_resp}")
-
-            # Try to parse the tool_resp
-            if isinstance(tool_resp, dict) and "status" in tool_resp.keys():
-                if tool_resp["status"]:
-                    observation_subset_for_prompting: dict = extract_out_dict_from_res(tool_resp, out_parser=None)
-                    logger.info(f"Tool response subset: {observation_subset_for_prompting}")
-
-                    if observation_subset_for_prompting["status"]:
-                        return f"ToolCallSuccessful: {observation_subset_for_prompting}"
-                    else:
-                        # oracle parsing failed, error case
-                        return f"ToolCallError: {observation_subset_for_prompting}"
-                else:
-                    return f"ToolCallError: {tool_resp}"
-
-            elif (
-                    isinstance(tool_resp, dict) and "message" in tool_resp.keys()
-                    and "You have exceeded the MONTHLY quota for Requests on your current plan" in tool_resp["message"]
-            ):
-                error = "ToolCallQuotaExceededError: Tool calls quota exceeded."
-                observation = f"{error}"
-                return observation
-
-            else:  # the case with the math_qa dataset <- Todo: Ask
-                if isinstance(tool_resp, dict) and "error" in tool_resp.keys():
-                    error = tool_resp["error"]
-                    observation = f"ToolCallError: {error}"
-                    return observation
-                else:
-                    return f"ToolCallSuccessful: {tool_resp}"
-
-    def run_tool_and_get_obs(self, action: Dict[str, Any]) -> str:
-        if action["type"] == "API":
-            observation = self.run_api(action["value"])
-        elif action["type"] == "RETRIEVE":
-            observation = self.run_doc_retrieval(action["value"])
-        else:
-            raise RuntimeError(f"Unknown action: {action['type']}")
-        return observation
-
-    @property
-    def curr_sample_idx(self) -> int:
-        return self.data[self.curr_instance_idx]['sample_id']
+	
+	def setup_tools(self):
+		curr_instance_data = self.data[self.curr_instance_idx]
+		
+		# 1. Get the tool list
+		# For Old data
+		if 'API_info' in curr_instance_data:
+			if 'tools' in curr_instance_data['API_info']:
+				tools: List[dict] = curr_instance_data['API_info']['tools']
+			else:
+				# Look for the tools using subdomain mode
+				if self.sub_domain.mode not in curr_instance_data['API_info'].keys():
+					raise RuntimeError(
+						f"Can't locate the available tools in {curr_instance_data['API_info']}. Implement the parsing logic for the same!")
+				if curr_instance_data['API_info'][self.sub_domain.mode] is None:
+					raise RuntimeError("Tools not available in this domain.")
+				if 'tools' not in curr_instance_data['API_info'][self.sub_domain.mode]:
+					raise RuntimeError("Tools not available in this domain.")
+				tools: List[dict] = curr_instance_data['API_info'][self.sub_domain.mode]['tools']
+			try:
+				assert self.es_config["index_name"] is not None
+			except AssertionError:
+				raise AssertionError("For older data, the index name must be set in the config file")
+			
+			self.document_collections = [self.es_config["index_name"]]
+		# For New data
+		else:
+			tools: List[dict] = curr_instance_data['tools']
+			self.document_collections = curr_instance_data['doc_collections']
+		
+		# 2. Configure the API usage for the env
+		if self.sub_domain.mode in ["slot_filling", "selection"]:
+			initialization_specs = curr_instance_data['API_info'][self.sub_domain.mode]['output'][0]
+			dataset_name = curr_instance_data['API_info'][self.sub_domain.mode]['dataset_name']
+		else:
+			initialization_specs = None
+			dataset_name = None
+		self.pre_setup_tools(tools, dataset_name, initialization_specs)
+		
+		# 3. Configure the document retrieval tool for the env
+		self.setup_document_retrieval_tool()
+		
+		# 4. Add the special tool for document retrieval [Old way]
+		# from envs.constants import RETRIEVE_FUNCTION_NAME
+		# if RETRIEVE_FUNCTION_NAME not in self.tool_names:
+		# 	retrieval_tool = {
+		# 		"name": RETRIEVE_FUNCTION_NAME,
+		# 		"description": "Retrieve document(s) from the collection that best matches the query.",
+		# 		"parameters": {
+		# 			"type": "object",
+		# 			"required": ["collection", "query"],
+		# 			"properties": {
+		# 				"collection": {
+		# 					"description": "Name of the collection to retrieve documents from.",
+		# 					"type": "string",
+		# 					"enum": self.document_collections
+		# 				},
+		# 				"query": {
+		# 					"description": "Query for retrieving the document(s).",
+		# 					"type": "string"
+		# 				}
+		# 			}
+		# 		}
+		# 	}
+		# 	tools.append(retrieval_tool)
+		
+		# 5. Format the list of final tools into the Google docstring format
+		tools = reformat_tools(tools)
+		self.tools: str = json.dumps(tools)
+	
+	def run_doc_retrieval(self, extracted_tool: Dict[str, Any]) -> str:
+		
+		# # Old way of calling
+		# retrieval_fn_name = extracted_tool['name']
+		# collection_name = extracted_tool['arguments']['collection']
+		# retrieval_query = extracted_tool['arguments']['query']
+		# logger.info(
+		# 	f"Trying to run tool ({retrieval_fn_name}): Document retrieval from the collection `{collection_name}` using query `{retrieval_query}`")
+		#
+		# if collection_name not in self.document_collections:  # Here we can catch hallucinated collection names
+		# 	error = f"DocumentCollectionNameNotFoundError: The provided collection name '{collection_name}' does not exist in the available collections list {self.document_collections}."
+		# 	observation = f"{error}"
+		# 	return observation
+		#
+		# document_text, metadata = self.doc_db.retrieve_passages(retrieval_query, self.es_config["top_k"],
+		# 														collection_name)
+		# logger.info(f"Retrieval Response Metadata: {json.dumps(metadata, indent=2)}")
+		#
+		# # Cleanup document text
+		# document_text = document_text.split("\n")
+		# document_text = [line for line in document_text if len(line.strip()) > 0]
+		# document_text = "\n".join(document_text)
+		#
+		# observation = f"ToolCallSuccessful: {document_text}"
+		
+		# # New way of calling [Mirrors the API call]
+		retrieval_fn_name = extracted_tool['name']
+		if retrieval_fn_name not in self.tool_names:  # Here we can catch hallucinated retrieval function names
+			error = f"ToolDoesNotFoundError: The provided tool name '{retrieval_fn_name}' does not exist in the tool list."
+			observation = f"{error}"
+			return observation
+		else:
+			retrieval_query = extracted_tool['arguments']['query']
+			logger.info(f"Trying to run tool ({retrieval_fn_name}) for document retrieval with query `{retrieval_query}`")
+			
+			tool_resp = self.doc_db[retrieval_fn_name](retrieval_query)
+			document_text = json.dumps(tool_resp)
+			
+			observation = f"ToolCallSuccessful: {document_text}"
+			return observation
+	
+	def run_api(self, extracted_tool: Dict[str, Any]) -> str:
+		tool_name = extracted_tool['name']
+		tool_args = extracted_tool['arguments']  # Can be extracted_tool['parameters']
+		logger.info(f"Trying to run tool: {tool_name} with arguments {tool_args}")
+		
+		if tool_name not in self.tool_names:  # Here we can catch hallucinated Tool name
+			error = f"ToolDoesNotFoundError: The provided tool name '{tool_name}' does not exist in the tool list."
+			observation = f"{error}"
+			return observation
+		
+		else:
+			# Check for the args the Tool expects
+			required_args: List[str] = self.tool_info[tool_name]['required_args']
+			missing_args: List[str] = []
+			for _arg in required_args:
+				if _arg not in tool_args.keys():
+					missing_args.append(_arg)
+			if len(missing_args) > 0:
+				error = f"ToolMissingArgumentError: The provided tool name '{tool_name}' has the following missing arguments: {', '.join(missing_args)}"
+				observation = f"{error}"
+				return observation
+			
+			# Check for parameter type mismatch
+			# Skipping: API Backend converts all parameter values to a string before querying the SQL DB
+			if self.sub_domain.mode == "rest":
+				try:
+					tool_resp: dict = run_tool(
+						tool_name,
+						tool_args,
+						base_url=self.api_config["end_point"]
+					)
+				except BaseException as e:
+					error = f"ToolCallError({type(e)}): {e}"
+					observation = f"{error}"
+					return observation
+			else:
+				try:
+					tool_resp = execute_single_api(
+						tool_name,
+						tool_args,
+						api_pool=self.callable_api_pool,
+					)
+				except BaseException as e:
+					error = f"ToolCallError({type(e)}): {e}"
+					observation = f"{error}"
+					return observation
+				
+				try:
+					tool_resp = tool_resp.to_dict(orient="list")
+				except BaseException:
+					pass
+			logger.info(f"Tool response: {tool_resp}")
+			
+			# Try to parse the tool_resp
+			if isinstance(tool_resp, dict) and "status" in tool_resp.keys():
+				if tool_resp["status"]:
+					observation_subset_for_prompting: dict = extract_out_dict_from_res(tool_resp, out_parser=None)
+					logger.info(f"Tool response subset: {observation_subset_for_prompting}")
+					
+					if observation_subset_for_prompting["status"]:
+						return f"ToolCallSuccessful: {observation_subset_for_prompting}"
+					else:
+						# oracle parsing failed, error case
+						return f"ToolCallError: {observation_subset_for_prompting}"
+				else:
+					return f"ToolCallError: {tool_resp}"
+			
+			elif (
+					isinstance(tool_resp, dict) and "message" in tool_resp.keys()
+					and "You have exceeded the MONTHLY quota for Requests on your current plan" in tool_resp["message"]
+			):
+				error = "ToolCallQuotaExceededError: Tool calls quota exceeded."
+				observation = f"{error}"
+				return observation
+			
+			else:  # the case with the math_qa dataset <- Todo: Ask
+				if isinstance(tool_resp, dict) and "error" in tool_resp.keys():
+					error = tool_resp["error"]
+					observation = f"ToolCallError: {error}"
+					return observation
+				else:
+					return f"ToolCallSuccessful: {tool_resp}"
+	
+	
+	def run_tool_and_get_obs(self, action: Dict[str, Any]) -> str:
+		if action["type"] == "API":
+			observation = self.run_api(action["value"])
+		elif action["type"] == "RETRIEVE":
+			observation = self.run_doc_retrieval(action["value"])
+		else:
+			raise RuntimeError(f"Unknown action: {action['type']}")
+		return observation
+	
+	
+	@property
+	def curr_sample_idx(self) -> int:
+		return self.data[self.curr_instance_idx]['sample_id']
