@@ -4,7 +4,9 @@ import os
 import random
 import re
 import sys
+import argparse
 from typing import List, Optional, Tuple
+from pathlib import Path
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -12,7 +14,6 @@ from tqdm import tqdm
 
 from agents.llm import invoke_llm, get_lm
 from metrics.plot import plot_freq_dist
-from extras import chunking
 
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
@@ -136,6 +137,7 @@ def wrap_hop_data_into_trajectory_str(hops) -> str:
 def create_and_inject_thoughts(
         parsed_data_dir: str,
         _save_data_at: str,
+        domain: str,
         model_name_or_path: str,
         range_tool_resp_cut_off: Tuple[int, int] = (5, 10),
         max_tool_resp_cut_off: int = 1024,
@@ -175,6 +177,11 @@ def create_and_inject_thoughts(
 
     domain_files = os.listdir(parsed_data_dir)
     domain_files = [f for f in domain_files if f.endswith('.json')]
+
+    if domain:
+        domain_files = [f for f in domain_files if f.startswith(f"{domain}_multiturn")]
+        if not domain_files:
+            print(f"Warning: No files found matching pattern '{domain}_*.json' in {parsed_data_dir}")
 
     training_data_stats = {
         'num_domains': len(domain_files),
@@ -291,7 +298,8 @@ def create_and_inject_thoughts(
                     continue
                 logger.info(f"\nThought generator response [turn #{turn_idx}]:\n{response}")
                 parsed_response = parse_thought_generator_response(response, len(hops))
-                if parsed_response is None:
+                logger.info(f"\nParsed response [turn #{turn_idx}]:\n{parsed_response}")
+                if parsed_response is None or not parsed_response:
                     is_valid_sample = False
                     logger.info(
                         f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
@@ -360,7 +368,7 @@ def create_and_inject_thoughts(
     return training_data_stats
 
 
-def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
+def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
     """This function simply parses the raw data. Do not inject scenarios here!"""
 
     if not os.path.exists(plot_dir):
@@ -369,11 +377,13 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
     domain_files = os.listdir(raw_data_dir)
     domain_files = [f for f in domain_files if f.endswith('.json')]
 
+    if domain:
+        domain_files = [f for f in domain_files if f.startswith(f"{domain}_multiturn")]
+        if not domain_files:
+            print(f"Warning: No files found matching pattern '{domain}_*.json' in {raw_data_dir}")
+
     final_tool_response_dist = dict()
     total_samples = 0
-
-    # Get model and tokenizer for chunking
-    tokenizer = chunking.get_tokenizer() 
 
     for domain_file in domain_files:
         with open(os.path.join(raw_data_dir, domain_file)) as f:
@@ -385,6 +395,11 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
         unique_queries, parsed_data = [], []
         for sample in tqdm(domain_data, total=len(domain_data),
                            desc=f"Creating turn-level data for domain {domain_file}"):
+
+            # Ignore the datapoint if the "ignore" key is set
+            if "ignore" in list (sample.keys()):
+                continue
+
             sample_id = sample['sample_id']
             logger.info(f"Creating turn level data sample #{sample_id}")
 
@@ -408,28 +423,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
             # Get the available document collections and add the retriever tool to the tools list
             doc_collections = list(set(sample['retrievers']))  # To avoid repeats
             # TODO: Add the description for each collection here as a metadata field in the below
-
-            from envs.constants import RETRIEVE_FUNCTION_NAME
-            retriever_tool = {
-                "name": RETRIEVE_FUNCTION_NAME,
-                "description": "Retrieve document(s) from the collection that best matches the query.",
-                "parameters": {
-                    "type": "object",
-                    "required": ["collection", "query"],
-                    "properties": {
-                        "collection": {
-                            "description": "Name of the collection to retrieve documents from.",
-                            "type": "string",
-                            "enum": doc_collections
-                        },
-                        "query": {
-                            "description": "Query for retrieving the document(s).",
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-            tools.append(retriever_tool)
 
             parsed_sample = {
                 'sample_id': f"{sample_id}",
@@ -491,7 +484,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
 
                     else:
                         hop_agent = 'rag_agent'
-                        from envs.constants import RETRIEVE_FUNCTION_NAME
                         # For a document retrieval, we define the function
                         collection = 'clapnq-' + hop['db_id']
                         try:
@@ -501,35 +493,34 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                                 f"    Collection {collection} not found for sample {sample_id} in available collections: {doc_collections}")
                             raise AssertionError(
                                 f"Collection {collection} not found in available collections: {doc_collections}")
+                        
 
-                        hop_tool_call = {
-                            'name': RETRIEVE_FUNCTION_NAME,
-                            'arguments': {
-                                'collection': collection,
-                                'query': hop_question,
-                            }
-                        }
+                        if 'output' in hop:
+                            if len(hop['output']) == 1:
+                                hop_tool_call = hop["output"][0]
+                            else:
+                                raise ValueError("Multiple outputs not supported at hop level!")
+                        else:
+                            logger.info(
+                                f"    Ignoring current turn. No output(tool-call) present at hop {hop_idx} in turn {turn_idx} for sample {sample_id} in file {domain_file}!")
+                            is_valid_sample = False
+                            rejected_turns_no_tool_call += 1
+                            break
 
-                        text = "\n".join(hop["OUTPUT_AFTER_EXECUTING_API"])
-                        chunks, positions = chunking.split_text(tokenizer=tokenizer, text=text)
-                        chunk_indices = chunking.score_chunks(
-                            chunks=chunks,
-                            query=hop["question"],
-                            answer=hop["answer"],
-                        )
-                        chunk_indices_set = set(chunk_indices)  
-                        # Build chunk objects
-                        chunk_info["chunks"] = [
-                            {"text": chunk, "gold_chunk": i in chunk_indices_set}
-                            for i, chunk in enumerate(chunks)
-                        ]
-                        chunk_info["chunks_error"] = not chunk_indices
+                        try:
+                            assert 'chunk_info' in hop
+                        except AssertionError:
+                            logger.error(f"Chunk info not found for sample {sample_id}")
+                            raise AssertionError(f"Chunk info not found for sample {sample_id}")
+                        # Skip example if there was a chunking error
+                        chunk_info = hop['chunk_info']
+                        if chunk_info['chunks_error']:
+                            continue
 
                         hop_response = {"documents": []}
                         for chunk_id, text in enumerate(chunk_info["chunks"]):
                             hop_response["documents"].append({"id": f"doc_{chunk_id+1}", "text": text["text"]})
                         hop_response = str(hop_response)
-                        
 
                     # Add n_t = tool call
                     single_turn_trajectory.append(
@@ -609,38 +600,45 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
 
 
 if __name__ == "__main__":
-    cwd = os.path.dirname(os.path.abspath(__file__))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_dir', '-i', required=True, 
+                       help='Path to raw data folder from root directory')
+    parser.add_argument('--output_dir', '-o', required=True, 
+                       help='Path to output folder directory to write to')
+    parser.add_argument('--domain', '-d', help="Specific domain to run chunking for")
+    args = parser.parse_args()
 
-    # # CCC Paths
-    # _raw_data_dir = '/proj/m3benchmark/bird-train/multi_turn/train_rest_v8_0730'
-    # _save_parsed_data_at = '/proj/m3benchmark/bird-train/multi_turn/train_parsed'
-    # _plot_dir = os.path.join(cwd, 'bird/plots')
-    # dotenv_path=os.path.join(cwd, "../.env")
+    project_root = Path.cwd()
 
-    # # Local Paths
-    # _raw_data_dir = os.path.join(cwd, '../../raw-data/bird-train/multi_turn/train_rest_v6_0730')
-    _raw_data_dir = os.path.join('data/sample/')
-    _log_dir = os.path.join(cwd, 'bird')
-    _save_parsed_data_at = os.path.join(cwd, 'bird/parsed')
-    _save_final_data_at = os.path.join(cwd, 'bird/final')
-    dotenv_path = os.path.join(cwd, "../.env")
+    # Use the input/output directories from arguments
+    _raw_data_dir = Path(args.input_dir)
+    _output_base_dir = Path(args.output_dir)
 
-    os.makedirs(_log_dir, exist_ok=True)
-    os.makedirs(_save_parsed_data_at, exist_ok=True)
-    os.makedirs(_save_final_data_at, exist_ok=True)
-    load_dotenv(dotenv_path=os.path.join(cwd, "../.env"))
+    # Create subdirectories within output directory
+    _log_dir = _output_base_dir / 'logs'
+    _save_parsed_data_at = _output_base_dir / 'parsed'
+    _save_final_data_at = _output_base_dir / 'final'
+
+    # Create directories
+    _log_dir.mkdir(parents=True, exist_ok=True)
+    _save_parsed_data_at.mkdir(parents=True, exist_ok=True)
+    _save_final_data_at.mkdir(parents=True, exist_ok=True)
+
+    # Load .env from root directory
+    dotenv_path = project_root / '.env'
+    load_dotenv(dotenv_path=dotenv_path)
 
     logger.remove()
     logger.add(sys.stdout, colorize=True, level="INFO", enqueue=True)
     logger.add(os.path.join(_log_dir, 'logs_{time}.log'), level="INFO", enqueue=True)
 
     # # 1. Parse the raw data
-    create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
+    create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
 
     # # 2. Create the final training data
     _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
     _created_training_data_stats = create_and_inject_thoughts(_save_parsed_data_at, _save_final_data_at,
-                                                              _model_name_or_path)
+                                                              args.domain, _model_name_or_path)
     logger.info(json.dumps(_created_training_data_stats, indent=4))
     with open(os.path.join(_log_dir, 'final_training_data_stats.json'), 'w') as f:
         json.dump(_created_training_data_stats, f, indent=4)

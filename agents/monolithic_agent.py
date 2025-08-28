@@ -232,7 +232,7 @@ class Monolithic(Agent):
         #     # "role": role,
         # }
 
-    def get_action(self, state):
+    def get_action(self, state, include_thoughts):
         # For OpenAI typed llms, we only use two roles - system, user and assistant. For others, add the special tokens
         if isinstance(self.llm, OpenAI):
             reformatted_state = []
@@ -260,8 +260,8 @@ class Monolithic(Agent):
         action = self.parse_llm_response(response)
         return action, None
 
-    def take_action(self, state, reward: Optional[float] = None) -> Dict[str, Any]:
-        action, num_transitions = self.get_action(state)
+    def take_action(self, state, include_thoughts: bool=True, reward: Optional[float] = None) -> Dict[str, Any]:
+        action, num_transitions = self.get_action(state, include_thoughts)
         return action
 
     def tracked_action(self, state, reward: Optional[float] = None) -> Dict:

@@ -567,14 +567,13 @@ class M3ToolCallEnv(ToolCallEnv):
     def load_env_data(self):
         path = Path(self.path_to_env_data)
         if path.is_file() and path.suffix == '.json':
-            # Single JSON file
             with open(path, 'r') as f:
                 data = json.load(f)
         elif path.is_dir():
             data = []
-            for json_file in path.glob('*.json'):
+            for json_file in path.glob('*_final.json'):
                 with open(json_file, 'r') as f:
-                    data.append(json.load(f))
+                    data.extend(json.load(f))
         else:
             raise ValueError(f"Path {self.path_to_env_data} is neither a JSON file nor a directory")
         return data
