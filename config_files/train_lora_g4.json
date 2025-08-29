@@ -1,0 +1,39 @@
+{
+  "template": "student_granite4",
+  "cutoff_len": 8192,
+  "dataset_dir": "sample/bird-dev-old/sft_expert",
+  "dataset": ["both_api_rag-api_before_rag"],
+  "mask_history": true,
+
+  "model_name_or_path": "/dccstor/belder1/cache/hub/granite-4.0-tiny-prerelease-greylock/r250825a",
+  "flash_attn": "fa2",
+  "disable_gradient_checkpointing": false,
+  "enable_liger_kernel": true,
+
+  "stage": "sft",
+  "adapter_name_or_path": null,
+  "create_new_adapter": false,
+  "finetuning_type": "lora",
+  "lora_rank": 6,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "lora_target": ["k_proj", "v_proj"],
+
+  "deepspeed": "./config_files/training/zero_stage3_offload_config.json",
+  "ddp_find_unused_parameters": null,
+  "do_eval": false,
+  "do_train": true,
+  "gradient_checkpointing": true,
+  "learning_rate": 1e-5,
+  "lr_scheduler_type": "cosine",
+  "logging_dir": "./logging",
+  "num_train_epochs": 4,
+  "per_device_train_batch_size": 1,
+  "report_to": [],
+  "save_only_model": true,
+  "save_steps": -1,
+  "warmup_ratio": 0.1,
+
+  "do_sample": false,
+  "max_new_tokens": 1024
+}

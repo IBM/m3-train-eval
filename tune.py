@@ -1,3 +1,4 @@
+print("STARTING IMPORTS")
 import json
 import os
 from datetime import datetime
@@ -12,16 +13,18 @@ from extras.custom import is_rank_0, set_run_environment, make_json_serializable
 if is_rank_0():
     set_run_environment(dotenv_path="./.env")
 
-# # Login with the hf_token
-# from huggingface_hub import login
-# login(token=os.environ.get("HF_TOKEN", ""))
+    print("LOGGING IN")
+    # Login with the hf_token
+    from huggingface_hub import login
+    login(token=os.environ.get("HF_TOKEN", ""))
 
 def main(debug=False):
+
     # Load the user-specified training configuration
     if debug:
         path_to_config = './config_files/debug_train.json'
     else:
-        path_to_config = './config_files/train_lora.json'
+        path_to_config = './config_files/train_lora_g4.json'
     with open(os.path.join(path_to_config), 'r') as f:
         override_args = json.load(f)
 

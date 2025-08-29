@@ -547,6 +547,10 @@ class BaseTrainer(object):
                     epoch_metrics[key] / len(self.train_dataloader) * self.training_args.gradient_accumulation_steps
             )
 
+        if torch.distributed.get_rank() == 0:  # Only print from rank 0
+            logger.info("TAKE A LOOK AT THE MEMORY PROFILE")
+            logger.info(torch.cuda.memory_summary())
+            torch.cuda.reset_peak_memory_stats()
         return epoch_metrics
 
     def _eval_epoch(self):

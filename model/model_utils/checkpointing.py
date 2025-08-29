@@ -165,7 +165,8 @@ def prepare_model_for_training(model: "PreTrainedModel", model_args: "ModelArgum
             )
             setattr(model.config, "use_cache", False)  # turn off when gradient checkpointing is enabled
             logger.info("Gradient checkpointing enabled.")
-
+            print("GRADIENT CHECKPOINTING HAS BEEN ENABLED")
+    print("WE SHOULD HAVE ENABLED GRADIENT CHECKPOINTING BY NOW")
     if model_args.upcast_lmhead_output:
         output_layer = model.get_output_embeddings()
         if isinstance(output_layer, torch.nn.Linear) and output_layer.weight.dtype != torch.float32:

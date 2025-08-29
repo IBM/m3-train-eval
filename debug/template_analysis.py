@@ -5,6 +5,9 @@ from transformers.utils import get_json_schema
 model_path = "ibm-granite/granite-3.3-8b-instruct" # "Qwen/Qwen3-8B", "mistralai/Mistral-7B-Instruct-v0.3"
 template_type = "granite3"
 
+# model_path = "/dccstor/belder1/cache/hub/granite-4.0-tiny-prerelease-greylock/r250825a" # "Qwen/Qwen3-8B", "mistralai/Mistral-7B-Instruct-v0.3"
+# template_type = "student_granite4"
+
 def get_current_weather(location: str, _format: str):
     """
     Get the current weather
