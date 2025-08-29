@@ -83,7 +83,7 @@ class Agent:
         """agent action with logging"""
         raise NotImplementedError
 
-    def take_action(self, state, reward: Optional[float] = None) -> Dict[str, Any]:
+    def take_action(self, state, include_thoughts: bool=True, reward: Optional[float] = None) -> Dict[str, Any]:
         """agent action"""
         raise NotImplementedError
 

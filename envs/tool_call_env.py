@@ -3,6 +3,7 @@ import json
 import os
 import random
 from typing import Dict, Any, List, Tuple, Optional
+from pathlib import Path
 
 from loguru import logger
 
@@ -232,8 +233,11 @@ class ToolCallEnv(BaseEnv):
                 env_role = Role.USER.value
             else:
                 if action["type"] == "API" or action["type"] == "RETRIEVE":
-                    # Action is a tool call
-                    observation = self.run_tool_and_get_obs(action)
+                    if "ground_truth_observation" in action:
+                        observation = f"ToolCallSuccessful: {action['ground_truth_observation']}"
+                    else:
+                        # Action is a tool call since we are not taking from the ground truth
+                        observation = self.run_tool_and_get_obs(action)
                     env_role = Role.OBSERVATION.value
                 elif action["type"] == "FINAL":
                     # Action is the final answer
@@ -561,7 +565,17 @@ class M3ToolCallEnv(ToolCallEnv):
         )
 
     def load_env_data(self):
-        data = json.load(open(self.path_to_env_data, 'r'))
+        path = Path(self.path_to_env_data)
+        if path.is_file() and path.suffix == '.json':
+            with open(path, 'r') as f:
+                data = json.load(f)
+        elif path.is_dir():
+            data = []
+            for json_file in path.glob('*_final.json'):
+                with open(json_file, 'r') as f:
+                    data.extend(json.load(f))
+        else:
+            raise ValueError(f"Path {self.path_to_env_data} is neither a JSON file nor a directory")
         return data
 
     def setup_user_queries(self):

@@ -32,6 +32,7 @@
 
   "expert_assist_mode": "ground_truth",
   "save_alternate_trace": true,
+  "include_thoughts": true,
   "expert_assist_init_limit": 2,
   "expert_assist_recent_limit": -2,
   "expert_assist_random_epsilon": 1.0
