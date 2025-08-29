@@ -5,7 +5,7 @@
   "dataset": ["both_api_rag-api_before_rag"],
   "mask_history": true,
 
-  "model_name_or_path": "/dccstor/belder1/cache/hub/granite-4.0-tiny-prerelease-greylock/r250825a",
+  "model_name_or_path": "/proj/m3benchmark/granite4_ckpts/granite-4.0-tiny-prerelease-greylock/r250825a",
   "flash_attn": "fa2",
   "disable_gradient_checkpointing": false,
   "enable_liger_kernel": true,
