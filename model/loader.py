@@ -211,6 +211,9 @@ def load_model(
         for name, param in model.named_parameters():
             print(f"name: {name}, dtype: {param.dtype}, device: {param.device}, trainable: {param.requires_grad}")
 
+
+    print('\n\n'+"ADDED PRINTS TO CHECK MODEL LOADING")
+    print(next(model.parameters()).dtype)
     return model
 
 

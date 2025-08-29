@@ -17,6 +17,8 @@ langchain_ollama
 librosa
 liger_kernel==0.6.0
 loguru
+# causal-conv1d>=1.4.0 # These two need to be installed froom source. clone the repo and pip install
+# mamba-ssm[causal-conv1d]==2.2.4
 matplotlib
 modelscope
 numpy
