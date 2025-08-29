@@ -189,7 +189,7 @@ def run_agent(args):
         # ######################################## Reset the environment ######################################## #
         try:
             state, reward, done, env_metadata = env.reset(inst_idx=i)
-        except RuntimeError as e:
+        except Exception as e:
             logger.error(f"Environment Reset Exception for env instance {i}: {e}. Skipping!")
             continue
         expert_agent.initialize(env)
