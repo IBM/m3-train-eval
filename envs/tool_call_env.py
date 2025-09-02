@@ -21,6 +21,9 @@ from invocable_api_hub.tool_calling.sql_to_api.utils import execute_single_api
 from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT
 from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer_prompt, parse_overseer_response, \
     get_parser_resolver_prompt
+from data_utils.scenario_injector import ToolUsePolicy, ToolAvailability, 
+from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES, TOOL_USE_API_TEMPLATES, TOOL_USE_RAG_TEMPLATES, TOOL_FIRST_RAG_TEMPLATES, TOOL_FIRST_API_TEMPLATES
+       
 
 ERRONEOUS_CATEGORIES: List[str] = [
     "REWARD_PARSING_ERROR", "REWARD_BAD_TOOL_CALL", "REWARD_BAD_TOOL_CALL", "REWARD_ERROR_NO_CATEGORY",
@@ -638,6 +641,7 @@ class M3ToolCallEnv(ToolCallEnv):
 
     def setup_scenarios(self):
         curr_instance_data = self.data[self.curr_instance_idx]
+        domain=curr_instance_data["gold_sequence"][-1]["db_id"]
         if 'tool_availability_policy' in curr_instance_data and 'tool_usage_policy' in curr_instance_data:
             self.tool_policy = ToolPolicy(
                 tool_availability_policy=curr_instance_data['tool_availability_policy'],
@@ -650,20 +654,33 @@ class M3ToolCallEnv(ToolCallEnv):
             )
 
         # Determine the final answer instructions and replace the slot
-        final_answer_instructions = self.get_final_answer_instructions()
+        final_answer_instructions = self.get_final_answer_instructions(domain)
         self.tool_policy.final_answer_policy = final_answer_instructions
 
-    def get_final_answer_instructions(self) -> str:
+    def get_final_answer_instructions(self, domain) -> str:
+
+
+        tool_usage_policy=self.tool_policy.tool_usage_policy
+        
+        if tool_usage_policy==ToolUsePolicy.ONLY_API:
+            use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
+        elif tool_usage_policy==ToolUsePolicy.ONLY_RAG:
+            use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES.format(domains=domain))
+        elif tool_usage_policy==ToolUsePolicy.RAG_FIRST:
+            use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES.format(domains=domain))
+        elif tool_usage_policy==ToolUsePolicy.API_FIRST:
+            use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
+            
+
         # Determine the guidance for generating final answer
         final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
 
         # [1] For the case when scenarios render the question unanswerable
-        from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
         chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
         chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
         instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
         final_answer_instructions += "\n                  > " + instr_insufficient_information
-
+        final_answer_instructions+="\n"+use_template_text
         # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
         curr_instance_data = self.data[self.curr_instance_idx]
         if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
