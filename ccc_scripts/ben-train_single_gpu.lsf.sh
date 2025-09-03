@@ -64,7 +64,7 @@ else
 fi
 
 # Run training using accelerate w deepspeed
-# accelerate launch --config_file config_files/training/ds_stage2.yml tune.py
+accelerate launch --config_file config_files/training/ds_stage2.yml tune.py
 
 ## Run training using python
 # accelerate launch tune.py
