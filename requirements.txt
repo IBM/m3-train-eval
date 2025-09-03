@@ -51,3 +51,4 @@ trl==0.19.1
 typing_extensions
 urllib3
 vllm
+spacy
