@@ -12,20 +12,19 @@ if TYPE_CHECKING:
     from data_utils.template import Template
     from data_utils.tool_utils import FunctionCall
 
-
 class Monolithic(Agent):
-    
+
     def __init__(
             self,
-            llm=None,
-            llm_parameters=None,
-            tokenizer_id_hf="",
-            hf_token="",
+            llm = None,
+            llm_parameters = None,
+            tokenizer_id_hf = "",
+            hf_token = "",
             agent_template: "Template" = None
     ):
         super().__init__(llm=llm, llm_parameters=llm_parameters, tokenizer_id_hf=tokenizer_id_hf, hf_token=hf_token,
                          agent_template=agent_template)
-    
+
     def parse_llm_response(self, response: str, prompt_type: str = "") -> Dict[str, Any]:
         """Parsing of the response from an LLM Agent is unique to each Agent (we use Agent's template).
         Corresponding error analysis from parsing is kept here instead of the environment.
@@ -42,7 +41,7 @@ class Monolithic(Agent):
             "response": response,  # Original response including thought and action
             "error": None,
         }
-        
+
         # Extract thought
         matches = self.agent_template.extract_thoughts(response)
         if len(matches) == 1:
@@ -57,10 +56,10 @@ class Monolithic(Agent):
                          f"Enclose only one thought process within the <think></think> tags.")
             parsed_response['error'] = error
             return parsed_response
-        
+
         # Remove thought
         no_thought_response: str = self.agent_template.remove_thought(response)
-        
+
         # Check if it is the final answer
         matches = re.findall(r"<FINAL>(.*?)</FINAL>", no_thought_response, re.DOTALL)
         if len(matches):
@@ -68,10 +67,10 @@ class Monolithic(Agent):
             parsed_response['value'] = matches[0].strip()
             # For final action, template free response is the same as actual response. No update for these fields
             return parsed_response
-        
+
         # Extract tool call
         actionic_response: Union[str, list["FunctionCall"]] = self.agent_template.extract_tool(no_thought_response)
-        
+
         if isinstance(actionic_response, str):
             if 'error' in actionic_response.split(":")[0].lower():  # Error
                 parsed_response['error'] = actionic_response
@@ -90,14 +89,14 @@ class Monolithic(Agent):
             parsed_response['value'] = {"name": name, "arguments": json.loads(arguments)}
             parsed_response[
                 'role'] = Role.FUNCTION.value  # With a successful tool extraction, we designate the Function role
-            
+
             # Update the template_free_response to remove the agent template's specific tokens for tool calling
             template_free_response = f"{self.agent_template.thought_words[0]}{thought}{self.agent_template.thought_words[1]}"  # Add the thought
             template_free_response += json.dumps(parsed_response['value'])  # Add the tool call
             parsed_response['template_free_response'] = template_free_response
-        
+
         return parsed_response
-        
+
         # thought = None
         # action = None
         # action_arguments = None
@@ -236,7 +235,7 @@ class Monolithic(Agent):
         #     "error": error,
         #     # "role": role,
         # }
-    
+
     def get_action(self, state):
         # For OpenAI typed llms, we only use two roles - system, user and assistant. For others, add the special tokens
         if isinstance(self.llm, OpenAI):
@@ -260,15 +259,15 @@ class Monolithic(Agent):
                             }
                         )
             state = reformatted_state
-        
+
         response = invoke_llm(self.llm, self.llm_parameters, state)
         action = self.parse_llm_response(response)
         return action, None
-    
+
     def take_action(self, state, reward: Optional[float] = None) -> Dict[str, Any]:
         action, num_transitions = self.get_action(state)
         return action
-    
+
     def tracked_action(self, state, reward: Optional[float] = None) -> Dict:
         result = self.take_action(state, reward)
         return {"output_text": result["response"], "output_meta": {}, "tracking_result": result}
