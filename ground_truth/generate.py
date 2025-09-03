@@ -13,6 +13,8 @@ from tqdm import tqdm
 from agents.llm import invoke_llm, get_lm
 from metrics.plot import plot_freq_dist
 
+from data_utils.tool_utils import get_tool_use_policy
+
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
                           tool_response: str) -> str:
@@ -27,11 +29,14 @@ def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: st
     return step_prompt
 
 
-def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str]) -> \
+def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str], tool_use_policy=None) -> \
 List[dict]:
-    from prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT
+    from prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT, SYSTEM_PROMPT_WITH_TOOL_POLICY
     prompt = []
     system_prompt = SYSTEM_PROMPT
+    if tool_use_policy is not None:
+        system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.format(tool_policy=tool_use_policy)
+
     prompt.append(
         {
             "role": "system",
@@ -191,15 +196,17 @@ def create_and_inject_thoughts(
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
             is_valid_sample = True
             orig_sample = copy.deepcopy(sample)
-
+            domain=sample["gold_sequence"][-1]["db_id"]
+        
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
 
             # # For each sample declare scenarios here
             tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
-            tool_usage_policy = ""  # This should be the instruction in english to control which tools need to be used
-            sample['tool_availability_policy']: str = tool_availability_policy
-            sample['tool_usage_policy']: str = tool_usage_policy
+            tool_usage_policy = get_tool_use_policy(sample['tool_usage_policy'], domain=domain)
+            
+            
+            
 
             # # Spawn on-the-go additional instr. to compress tool response into the final answer. This will go into the
             # # agentic system prompt to be used for all turns (only during generation not during conditioning on context-response pairs)
@@ -232,6 +239,7 @@ def create_and_inject_thoughts(
                     # agent can pick all the objects and construct the final answer around it. (No Truncation)
                     resp_cutoff_thresh = None
                     answer_generator_additional_instr = ''
+                
 
                 # Collect hop-level data
                 current_turn_tool_call_trajectory = curr_turn_trajectory[1:-1]  # Exclude user query and final answer
@@ -278,6 +286,7 @@ def create_and_inject_thoughts(
                     previous_dialogue=previous_dialogue,
                     user_query=curr_user_query,
                     step_prompts=step_prompts,
+                    tool_use_policy=tool_usage_policy
                 )
                 response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
                 logger.info(f"\nThought generator response [turn #{turn_idx}]:\n{response}")

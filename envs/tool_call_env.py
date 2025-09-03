@@ -18,12 +18,10 @@ from envs.utils import reformat_tools
 from invocable_api_hub.tool_calling.sql_to_api.sql_sequencing_dataset_builder import SqlSequencingDatasetBuilder
 from invocable_api_hub.tool_calling.sql_to_api.sql_slot_filling_dataset_builder import SqlSlotFillingDatasetBuilder
 from invocable_api_hub.tool_calling.sql_to_api.utils import execute_single_api
-from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT
+from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT, FINAL_ANSWER_FALLBACKS,FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
 from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer_prompt, parse_overseer_response, \
     get_parser_resolver_prompt
-from data_utils.scenario_injector import ToolUsePolicy, ToolAvailability, 
-from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES, TOOL_USE_API_TEMPLATES, TOOL_USE_RAG_TEMPLATES, TOOL_FIRST_RAG_TEMPLATES, TOOL_FIRST_API_TEMPLATES
-       
+from data_utils.tool_utils import get_tool_use_policy
 
 ERRONEOUS_CATEGORIES: List[str] = [
     "REWARD_PARSING_ERROR", "REWARD_BAD_TOOL_CALL", "REWARD_BAD_TOOL_CALL", "REWARD_ERROR_NO_CATEGORY",
@@ -645,14 +643,7 @@ class M3ToolCallEnv(ToolCallEnv):
         if 'tool_availability_policy' in curr_instance_data and 'tool_usage_policy' in curr_instance_data:
             #if tool availabilty and usage both are provided 
             tool_usage_policy=curr_instance_data['tool_usage_policy']
-            if tool_usage_policy==ToolUsePolicy.ONLY_API:
-               use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
-            elif tool_usage_policy==ToolUsePolicy.ONLY_RAG:
-               use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES.format(domains=domain))
-            elif tool_usage_policy==ToolUsePolicy.RAG_FIRST:
-               use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES.format(domains=domain))
-            elif tool_usage_policy==ToolUsePolicy.API_FIRST:
-               use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
+            use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
             self.tool_policy = ToolPolicy(
                 tool_availability_policy=curr_instance_data['tool_availability_policy'],
                 tool_usage_policy=use_template_text
@@ -660,14 +651,8 @@ class M3ToolCallEnv(ToolCallEnv):
         elif 'tool_usage_policy' in curr_instance_data:
             #if only tool usage policy is provided. 
             tool_usage_policy=curr_instance_data['tool_usage_policy']
-            if tool_usage_policy==ToolUsePolicy.ONLY_API:
-               use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
-            elif tool_usage_policy==ToolUsePolicy.ONLY_RAG:
-               use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES.format(domains=domain))
-            elif tool_usage_policy==ToolUsePolicy.RAG_FIRST:
-               use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES.format(domains=domain))
-            elif tool_usage_policy==ToolUsePolicy.API_FIRST:
-               use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
+            use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
+    
             self.tool_policy = ToolPolicy(
                 tool_availability_policy="both_api_rag",
                 tool_usage_policy=use_template_text)
@@ -678,10 +663,10 @@ class M3ToolCallEnv(ToolCallEnv):
             )
 
         # Determine the final answer instructions and replace the slot
-        final_answer_instructions = self.get_final_answer_instructions(domain)
+        final_answer_instructions = self.get_final_answer_instructions()
         self.tool_policy.final_answer_policy = final_answer_instructions
 
-    def get_final_answer_instructions(self, domain) -> str:
+    def get_final_answer_instructions(self) -> str:
          # Determine the guidance for generating final answer
         final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
 

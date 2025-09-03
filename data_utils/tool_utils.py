@@ -643,3 +643,18 @@ def get_tool_utils(name: str) -> "ToolUtils":
         raise ValueError(f"Tool utils `{name}` not found.")
 
     return tool_utils
+
+import random
+from data_utils.scenario_injector import ToolUsePolicy, ToolAvailability
+from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES, TOOL_USE_API_TEMPLATES, TOOL_USE_RAG_TEMPLATES, TOOL_FIRST_RAG_TEMPLATES, TOOL_FIRST_API_TEMPLATES
+def get_tool_use_policy(tool_usage_policy:str, domain:str)->str:
+    if tool_usage_policy==ToolUsePolicy.ONLY_API:
+        use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
+    elif tool_usage_policy==ToolUsePolicy.ONLY_RAG:
+        use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES.format(domains=domain))
+    elif tool_usage_policy==ToolUsePolicy.RAG_FIRST:
+        use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES.format(domains=domain))
+    elif tool_usage_policy==ToolUsePolicy.API_FIRST:
+        use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
+    return use_template_text
+    
