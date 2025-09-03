@@ -969,7 +969,7 @@ class M3ToolCallEnv(ToolCallEnv):
                 if tool_resp["status"]:
                     observation_subset_for_prompting: dict = extract_out_dict_from_res(tool_resp, out_parser=None)
                     logger.info(f"Tool response subset: {observation_subset_for_prompting}")
-                    
+
                     if observation_subset_for_prompting["status"]:
                         return f"ToolCallSuccessful: {observation_subset_for_prompting}"
                     else:
