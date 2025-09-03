@@ -113,8 +113,7 @@ class LinearExpert(Agent):
         # conclusion = parsed_response["conclusion"]
 
         logger.info(f"[External Agent Call] Agent = Observational_Witness")
-        logger.info(
-            f"Asking Judge LLM whether it has seen the response for the expert action: ({expert_interaction_info}) in the agent's observational history ({', '.join(agentic_observations)}).")
+        logger.info(f"Asking Judge LLM whether it has seen the response for the expert action: ({expert_interaction_info}) in the agent's observational history ({', '.join(agentic_observations)}).")
         logger.info(f"Judge LLM said: {json.dumps(parsed_response, indent=2)}")
 
         if parsed_response["witnessed"]:
@@ -154,10 +153,8 @@ class LinearExpert(Agent):
             }
             parsed_response["value"] = tool_call
             parsed_response["role"] = Role.FUNCTION.value  # Assistant invokes a tool
-            parsed_response[
-                "template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
-            parsed_response[
-                "response"] = f"{self.thought_start}{thought}{self.thought_end}" + self.agent_template.format_tools.tool_utils.function_formatter(
+            parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
+            parsed_response["response"] = f"{self.thought_start}{thought}{self.thought_end}" + self.agent_template.format_tools.tool_utils.function_formatter(
                 [FunctionCall(tool_call["name"], json.dumps(tool_call["arguments"], ensure_ascii=False))]
             )
 
@@ -218,7 +215,7 @@ class LinearExpert(Agent):
                 expert_action_found = False
                 act_idx = self.get_curr_action_idx()
                 while act_idx < curr_turn_max_expert_actions or not expert_action_found:
-                    
+
                     action, observation = self.map_idx_to_action(act_idx)
                     action_type = action["type"]
 
@@ -256,7 +253,7 @@ class LinearExpert(Agent):
 
                 logger.error("Reached a point where we looked for the next expert action but can not find any.")
                 sys.exit(-1)
-    
+
     def take_action(self, state, reward: Optional[float] = None) -> Dict[str, Any]:
         """
         :param state: History of agent interactions. List of agentic actions, arguments and observations.
@@ -315,7 +312,7 @@ class M3Expert(LinearExpert):
         actions, action_arguments = [], []
         hops = [(trajectory[i], trajectory[i + 1]) for i in range(0, len(trajectory), 2)]  # (s, a)
         for hop_idx, (item_0, item_1) in enumerate(hops):
-            
+
             # # State is either the user query or the response for the previous action. Parse Action
             if "answer" in item_1.keys():  # i) If action is a Final action
                 actions.append("FINAL")
@@ -330,7 +327,7 @@ class M3Expert(LinearExpert):
                 assert "response" in hops[hop_idx + 1][0].keys()  # The next state should have the response
 
                 if item_1['agent'] == "api_agent":  # ii) If action is an API call
-                    
+
                     actions.append("API")
                     action_arguments.append(
                         {
@@ -450,5 +447,6 @@ class M3Expert(LinearExpert):
         #     }
         else:
             raise NotImplementedError(f"Parsing G.T. trajectory logic not implemented for {self.env}")
+
 
         return trajectory
