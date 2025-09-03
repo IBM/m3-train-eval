@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from data_utils.template import Template
     from envs.tool_call_env import ToolCallEnv
 
-
 class LinearExpert(Agent):
     def __init__(
             self,
@@ -38,12 +37,12 @@ class LinearExpert(Agent):
         """
         super().__init__(tokenizer_id_hf=tokenizer_id_hf, hf_token=hf_token, llm=llm, llm_parameters=llm_parameters,
                          agent_template=agent_template)
-        
+
         self.env: "ToolCallEnv" = None
         self.trajectory: Optional[List[Dict[str, Any]]] = None
         self.global_action_idx: int = -1  # Action idx that traverses multiple-turns
         self.local_action_idx: int = -1  # Action idx that traverses multiple steps/hops within a turn
-    
+
     def get_trajectory(self) -> Optional[dict]:
         """
         Logic to get the ground truth trajectory specific to parsing of a given benchmark.
@@ -60,13 +59,13 @@ class LinearExpert(Agent):
         }
         """
         raise NotImplementedError()
-    
+
     def initialize(self, env: "ToolCallEnv"):
         self.env = env
         self.trajectory = self.get_trajectory()
         self.global_action_idx = 0
         self.local_action_idx = 0
-    
+
     def update_thought(self, state, result) -> dict:
         thought_rewriter_prompt = get_thought_rewriter_prompt(
             current_agent_trajectory=state,
@@ -78,11 +77,11 @@ class LinearExpert(Agent):
         )
         response = invoke_llm(self.llm, self.llm_parameters, thought_rewriter_prompt)
         updated_thought = parse_rewriter_response(response)
-        
+
         logger.info(f"[External Agent Call] Agent = Thought_Rewriter")
         logger.info(f"Original thought: {result['thought'].strip()}")
         logger.info(f"Updated thought: {updated_thought}")
-        
+
         orig_thought = result["thought"]
         assert orig_thought in result["response"]
         result['response'] = result['response'].replace(orig_thought, updated_thought)
@@ -90,7 +89,7 @@ class LinearExpert(Agent):
         result['template_free_response'] = result['template_free_response'].replace(orig_thought, updated_thought)
         result["thought"] = updated_thought
         return result
-    
+
     def has_observed_curr_action_response(self, expert_interaction_info: dict, agentic_observations: List[str]) -> bool:
         # Process the observation before adding them to the prompt
         parsed_observations = []
@@ -100,9 +99,9 @@ class LinearExpert(Agent):
             parsed_observations.append(obs)
         parsed_observations = [f"{i + 1}. {obs}" for i, obs in enumerate(parsed_observations)]
         observations_str = "\n".join(parsed_observations)
-        
+
         expert_interaction_info = json.dumps(expert_interaction_info, indent=2)
-        
+
         witness_prompt = get_witness_prompt(
             query=self.env.curr_query,
             expert_interaction_info=expert_interaction_info,
@@ -112,29 +111,29 @@ class LinearExpert(Agent):
         response = invoke_llm(self.llm, self.llm_parameters, witness_prompt)
         parsed_response = parse_witness_response(response)
         # conclusion = parsed_response["conclusion"]
-        
+
         logger.info(f"[External Agent Call] Agent = Observational_Witness")
         logger.info(
             f"Asking Judge LLM whether it has seen the response for the expert action: ({expert_interaction_info}) in the agent's observational history ({', '.join(agentic_observations)}).")
         logger.info(f"Judge LLM said: {json.dumps(parsed_response, indent=2)}")
-        
+
         if parsed_response["witnessed"]:
             return True
         else:
             return False
-    
+
     def map_idx_to_action(self, act_idx: int) -> Tuple[dict, str]:
         """Get expert action corresponding to the given action index."""
         parsed_response = dict()
-        
+
         curr_turn_trajectory = self.trajectory[self.env.curr_turn]
         action_type = curr_turn_trajectory["actions"][act_idx]
         action_arguments = curr_turn_trajectory["action_arguments"][act_idx]
         parsed_response["type"] = action_type
-        
+
         thought = action_arguments["thought"]
         parsed_response["thought"] = thought
-        
+
         if action_type == "API":
             tool_call = {
                 "name": action_arguments["name"],
@@ -142,13 +141,11 @@ class LinearExpert(Agent):
             }
             parsed_response["value"] = tool_call
             parsed_response["role"] = Role.FUNCTION.value  # Assistant invokes a tool
-            parsed_response[
-                "template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
-            parsed_response[
-                "response"] = f"{self.thought_start}{thought}{self.thought_end}" + self.agent_template.format_tools.tool_utils.function_formatter(
+            parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
+            parsed_response["response"] = f"{self.thought_start}{thought}{self.thought_end}" + self.agent_template.format_tools.tool_utils.function_formatter(
                 [FunctionCall(tool_call["name"], json.dumps(tool_call["arguments"], ensure_ascii=False))]
             )
-            
+
             observation = action_arguments["response"]  # Result of API Call
         elif action_type == "RETRIEVE":
             tool_call = {
@@ -163,7 +160,7 @@ class LinearExpert(Agent):
                 "response"] = f"{self.thought_start}{thought}{self.thought_end}" + self.agent_template.format_tools.tool_utils.function_formatter(
                 [FunctionCall(tool_call["name"], json.dumps(tool_call["arguments"], ensure_ascii=False))]
             )
-            
+
             observation = action_arguments["response"]  # Documents from the Retrieval
         elif action_type == "FINAL":
             final_answer = action_arguments["final_answer"]
@@ -173,14 +170,14 @@ class LinearExpert(Agent):
                 "template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}<FINAL>{final_answer}</FINAL>"
             parsed_response[
                 "response"] = f"{self.thought_start}{thought}{self.thought_end}<FINAL>{final_answer}</FINAL>"
-            
+
             observation = 'Done!'
         else:
             raise ValueError(f"Unknown action {action_type}")
-        
+
         parsed_response['error'] = None
         return parsed_response, observation
-    
+
     def get_action(self, state) -> Tuple[dict, int]:
         """ This function basically represents the transition and output function of the Finite-State Machine (or Finite-State Transducer)
             Based on the agent's execution trace that acts as the input to the FSM,
@@ -224,14 +221,14 @@ class LinearExpert(Agent):
                     
                     action, observation = self.map_idx_to_action(act_idx)
                     action_type = action["type"]
-                    
+
                     if action_type == "FINAL":
                         # Expert has reached the point where all its expected actions are present in agent's trajectory
                         # Update thought
                         action = self.update_thought(state, action)
                         num_transitions += 1
                         return action, num_transitions
-                    
+
                     else:
                         # Call ObservationWitnessLLM to determine if the expected response to expert's current action is already observed by the agent.
                         agentic_observations = [item["observation"] for item in no_error_state]
@@ -248,15 +245,15 @@ class LinearExpert(Agent):
                             expert_interaction_info,
                             agentic_observations
                         )
-                        
+
                         act_idx += 1
                         num_transitions += 1
-                        
+
                         if not has_observed_curr_action_response:
                             # Update thought
                             action = self.update_thought(state, action)
                             return action, num_transitions
-                
+
                 logger.error("Reached a point where we looked for the next expert action but can not find any.")
                 sys.exit(-1)
     
@@ -280,7 +277,7 @@ class LinearExpert(Agent):
             self.transition_to_next_action()
             num_transitions -= 1
         return action
-    
+
     def get_curr_action_idx(self) -> int:
         """This function in a way represents the internal state of the Expert when realised as an FSM"""
         # Based on env turn determine the range of global action
@@ -290,12 +287,12 @@ class LinearExpert(Agent):
             _min += len(self.trajectory[t]["actions"])
             t += 1
         _max = _min + len(self.trajectory[t]["actions"])
-        
+
         if self.global_action_idx <= _min:  # This implies that agent has transitioned to the next turn w/o needing expert's assistance
             self.global_action_idx = _min
             self.local_action_idx = 0
         return self.local_action_idx
-    
+
     def transition_to_next_action(self):
         # Determine the next expert action.
         self.global_action_idx += 1
@@ -313,7 +310,7 @@ class M3Expert(LinearExpert):
     ):
         super().__init__(tokenizer_id_hf=tokenizer_id_hf, hf_token=hf_token, llm=llm, llm_parameters=llm_parameters,
                          agent_template=agent_template)
-    
+
     def get_single_turn_trajectory(self, trajectory) -> Dict[str, Any]:
         actions, action_arguments = [], []
         hops = [(trajectory[i], trajectory[i + 1]) for i in range(0, len(trajectory), 2)]  # (s, a)
@@ -325,14 +322,13 @@ class M3Expert(LinearExpert):
                 action_arguments.append(
                     {
                         "thought": "I now know the final answer." if 'plan' not in item_1.keys() else item_1['plan'],
-                        "final_answer": item_1['answer'],
-                        # For expert, have it return the wrapped answer always as it is being used for model training
+                        "final_answer": item_1['answer'],  # For expert, have it return the wrapped answer always as it is being used for model training
                     }
                 )
             else:
                 assert "agent" in item_1.keys()
                 assert "response" in hops[hop_idx + 1][0].keys()  # The next state should have the response
-                
+
                 if item_1['agent'] == "api_agent":  # ii) If action is an API call
                     
                     actions.append("API")
@@ -373,32 +369,32 @@ class M3Expert(LinearExpert):
                         )
                     else:
                         raise NotImplementedError(f"Unsupported type for output in retrieve agent: {item_1['output']}")
-                
+
                 else:
                     raise ValueError(f"Unknown agent of type {item_1['agent']}")
-        
+
         expert_traj = {
             "actions": actions,
             "action_arguments": action_arguments,
         }
         return expert_traj
-    
+
     def get_trajectory(self) -> Optional[List[dict]]:
         curr_instance_data = self.env.data[self.env.curr_instance_idx]
-        
+
         # Following logic to parse the G.T. Trajectory should work for all the tool availability/usage policies
         if 'trajectory' in curr_instance_data:
             traj_data = curr_instance_data['trajectory']
         else:
             return None
-        
+
         # Parse
         if self.env.sub_domain.mode == "rest":
-            
+
             # For Multi-turn data
             if isinstance(traj_data[0], list):
                 trajectory = [self.get_single_turn_trajectory(curr_turn_traj) for curr_turn_traj in traj_data]
-            
+
             else:
                 trajectory = [self.get_single_turn_trajectory(traj_data)]
         # elif self.env.sub_domain.mode in ['selection', 'slot_filling']:
@@ -454,5 +450,5 @@ class M3Expert(LinearExpert):
         #     }
         else:
             raise NotImplementedError(f"Parsing G.T. trajectory logic not implemented for {self.env}")
-        
+
         return trajectory
