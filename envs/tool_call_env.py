@@ -70,7 +70,7 @@ class ToolCallEnv(BaseEnv):
         NLIE: Natural Language Interaction Environment with access to tools for integrated reasoning and prob solving
                 in multi-hop multi-turn QA settings
     """
-    
+
     def __init__(
             self,
             horizon: int,
@@ -88,7 +88,7 @@ class ToolCallEnv(BaseEnv):
         self.tool_policy = None
         self.sub_domain = sub_domain
         super().__init__(horizon)
-        
+
         # Maintain a summarised state that will only contain context-response or QA pairs for multi-turn
         self.curr_summarised_state = None
         self.summarise_turns_for_multi_turn = summarise_turns_for_multi_turn
@@ -100,12 +100,12 @@ class ToolCallEnv(BaseEnv):
         
         # Chat template for the agent. Required for parsing llm-backed agent-specific responses
         self.agent_template = agent_template
-        
+
         # Other initial params
         self.tools, self.system = '', ''
         self.history, self.curr_turn_history = [], []
         self.curr_turn: int = -1  # Turn in multi-turn QA
-        
+
         # Turn-wise data
         self.user_queries: List[str] = []
         self.raw_answers: Optional[List[str]] = None
@@ -113,25 +113,25 @@ class ToolCallEnv(BaseEnv):
         self.were_final_answers_truncated: Optional[
             List[bool]] = None  # Whether the raw answer truncated to create golden answer
         self.ordered_sub_ques_composition: Optional[List[str]] = None
-        
+
         # For enabling expert_assist
         self.expert_assist: ExpertAssist = expert_assist
-        
+
         # For overseer
         self.overseer_llm, self.overseer_llm_parameters = overseer_llm, overseer_llm_parameters
-        
+
         # For scoring
         self.scorer_llm, self.scorer_llm_parameters = scorer_llm, scorer_llm_parameters
         self.partial_credit = partial_credit
-    
+
     def setup_tools(self):
         """Set up your environment specific tools here"""
         raise NotImplementedError()
-    
+
     def run_tool_and_get_obs(self, action: Dict[str, Any]) -> str:
         """Run the tool and return the response from running it as a string"""
         raise NotImplementedError()
-    
+
     def setup_user_queries(self):
         """Set up user queries here.
             > self.user_queries: List[str]  # List of user queries across multiple turns in order
@@ -142,15 +142,15 @@ class ToolCallEnv(BaseEnv):
                     # sub-question within each turn (from multi-hop) and its expected response
         """
         raise NotImplementedError()
-    
+
     def setup_scenarios(self) -> str:
         """Set up scenarios here."""
         raise NotImplementedError()
-    
+
     def get_final_answer_instructions(self) -> str:
         """Specify any additional instructions here!"""
         raise NotImplementedError()
-    
+
     def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
         # To get the data for the current instance of the environment
         if inst_idx is not None:
@@ -158,31 +158,31 @@ class ToolCallEnv(BaseEnv):
             self.curr_instance_idx = inst_idx
         else:
             self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
-        
+
         # Set the init params
         self.history, self.curr_turn_history = [], []
         self.curr_turn = 0
-        
+
         # Setup user queries
         self.setup_user_queries()
-        
+
         # Setup tools
         self.setup_tools()
-        
+
         # Determine the Tool Policy.
         self.setup_scenarios()
-        
+
         # Determine the tool text
         tool_text = self.agent_template.format_tools.apply(content=self.tools, tool_policy=self.tool_policy)[0]
-        
+
         # Form the system prompt
         self.system: str = SYSTEM_PROMPT
         system_prompt = self.system + tool_text  # This becomes the overall system (imitates the template.encode)
-        
+
         # Form the query prompt
         curr_query = self.user_queries[self.curr_turn]
         query_prompt = QUERY_PROMPT.format(query=curr_query)
-        
+
         # #################################### Create the init state #################################### #
         state = [{"role": Role.SYSTEM.value, "content": system_prompt},
                  {"role": Role.USER.value, "content": query_prompt}]
@@ -194,30 +194,30 @@ class ToolCallEnv(BaseEnv):
             "truncated": False,
             "success": False,
         }
-    
+
     def step(self, action):
-        
+
         # 1. Act and get the observation
         env_role, observation, terminated, truncated = self.get_observation(action)
-        
+
         # 2. Compute reward
         reward, success = self.get_reward(action, observation)
         done = terminated or truncated  # Don't condition done on success since success here is at turn level
-        
+
         # 3. Transition to the next state
         self.transition(observation, action, env_role)
-        
+
         return self.curr_state, reward, done, {
             "terminated": terminated,
             "truncated": truncated,
             "success": success,
         }
-    
+
     def get_observation(self, action):
         terminated = False  # True when agent considers it is done
         truncated = False  # True when max number of steps is reached
         if self.curr_step + 1 >= self.horizon:  # For horizon=1, first action taken should bring to terminal state
-            
+
             # If the last step is the final in last turn, we call env instance terminated instead of truncated
             if action["type"] == "FINAL" and self.curr_turn + 1 == len(self.user_queries):
                 terminated = True
@@ -226,7 +226,7 @@ class ToolCallEnv(BaseEnv):
                 truncated = True
                 observation = f"Max Steps Reached!"
             env_role = Role.USER.value
-        
+
         else:
             # There was a parsing error
             error = action["error"]
@@ -250,32 +250,32 @@ class ToolCallEnv(BaseEnv):
                     env_role = Role.USER.value
                 else:
                     raise NotImplementedError(f"Unknown predicted action: {action['type']}")
-        
+
         return env_role, observation, terminated, truncated
-    
+
     def get_reward(self, action, observation):
         if 'error' in observation.lower():  # Don't penalise for server error
-            
+
             # Check for agent template specific errors
             for e in ERRORS_AGENT_SPECIFIC_PARSING:
                 if e in observation:
                     reward = "{REWARD_PARSING_ERROR}"
                     return reward, False
-            
+
             # Check for bad tool calls
             for e in ERRORS_BAD_TOOL_CALLS:
                 if e in observation:
                     reward = "{REWARD_BAD_TOOL_CALL}"
                     return reward, False
-            
+
             for e in ERRORS_NO_PENALTY:
                 if e in observation:
                     reward = "{REWARD_NO_PENALTY}"
                     return reward, False
-            
+
             reward = "{REWARD_ERROR_NO_CATEGORY}"
             return reward, False
-        
+
         else:
             if action["type"] == "FINAL":
                 # TODO: Update the logic:
@@ -312,34 +312,34 @@ class ToolCallEnv(BaseEnv):
                     )
                     response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
                     parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
-                
+
                 logger.info(f"[External Agent Call] Agent = Final_Scorer")
                 logger.info(
                     f"Asking (partial credit={self.partial_credit})ScorerJudge LLM to score:\nQuery: {self.curr_query}\nGolden Answer: {self.curr_golden_answer}\nAgent Final Answer: ({predicted_final_answer})")
                 logger.info(f"ScorerJudge LLM said: {json.dumps(parsed_response, indent=2)}")
-                
+
                 if parsed_response["success"]:
                     reward = "{REWARD_FINAL_ANSWER_MATCH}"
                 else:
                     reward = "{REWARD_FINAL_ANSWER_NO_MATCH}"
                 return reward, parsed_response["success"]
-            
+
             elif action["type"] == "RETRIEVE":
                 reward = "{REWARD_SUCCESS_RETRIEVAL_CALL}"
                 return reward, False
             else:
                 reward = "{REWARD_SUCCESS_TOOL_CALL}"
                 return reward, False
-    
+
     def transition(self, observation, action, env_role):
-        
+
         # ############################################ Update State ############################################ #
         # Get the current state
         next_state = self.curr_state
         next_summarised_state = self.curr_summarised_state
-        
+
         if action["type"] == "FINAL":  # Agent has reached the end of given turn
-            
+
             if not self.is_a_live_agent and self.curr_golden_answer is not None:
                 if self.final_answer_is_truncated:
                     # To condition future reasoning on un-truncated context-response pairs.
@@ -347,13 +347,13 @@ class ToolCallEnv(BaseEnv):
                     final_answer = self.curr_raw_answer
                 else:
                     final_answer = self.curr_golden_answer
-            
+
             else:
                 final_answer = action["value"]
-            
+
             # Wrap the final answer
             final_answer = f"<FINAL>{final_answer}</FINAL>"
-            
+
             next_summarised_state.extend(
                 [
                     {
@@ -369,11 +369,11 @@ class ToolCallEnv(BaseEnv):
             # NOTE: We update the turn if agent generates the final answer (even though it might be incorrect)
             self.curr_turn += 1
             self.curr_summarised_state = next_summarised_state
-            
+
             if self.summarise_turns_for_multi_turn:
                 # Agent will act on past turns summarised as context response pairs
                 self.curr_state = copy.deepcopy(next_summarised_state)
-            
+
             else:
                 # If we don't summarise, does not matter whether the agent is live or not, the actual predicted answer
                 # along with its thought in the state. Can't replace the predicted with golden since it won't naturally
@@ -392,7 +392,7 @@ class ToolCallEnv(BaseEnv):
                 )
                 # Update the current state
                 self.curr_state = next_state
-        
+
         else:
             next_state.extend(
                 [
@@ -408,7 +408,7 @@ class ToolCallEnv(BaseEnv):
             )
             # Update the current state
             self.curr_state = next_state
-        
+
         # ############################################ Update History ############################################ #
         self.curr_turn_history.append(
             {
@@ -421,7 +421,7 @@ class ToolCallEnv(BaseEnv):
             self.history.append(copy.deepcopy(self.curr_turn_history))
             self.curr_turn_history = []
         self.curr_step += 1
-    
+
     def get_agent_history_for_overseer(self):
         """
         Implement how far back into the agentic history overseer should look into to determine if agent is stuck.
@@ -430,7 +430,7 @@ class ToolCallEnv(BaseEnv):
         """
         agent_history = self.curr_turn_history
         return agent_history
-    
+
     def is_expert_help_needed(self, last_action_was_experts: bool) -> bool:
         """
         Implements the overseer policy to determine if the agent requires expert help or not.
@@ -438,30 +438,30 @@ class ToolCallEnv(BaseEnv):
         :return: True if the agent is stuck and requires expert help.
         """
         agent_history = self.get_agent_history_for_overseer()
-        
+
         # Case 1. Overlook initial attempts
         if len(agent_history) < self.expert_assist.init_limit:
             return False
-        
+
         # Case 2. If last action was taken by the expert, we let the agent take the current action
         if last_action_was_experts:
             return False
-        
+
         recent_history = agent_history[self.expert_assist.recent_limit:][::-1]
         recent_observations = [item["observation"] for item in recent_history]
         recent_actions = [f"{item['action']}:{json.dumps(item['action_arguments'])}" for item in recent_history]
-        
+
         # Case 3. If all erroneous actions in recent interaction
         if all([True if 'error' in obs.lower() else False for obs in recent_observations]):
             logger.info(
                 f"[Expert Help] Provided for making consecutive errors in recent interactions: {recent_observations}")
             return True
-        
+
         # Case 4. If the same action was taken consecutively
         if len(set(recent_actions)) == 1:
             logger.info(f"[Expert Help] Provided for getting stuck at the same action: {recent_actions}")
             return True
-        
+
         overseer_prompt = get_overseer_prompt(
             query=self.curr_query,
             agent_history=agent_history,  # TODO: Should for multi-turn, we use the complete history or recent history?
@@ -469,29 +469,29 @@ class ToolCallEnv(BaseEnv):
         )
         response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
         parsed_response = parse_overseer_response(response)
-        
+
         logger.info(f"[External Agent Call] Agent = Overseer")
         logger.info(f"Asking Overseer whether the agent is stuck with history: {json.dumps(agent_history, indent=2)}.")
         logger.info(f"Overseer said: {json.dumps(parsed_response, indent=2)}")
-        
+
         if parsed_response["stuck"]:
             logger.info(f"[Expert Help] Provided based on overseer feedback")
             return True
         else:
             return False
-    
+
     def close(self):
         self.history, self.curr_turn_history = [], []
         self.curr_instance_idx = 0
-    
+
     @property
     def curr_sample_idx(self) -> int:
         raise NotImplementedError
-    
+
     @property
     def curr_query(self) -> str:
         return self.user_queries[self.curr_turn]
-    
+
     @property
     def curr_golden_answer(self) -> Any:
         """The answer the model/agent generates. It is properly wrapped into a sentence."""
@@ -499,7 +499,7 @@ class ToolCallEnv(BaseEnv):
             return self.golden_answers[self.curr_turn]
         else:
             return None
-    
+
     @property
     def curr_raw_answer(self) -> Any:
         """The answer the model/agent should have generated. It is unwrapped and json dumped structured object."""
@@ -507,7 +507,7 @@ class ToolCallEnv(BaseEnv):
             return self.raw_answers[self.curr_turn]
         else:
             return None
-    
+
     @property
     def final_answer_is_truncated(self) -> Any:
         """If the tool response was truncated and summarised into the final answer, return True."""
@@ -515,7 +515,7 @@ class ToolCallEnv(BaseEnv):
             return self.were_final_answers_truncated[self.curr_turn]
         else:
             return False
-    
+
     def __len__(self):
         return self.total_unique_instances
 
@@ -540,20 +540,20 @@ class M3ToolCallEnv(ToolCallEnv):
         self.path_to_env_data = path_to_env_data
         self.es_config = es_config
         self.api_config = api_config
-        
+
         # Init. the API tools here
         self.tool_names, self.tool_info = [], {}
         self.callable_api_pool, self.initial_data_csv = None, None
         self.sql_db_name = 'bird'
-        
+
         # TODO: For sel-slot data updated these paths
         self.base_sql_dir = None
         self.path_to_sql_data = None
         self.path_for_sql_cache = None
-        
+
         # Init. the document database here
         self.doc_db, self.document_collections = None, None
-        
+
         super().__init__(
             horizon,
             sub_domain,
@@ -566,14 +566,14 @@ class M3ToolCallEnv(ToolCallEnv):
             partial_credit,
             summarise_turns_for_multi_turn
         )
-    
+
     def load_env_data(self):
         data = json.load(open(self.path_to_env_data, 'r'))
         return data
-    
+
     def setup_user_queries(self):
         curr_instance_data = self.data[self.curr_instance_idx]
-        
+
         # For Multi-turn data
         if "turns" in curr_instance_data:
             self.user_queries = [turn_data["query"] for turn_data in curr_instance_data["turns"]]
@@ -587,20 +587,20 @@ class M3ToolCallEnv(ToolCallEnv):
             self.golden_answers = [curr_instance_data['answer']]
             self.raw_answers = [curr_instance_data['answer']]
             self.were_final_answers_truncated = [False]
-        
+
         if 'trajectory' not in curr_instance_data:
             ordered_sub_ques_composition = None
         else:
             trajectory = curr_instance_data['trajectory']
-            
+
             # For Multi-turn data
             if isinstance(trajectory[0], list):
-                
+
                 # Get the sub-questions (in order) that the agent/expert should try to answer
                 ordered_sub_ques_composition = []
                 for curr_turn_traj in trajectory:
                     curr_turn_ordered_sub_ques_composition = []
-                    
+
                     hops = [(curr_turn_traj[i], curr_turn_traj[i + 1]) for i in
                             range(0, len(curr_turn_traj), 2)]  # (s, a)
                     for hop_idx, (item_0, item_1) in enumerate(hops):
@@ -619,7 +619,7 @@ class M3ToolCallEnv(ToolCallEnv):
                             else:
                                 raise ValueError(f"Unknown agent of type {item_1['agent']}")
                     ordered_sub_ques_composition.append(json.dumps(curr_turn_ordered_sub_ques_composition))
-            
+
             # For [Older] Single-turn data
             else:
                 # Get the sub-questions (in order) that the agent/expert should try to answer
@@ -641,9 +641,9 @@ class M3ToolCallEnv(ToolCallEnv):
                         else:
                             raise ValueError(f"Unknown agent of type {item_1['agent']}")
                 ordered_sub_ques_composition = [json.dumps(ordered_sub_ques_composition)]
-        
+
         self.ordered_sub_ques_composition = ordered_sub_ques_composition
-    
+
     def setup_scenarios(self):
         curr_instance_data = self.data[self.curr_instance_idx]
         if 'tool_availability_policy' in curr_instance_data and 'tool_usage_policy' in curr_instance_data:
@@ -656,22 +656,22 @@ class M3ToolCallEnv(ToolCallEnv):
                 tool_availability_policy="both_api_rag",
                 tool_usage_policy=""
             )
-        
+
         # Determine the final answer instructions and replace the slot
         final_answer_instructions = self.get_final_answer_instructions()
         self.tool_policy.final_answer_policy = final_answer_instructions
-    
+
     def get_final_answer_instructions(self) -> str:
         # Determine the guidance for generating final answer
         final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
-        
+
         # [1] For the case when scenarios render the question unanswerable
         from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
         chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
         chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
         instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
         final_answer_instructions += "\n                  > " + instr_insufficient_information
-        
+
         # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
         curr_instance_data = self.data[self.curr_instance_idx]
         if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
@@ -679,9 +679,9 @@ class M3ToolCallEnv(ToolCallEnv):
             # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
             instr_resp_cutoff = curr_instance_data['resp_cutoff_inst']
             final_answer_instructions += "\n                  > " + instr_resp_cutoff
-        
+
         return final_answer_instructions
-    
+
     def initialize_sel_slot_data(self, initialization_specs: dict, callable_api_pool: dict) -> str:
         # Perform the initialization step
         # runs the tool and returns the observation
@@ -692,7 +692,7 @@ class M3ToolCallEnv(ToolCallEnv):
             args["database_path"] = new_path
         except:
             logger.info(f'Sticking with database_path = {args["database_path"]}')
-        
+
         try:
             initial_data_csv = execute_single_api(
                 initialization_specs["name"],
@@ -701,22 +701,22 @@ class M3ToolCallEnv(ToolCallEnv):
             )
         except BaseException as e:
             raise Exception(f"Initialization step failed with error: {e}")
-        
+
         try:
             initial_data_csv = initial_data_csv.to_dict(orient="list")
         except BaseException as e:
             pass
         return initial_data_csv
-    
+
     def pre_setup_tools(self, tools, dataset_name=None, initialization_specs=None):
         tool_names = []
         tool_info = {}
         for tool in tools:
             if tool["name"] == "initialize_active_data":
                 continue  # Don't add this to the pool of available tools
-            
+
             tool_names.append(tool['name'])
-            
+
             # Identify the required arguments. Essential to set up the env response when args generated by agent are not sufficient.
             # Must match the logic in reformat_tools() at envs/tool_call_env.py
             _required: List[str] = []
@@ -726,15 +726,15 @@ class M3ToolCallEnv(ToolCallEnv):
                 else:
                     if tool["parameters"]:
                         _required = list(tool["parameters"].keys())
-            
+
             tool_info[tool['name']] = {
                 "required_args": _required,
             }
-        
+
         self.tool_names = tool_names
         self.tool_info = tool_info
         logger.info(f"Agent has access to {len(self.tool_names)} tools: {self.tool_names}")
-        
+
         # [Optionally] For Sel/Slot set up the callable api pool
         if self.sub_domain.mode in ['slot_filling', 'selection']:
             source_dataset_name = self.sql_db_name
@@ -742,7 +742,7 @@ class M3ToolCallEnv(ToolCallEnv):
             results_cache_path_unique = os.path.join(self.path_for_sql_cache, dataset_name)
             if not os.path.isdir(results_cache_path_unique):
                 os.mkdir(results_cache_path_unique)
-            
+
             if self.sub_domain.mode == "slot_filling":
                 builder = SqlSlotFillingDatasetBuilder(
                     dataset_name,
@@ -758,16 +758,16 @@ class M3ToolCallEnv(ToolCallEnv):
                     source_dataset_name,
                 )
             builder.build()
-            
+
             try:
                 assert initialization_specs is not None
             except AssertionError:
                 raise AssertionError(f"Initialization specs should not be None for {self.sub_domain.mode}")
-            
+
             initialization_specs["arguments"]["database_path"] = os.path.join(str(results_cache_path_unique), f"{dataset_name}.sqlite")
             self.callable_api_pool, _ = builder.set_query_specific_api_pool([initialization_specs])
             self.initial_data_csv = self.initialize_sel_slot_data(initialization_specs, self.callable_api_pool)
-    
+
     def setup_document_retrieval_tool(self):
         """Set up the retrieval tools here"""
         
@@ -797,14 +797,13 @@ class M3ToolCallEnv(ToolCallEnv):
             
             # doc_db is now a list of executable retriever functions
             self.doc_db[fn_name] = make_retriever(index_name=index_name)
-        
+
         logger.info(
             f"Agent has access to {len(self.doc_db)} document retrievers for collections: {self.document_collections}")
 
-    
     def setup_tools(self):
         curr_instance_data = self.data[self.curr_instance_idx]
-        
+
         # 1. Get the tool list
         # For Old data
         if 'API_info' in curr_instance_data:
@@ -824,13 +823,13 @@ class M3ToolCallEnv(ToolCallEnv):
                 assert self.es_config["index_name"] is not None
             except AssertionError:
                 raise AssertionError("For older data, the index name must be set in the config file")
-            
+
             self.document_collections = [self.es_config["index_name"]]
         # For New data
         else:
             tools: List[dict] = curr_instance_data['tools']
             self.document_collections = curr_instance_data['doc_collections']
-        
+
         # 2. Configure the API usage for the env
         if self.sub_domain.mode in ["slot_filling", "selection"]:
             initialization_specs = curr_instance_data['API_info'][self.sub_domain.mode]['output'][0]
@@ -839,10 +838,10 @@ class M3ToolCallEnv(ToolCallEnv):
             initialization_specs = None
             dataset_name = None
         self.pre_setup_tools(tools, dataset_name, initialization_specs)
-        
+
         # 3. Configure the document retrieval tool for the env
         self.setup_document_retrieval_tool()
-        
+
         # 4. Add the special tool for document retrieval [Old way]
         # from envs.constants import RETRIEVE_FUNCTION_NAME
         # if RETRIEVE_FUNCTION_NAME not in self.tool_names:
@@ -870,7 +869,7 @@ class M3ToolCallEnv(ToolCallEnv):
         # 5. Format the list of final tools into the Google docstring format
         tools = reformat_tools(tools)
         self.tools: str = json.dumps(tools)
-    
+
     def run_doc_retrieval(self, extracted_tool: Dict[str, Any]) -> str:
         
         # # Old way of calling
@@ -916,7 +915,7 @@ class M3ToolCallEnv(ToolCallEnv):
         tool_name = extracted_tool['name']
         tool_args = extracted_tool['arguments']  # Can be extracted_tool['parameters']
         logger.info(f"Trying to run tool: {tool_name} with arguments {tool_args}")
-        
+
         if tool_name not in self.tool_names:  # Here we can catch hallucinated Tool name
             error = f"ToolDoesNotFoundError: The provided tool name '{tool_name}' does not exist in the tool list."
             observation = f"{error}"
@@ -933,7 +932,7 @@ class M3ToolCallEnv(ToolCallEnv):
                 error = f"ToolMissingArgumentError: The provided tool name '{tool_name}' has the following missing arguments: {', '.join(missing_args)}"
                 observation = f"{error}"
                 return observation
-            
+
             # Check for parameter type mismatch
             # Skipping: API Backend converts all parameter values to a string before querying the SQL DB
             if self.sub_domain.mode == "rest":
