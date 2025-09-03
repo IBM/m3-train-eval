@@ -17,7 +17,7 @@ from metrics.plot import plot_freq_dist
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
                           tool_response: str) -> str:
     from prompt_thought_generator import QUERY_STEP_PROMPT as step_prompt
-    
+
     # First replace the step number
     step_prompt = step_prompt.replace("{number}", str(step_idx))
     step_prompt = step_prompt.replace("{sub_question}", sub_question, 1)
@@ -28,7 +28,7 @@ def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: st
 
 
 def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str]) -> \
-        List[dict]:
+List[dict]:
     from prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT
     prompt = []
     system_prompt = SYSTEM_PROMPT
@@ -52,7 +52,7 @@ def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_
                     },
                 ]
             )
-    
+
     # Form the prompt for current user turn
     query_prompt = QUERY_PROMPT.format(user_query=user_query)
     query_prompt: str = query_prompt + "\n" + "\n".join(step_prompts)
@@ -76,7 +76,7 @@ def get_answer_generator_prompt(user_query: str, trajectory: str, additional_ins
             "content": system_prompt,
         }
     )
-    
+
     query_prompt = QUERY_PROMPT.format(user_query=user_query, agent_trajectory=trajectory)
     prompt.append(
         {
@@ -94,10 +94,10 @@ def parse_thought_generator_response(response: str, num_steps: int) -> Optional[
         except AssertionError:
             logger.error(f"    Thought not found for step {step_idx + 1}")
             return None
-    
+
     pattern = re.compile(r"Thought_(\d+):\s*(.*?)(?=\nThought_\d+:|$)", re.DOTALL)
     matches = pattern.findall(response)
-    
+
     result = {}
     for step_str, thought in matches:
         step = int(step_str)
@@ -109,11 +109,11 @@ def parse_thought_generator_response(response: str, num_steps: int) -> Optional[
 def parse_answer_generator_response(response: str, ) -> Optional[dict]:
     thought_match = re.search(r"<think>(.*?)</think>", response, re.DOTALL)
     final_match = re.search(r"<FINAL>(.*?)</FINAL>", response, re.DOTALL)
-    
+
     if not thought_match or not final_match:
         logger.error(f"    Thought/Answer not found")
         return None
-    
+
     return {
         "thought": thought_match.group(1).strip(),
         "answer": final_match.group(1).strip()
@@ -162,7 +162,7 @@ def create_and_inject_thoughts(
     :param max_tool_resp_cut_off: max value beyond which if tool's response exists, the sample is discarded
     :return: training data statistics as a dictionary
     """
-    
+
     llm_parameters = {
         "model_name_or_path": model_name_or_path,
         "max_new_tokens": 4096,
@@ -173,7 +173,7 @@ def create_and_inject_thoughts(
     
     domain_files = os.listdir(parsed_data_dir)
     domain_files = [f for f in domain_files if f.endswith('.json')]
-    
+
     training_data_stats = {
         'num_domains': len(domain_files),
         'train_samples_per_domain': [],
@@ -181,11 +181,11 @@ def create_and_inject_thoughts(
         'train_samples': 0,
         'total_samples': 0
     }
-    
+
     for domain_file in domain_files:
         with open(os.path.join(parsed_data_dir, domain_file)) as f:
             domain_data = json.load(f)
-        
+
         logger.info(f"\n# ===================================== {domain_file} ===================================== #")
         final_domain_data, left_out_domain_data = [], []  # Segregate chosen and rejected (in orig format) samples
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
@@ -194,13 +194,13 @@ def create_and_inject_thoughts(
             
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
-            
+
             # # For each sample declare scenarios here
             tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
             tool_usage_policy = ""  # This should be the instruction in english to control which tools need to be used
             sample['tool_availability_policy']: str = tool_availability_policy
             sample['tool_usage_policy']: str = tool_usage_policy
-            
+
             # # Spawn on-the-go additional instr. to compress tool response into the final answer. This will go into the
             # # agentic system prompt to be used for all turns (only during generation not during conditioning on context-response pairs)
             # Spawn a random integer between min to max
@@ -210,7 +210,7 @@ def create_and_inject_thoughts(
                 curr_resp_cutoff=resp_cutoff_thresh)
             sample['resp_cutoff_thresh']: int = resp_cutoff_thresh
             sample['resp_cutoff_inst']: str = answer_generator_additional_instr
-            
+
             previous_dialogue = []
             turns = []  # For storing turn-level query-answer pairs
             for turn_idx, curr_turn_trajectory in enumerate(sample['trajectory']):
@@ -218,7 +218,7 @@ def create_and_inject_thoughts(
                 curr_raw_answer = copy.deepcopy(curr_turn_trajectory[-1]['answer'])
                 logger.info(f"\nQuery [turn #{turn_idx}]: {curr_user_query}")
                 logger.info(f"Final Raw Response [turn #{turn_idx}]: {curr_raw_answer}")
-                
+
                 if isinstance(curr_raw_answer, list) and len(curr_raw_answer) > resp_cutoff_thresh:
                     if len(curr_raw_answer) > max_tool_resp_cut_off:
                         # Ignore samples for which tool response is tool long
@@ -226,22 +226,22 @@ def create_and_inject_thoughts(
                             f"    Discarding the sample since length of its tool response at end of turn #{turn_idx} {len(curr_raw_answer)} > {max_tool_resp_cut_off}")
                         is_valid_sample = False
                         break
-                
+
                 else:
                     # For the current turn's thought generation, we discard the resp_cutoff_inst instruction if the
                     # agent can pick all the objects and construct the final answer around it. (No Truncation)
                     resp_cutoff_thresh = None
                     answer_generator_additional_instr = ''
-                
+
                 # Collect hop-level data
                 current_turn_tool_call_trajectory = curr_turn_trajectory[1:-1]  # Exclude user query and final answer
                 hops = [(current_turn_tool_call_trajectory[i], current_turn_tool_call_trajectory[i + 1]) for i in
                         range(0, len(current_turn_tool_call_trajectory), 2)]
-                
+
                 # Create step-level information for the thought-generator prompt
                 step_prompts = []
                 for hop_idx, (item_0, item_1) in enumerate(hops):
-                    
+
                     # 1. Create the tool-call-str
                     tool_call_str = "\n" + json.dumps(item_0['output'], indent=2) if isinstance(item_0['output'],
                                                                                                 dict) else item_0[
@@ -249,7 +249,7 @@ def create_and_inject_thoughts(
                     prefix = "            "  # constant indentation from the prompt
                     tool_call_str = "\n".join(prefix + line for line in tool_call_str.splitlines())
                     logger.info(f"        \nTool Call {hop_idx + 1}: {tool_call_str}")
-                    
+
                     # 2. Find and create the matching tool-description-str
                     curr_tool_name: str = item_0['output']['name']
                     tool_description_str = ''
@@ -260,10 +260,10 @@ def create_and_inject_thoughts(
                     assert len(tool_description_str) > 0  # Check to make sure the used tool is in tool universe
                     prefix = "            "  # constant indentation from the prompt
                     tool_description_str = "\n".join(prefix + line for line in tool_description_str.splitlines())
-                    
+
                     # 3. Create the tool-response-str
                     tool_response_str = item_1['response']
-                    
+
                     curr_step_prompt: str = get_step_query_prompt(
                         hop_idx + 1,
                         item_0['question'],
@@ -272,7 +272,7 @@ def create_and_inject_thoughts(
                         tool_response_str,
                     )
                     step_prompts.append(curr_step_prompt)
-                
+
                 # ############################ Generate reasoning for tool calls ############################ #
                 thought_generator_prompt = get_thought_generator_prompt(
                     previous_dialogue=previous_dialogue,
@@ -287,12 +287,12 @@ def create_and_inject_thoughts(
                     logger.info(
                         f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
                     break
-                
+
                 # Fill in the thought
                 for hop_idx, (item_0, item_1) in enumerate(hops):
                     curr_step_thought: str = parsed_response[hop_idx]
                     item_0['plan'] = curr_step_thought
-                
+
                 # # ############################ Generate final answer and its thought ############################ #
                 # TODO: Inject the previous_dialogue if the final answer of the current turn depends on it
                 trajectory_str = wrap_hop_data_into_trajectory_str(hops)
@@ -308,11 +308,10 @@ def create_and_inject_thoughts(
                     is_valid_sample = False
                     logger.info(f"    Parsing error (final answer) for sample {sample['sample_id']} failed. Ignoring!")
                     break
-                
+
                 # # Fill in the answer
                 curr_turn_trajectory[-1]['plan'] = parsed_response['thought']
-                curr_turn_trajectory[-1]['answer'] = parsed_response[
-                    'answer']  # At turn-level trajectory, store the wrapped answer as it is being used for model training
+                curr_turn_trajectory[-1]['answer'] = parsed_response['answer']  # At turn-level trajectory, store the wrapped answer as it is being used for model training
                 curr_turn_trajectory[-1]['raw_answer'] = json.dumps(curr_raw_answer)
                 turns.append(
                     {
@@ -323,50 +322,50 @@ def create_and_inject_thoughts(
                         # Could be Useful to determine turn-level final answer match rewards
                     }
                 )
-                
+
                 # M3 Data considers the response from the final tool call as the final answer.
                 previous_dialogue.append(
                     (curr_user_query, curr_raw_answer)
                 )
-            
+
             sample['turns'] = turns
             if not is_valid_sample:
                 left_out_domain_data.append(orig_sample)
             else:
                 final_domain_data.append(sample)
-        
+
         # Update the statistics with domain's
         training_data_stats['total_samples'] += len(domain_data)
         training_data_stats['total_samples_per_domain'].append(len(domain_data))
         training_data_stats['train_samples_per_domain'].append(len(final_domain_data))
         training_data_stats['train_samples'] += len(final_domain_data)
-        
+
         # Save the new data
         with open(os.path.join(_save_data_at, domain_file.replace(".json", "_final.json")), 'w') as f:
             json.dump(final_domain_data, f, indent=4)
-        
+
         # Save the data that got left out
         with open(os.path.join(_save_data_at, domain_file.replace(".json", "_left_out.json")), 'w') as f:
             json.dump(left_out_domain_data, f, indent=4)
-    
+
     return training_data_stats
 
 
 def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
     """This function simply parses the raw data. Do not inject scenarios here!"""
-    
+
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir, exist_ok=True)
-    
+
     domain_files = os.listdir(raw_data_dir)
     domain_files = [f for f in domain_files if f.endswith('.json')]
-    
+
     final_tool_response_dist = dict()
     total_samples = 0
     for domain_file in domain_files:
         with open(os.path.join(raw_data_dir, domain_file)) as f:
             domain_data = json.load(f)
-        
+
         logger.info(f"\n# =================== {domain_file} =================== #")
         final_tool_response_dist_domain = dict()
         rejected_samples_no_tools, rejected_turns_no_tool_call, rejected_turns_non_unique_query, retrieve_type_samples = 0, 0, 0, 0
@@ -375,11 +374,11 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                            desc=f"Creating turn-level data for domain {domain_file}"):
             sample_id = sample['sample_id']
             logger.info(f"Creating turn level data sample #{sample_id}")
-            
+
             # If there is a retrieve document tool call for this sample
             if 'RAG' in sample['type']:
                 retrieve_type_samples += 1
-            
+
             # Get the available tools. Will add retrieval tool later in M3-train
             if 'tools' in sample:
                 tools = sample['tools']
@@ -392,10 +391,10 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                     f"    Ignoring current sample. No tools available for sample {sample_id} in file {domain_file}")
                 rejected_samples_no_tools += 1
                 continue
-            
+
             # Get the available document collections and add the retriever tool to the tools list
             doc_collections = list(set(sample['retrievers']))  # To avoid repeats
-            
+
             # # [Old Logic] For common retriever function across collections
             # TODO: Add the description for each collection here as a metadata field in the below
             # from envs.constants import RETRIEVE_FUNCTION_NAME
@@ -440,7 +439,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                     }
                 }
                 tools.append(retriever_tool)
-            
+
             parsed_sample = {
                 'sample_id': f"{sample_id}",
                 'tools': tools,
@@ -450,15 +449,15 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                 'type': sample['type'],
                 'trajectory': [],
             }
-            
+
             is_valid_sample: bool = True
             for turn_idx, turn in enumerate(sample['turns']):
-                
+
                 # ################################ Create trajectory (per turn) ################################ #
-                
+
                 # Initialisation
                 user_query = turn['query']
-                
+
                 # # [Old Logic]
                 # if user_query not in unique_queries:
                 #     unique_queries.append(user_query)
@@ -466,21 +465,21 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                 #     rejected_turns_non_unique_query += 1
                 #     logger.info(f"    Ignoring current turn. Duplicate query {user_query} in turn {turn_idx}")
                 #     continue
-                
+
                 # Add n_0 = user query
                 single_turn_trajectory = [
                     {
                         'input': user_query,
                     }
                 ]
-                
+
                 # Get the current turn's (golden) tool calls and responses at hop-level
                 turn_gold_seq = turn['gold_sequence']
                 for hop_idx, hop in enumerate(turn_gold_seq):
-                    
+
                     # 1. Get the question at hop-level
                     hop_question = hop['question']
-                    
+
                     # 2. Get the tool call and tool response
                     if hop['question_type'] == "API":
                         hop_agent = 'api_agent'  # We define this to adhere to M3-Train's parsing logic
@@ -497,7 +496,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                             break
                         hop_response = hop[
                             'OUTPUT_AFTER_EXECUTING_API']  # We use this field for tool response as it is json structured compared to hop['answer']
-                    
+
                     else:
                         hop_agent = 'rag_agent'
                         from envs.constants import RETRIEVE_FUNCTION_NAME, RETRIEVER_FUNCTION_PREFIX
@@ -519,7 +518,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                         # 		'query': hop_question,
                         # 	}
                         # }
-                        
+
                         # # [New Logic] For retriever function per collection
                         hop_tool_call = {
                             'name': f"{RETRIEVER_FUNCTION_PREFIX}_clapnq_{hop['db_id']}",
@@ -534,7 +533,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                         else:
                             assert isinstance(hop['rag_doc'], str)
                             hop_response = hop['rag_doc']
-                    
+
                     # Add n_t = tool call
                     single_turn_trajectory.append(
                         {
@@ -558,14 +557,14 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                         # For now use what is in the turn's json object, later generate this using LLM
                     }
                 )
-                
+
                 if not is_valid_sample:
                     # Discard the current sample
                     break
-                
+
                 # Add turn level datum to the trajectory
                 parsed_sample['trajectory'].append(single_turn_trajectory)
-                
+
                 len_answer = len(turn['answer']) if isinstance(turn['answer'], list) else 1
                 if str(len_answer) not in final_tool_response_dist:
                     final_tool_response_dist[str(len_answer)] = 1
@@ -576,11 +575,11 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                     final_tool_response_dist_domain[str(len_answer)] = 1
                 else:
                     final_tool_response_dist_domain[str(len_answer)] += 1
-            
+
             # Add the parsed sample
             if is_valid_sample:
                 parsed_data.append(parsed_sample)
-        
+
         logger.info(f"====================== x =====================")
         logger.info(f"[Metrics] Total samples: {len(domain_data)}")
         logger.info(f"[Metrics] Total samples with retrieve tool call: {retrieve_type_samples}")
@@ -590,12 +589,12 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
             f"[Metrics] Number of rejected turns because of no tool call present: {rejected_turns_no_tool_call}")
         logger.info(f"[Metrics] Total number of parsed samples at domain-level: {len(parsed_data)}")
         logger.info(f"====================== x =====================")
-        
+
         total_samples += len(parsed_data)
         # Save current domain's parsed data as json
         with open(os.path.join(save_data_at, domain_file), 'w') as f:
             json.dump(parsed_data, f, indent=4)
-        
+
         # [Auxiliary] Plot the length of final tool responses per domain
         final_tool_response_dist_domain = dict(
             sorted(final_tool_response_dist_domain.items(), key=lambda x: int(x[0]), reverse=False))
@@ -603,13 +602,13 @@ def create_multi_turn_data(raw_data_dir, save_data_at, plot_dir):
                        os.path.join(plot_dir, f"final_tool_response_dist_{domain_file.split('.')[0]}.png"))
         with open(os.path.join(plot_dir, f"final_tool_response_len_dist_{domain_file.split('.')[0]}.json"), 'w') as f:
             json.dump(final_tool_response_dist_domain, f, indent=4)
-    
+
     # [Auxiliary] Plot the length of final tool responses across domains
     final_tool_response_dist = dict(sorted(final_tool_response_dist.items(), key=lambda x: int(x[0]), reverse=False))
     plot_freq_dist(final_tool_response_dist, os.path.join(plot_dir, 'final_tool_response_dist.png'))
     with open(os.path.join(plot_dir, 'final_tool_response_len_dist.json'), 'w') as f:
         json.dump(final_tool_response_dist, f, indent=4)
-    
+
     logger.info(f"\n[Overall Metrics] Total number of parsed samples: {total_samples}")
 
 
