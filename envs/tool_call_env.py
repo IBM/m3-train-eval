@@ -647,6 +647,19 @@ class M3ToolCallEnv(ToolCallEnv):
                 tool_availability_policy=curr_instance_data['tool_availability_policy'],
                 tool_usage_policy=curr_instance_data['tool_usage_policy']
             )
+        elif 'tool_usage_policy' in curr_instance_data:
+            tool_usage_policy=curr_instance_data['tool_usage_policy']
+            if tool_usage_policy==ToolUsePolicy.ONLY_API:
+               use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
+            elif tool_usage_policy==ToolUsePolicy.ONLY_RAG:
+               use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES.format(domains=domain))
+            elif tool_usage_policy==ToolUsePolicy.RAG_FIRST:
+               use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES.format(domains=domain))
+            elif tool_usage_policy==ToolUsePolicy.API_FIRST:
+               use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
+            self.tool_policy = ToolPolicy(
+                tool_availability_policy="both_api_rag",
+                tool_usage_policy=use_template_text)
         else:
             self.tool_policy = ToolPolicy(
                 tool_availability_policy="both_api_rag",
@@ -658,21 +671,7 @@ class M3ToolCallEnv(ToolCallEnv):
         self.tool_policy.final_answer_policy = final_answer_instructions
 
     def get_final_answer_instructions(self, domain) -> str:
-
-
-        tool_usage_policy=self.tool_policy.tool_usage_policy
-        
-        if tool_usage_policy==ToolUsePolicy.ONLY_API:
-            use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
-        elif tool_usage_policy==ToolUsePolicy.ONLY_RAG:
-            use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES.format(domains=domain))
-        elif tool_usage_policy==ToolUsePolicy.RAG_FIRST:
-            use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES.format(domains=domain))
-        elif tool_usage_policy==ToolUsePolicy.API_FIRST:
-            use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
-            
-
-        # Determine the guidance for generating final answer
+         # Determine the guidance for generating final answer
         final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
 
         # [1] For the case when scenarios render the question unanswerable
@@ -680,7 +679,7 @@ class M3ToolCallEnv(ToolCallEnv):
         chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
         instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
         final_answer_instructions += "\n                  > " + instr_insufficient_information
-        final_answer_instructions+="\n"+use_template_text
+        #final_answer_instructions+="\n"+use_template_text
         # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
         curr_instance_data = self.data[self.curr_instance_idx]
         if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
