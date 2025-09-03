@@ -643,11 +643,22 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         domain=curr_instance_data["gold_sequence"][-1]["db_id"]
         if 'tool_availability_policy' in curr_instance_data and 'tool_usage_policy' in curr_instance_data:
+            #if tool availabilty and usage both are provided 
+            tool_usage_policy=curr_instance_data['tool_usage_policy']
+            if tool_usage_policy==ToolUsePolicy.ONLY_API:
+               use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
+            elif tool_usage_policy==ToolUsePolicy.ONLY_RAG:
+               use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES.format(domains=domain))
+            elif tool_usage_policy==ToolUsePolicy.RAG_FIRST:
+               use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES.format(domains=domain))
+            elif tool_usage_policy==ToolUsePolicy.API_FIRST:
+               use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
             self.tool_policy = ToolPolicy(
                 tool_availability_policy=curr_instance_data['tool_availability_policy'],
-                tool_usage_policy=curr_instance_data['tool_usage_policy']
+                tool_usage_policy=use_template_text
             )
         elif 'tool_usage_policy' in curr_instance_data:
+            #if only tool usage policy is provided. 
             tool_usage_policy=curr_instance_data['tool_usage_policy']
             if tool_usage_policy==ToolUsePolicy.ONLY_API:
                use_template_text=random.choice(TOOL_USE_API_TEMPLATES.format(domains=domain))
