@@ -14,30 +14,30 @@ def reformat_tools(tools: Union[dict, List[dict]]) -> List[dict]:
     """
     if isinstance(tools, dict):
         tools = [tools]
-    
+
     reformatted_tools = []
     for tool in tools:
-        
+
         # The tool does not accept any parameters
         if 'parameters' not in tool:
             tool["parameters"] = {}
-        
+
         _type: str = tool["parameters"]["type"] if "type" in tool["parameters"] else "object"
-        
+
         _required: List[str] = []
         if 'required' in tool["parameters"]:
             _required = tool["parameters"]["required"]
         else:
             if tool["parameters"]:
                 _required = list(tool["parameters"].keys())
-        
+
         _properties: dict = {}  # Will be used as default if tool does not accept any parameters
         if 'properties' in tool["parameters"]:
             _properties = tool["parameters"]["properties"]
         else:
             if tool["parameters"]:
                 _properties = tool["parameters"]
-        
+
         # Formatted tool
         _tool = {
             "type": "function",
@@ -52,7 +52,7 @@ def reformat_tools(tools: Union[dict, List[dict]]) -> List[dict]:
             }
         }
         reformatted_tools.append(_tool)
-    
+
     return reformatted_tools
 
 
@@ -89,6 +89,7 @@ def split_retriever_tool_from_rest(tools: list[dict[str, Any]]) -> Tuple[List[di
 
 
 def print_google_docstring_format():
+
     def get_current_weather(location: str, format: str):
         """
         Get the current weather
@@ -97,7 +98,7 @@ def print_google_docstring_format():
             format: The temperature unit to use. Infer this from the users location. (choices: ["celsius", "fahrenheit"])
         """
         pass
-    
+
     print(json.dumps(get_json_schema(get_current_weather), indent=4))
 
 
@@ -123,3 +124,4 @@ def ground_tool_usage(policy: str) -> str:
 
 if __name__ == "__main__":
     print_google_docstring_format()
+
