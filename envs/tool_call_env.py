@@ -111,8 +111,7 @@ class ToolCallEnv(BaseEnv):
         self.user_queries: List[str] = []
         self.raw_answers: Optional[List[str]] = None
         self.golden_answers: Optional[List[str]] = None
-        self.were_final_answers_truncated: Optional[
-            List[bool]] = None  # Whether the raw answer truncated to create golden answer
+        self.were_final_answers_truncated: Optional[List[bool]] = None  # Whether the raw answer truncated to create golden answer
         self.ordered_sub_ques_composition: Optional[List[str]] = None
 
         # For enabling expert_assist
@@ -593,8 +592,7 @@ class M3ToolCallEnv(ToolCallEnv):
             self.user_queries = [turn_data["query"] for turn_data in curr_instance_data["turns"]]
             self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
             self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
-            self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in
-                                                 curr_instance_data["turns"]]
+            self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in curr_instance_data["turns"]]
         # For [Older] Single-turn data
         else:
             self.user_queries = [curr_instance_data['merged_query']]
