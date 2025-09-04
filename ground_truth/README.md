@@ -11,7 +11,27 @@ All of this is handled via:
 
 ---
 
-### ⚙️ Mode 1: Parsing Raw Data into Multi-turn Format
+### ⚙️ Mode 1: Chunking Raw RAG data
+
+This step converts the RAG documents from the raw data into chunks, and additionally samples the retrievers for additional chunks to generate `topk` total chunks for each RAG example.
+
+Note: This is a pre-requisite before creating the ground truth trajectories with `generate.py`.
+
+**💡 Arguments:**
+
+* `--input_dir`: Path to the raw data directory
+* `--output_dir`: Path where the chunked raw data should be saved
+* `--topk`: Number of chunks to sample per RAG example (Defaults to 5)
+* `--domain`: Optional; run chunking for a specific domain's raw data
+
+
+**Usage:**
+
+```bash
+python -m ground_truth.chunk -i data/ -o chunked_data/ --topk 5
+```
+
+### ⚙️ Mode 2: Parsing Raw Data into Multi-turn Format
 
 This step converts raw scenario data into a pipeline-consumable multi-turn format.
 
@@ -22,12 +42,13 @@ This step converts raw scenario data into a pipeline-consumable multi-turn forma
 
 **💡 Arguments:**
 
-* `_raw_data_dir`: Path to the raw data directory
-* `_save_parsed_data_at`: Path where the parsed multi-turn data should be saved
+* `--input_dir`: Path to the raw data directory
+* `--output_dir`: Path where the parsed multi-turn data should be saved
+* `--domain`: Optional; run GT trajectory generation for a specific domain.
 
 ---
 
-### 🤖 Mode 2: Injecting LLM-Generated Thoughts and Final Answers
+### 🤖 Mode 3: Injecting LLM-Generated Thoughts and Final Answers
 
 After parsing, you can optionally inject reasoning traces and final answers using an LLM, guided by specific rules for tool response formatting and data quality.
 
@@ -76,8 +97,17 @@ If the final tool response is a list of many objects, and all of them could be u
 ### 🧪 Example Usage
 
 ```bash
-python generate.py
+python -m ground_truth.generate -i chunked_data/ -o trajectories
 ```
 
+
+### CCC scripts
+
+We have scripts to run chunking and generation in a distributed manner on CCC (at a per-domain level to save time).
+
+```bash
+bash ccc_scripts/run_chunking.sh
+bash ccc_scripts/run_generate.sh
+```
 ---
 

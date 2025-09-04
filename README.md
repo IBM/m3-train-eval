@@ -95,6 +95,7 @@ The parameters for governing the structure and behavior of the agent and its tas
 | `expert_model_name_or_path`   | RITS Model to serve for expert intervention (corresponding prompt in [observation_witness.py](prompts/judge/observation_witness.py))                    |
 | `resume_instance`             | Resume run specific parameter. ID of environment instance to resume from. See index at the last Environment Instantiated message in log file to find it |
 | `path_to_prev_run_dir`        | Resume run specific parameter. Directory where previous run's trajectories are saved at                                                                 |
+| `include_thoughts`        | Boolean toggle to include or exclude thoughts from the final trajectories. Useful to generate data to train SFT with and without thoughts. |
 
 ---
 
