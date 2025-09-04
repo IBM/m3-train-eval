@@ -174,7 +174,7 @@ def create_and_inject_thoughts(
         "stop_sequences": ["User Query"],
     }
     llm = get_lm(model_name_or_path, parameters=llm_parameters)
-    
+
     domain_files = os.listdir(parsed_data_dir)
     domain_files = [f for f in domain_files if f.endswith('.json')]
 
@@ -423,50 +423,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
             # Get the available document collections and add the retriever tool to the tools list
             doc_collections = list(set(sample['retrievers']))  # To avoid repeats
 
-            # # [Old Logic] For common retriever function across collections
-            # TODO: Add the description for each collection here as a metadata field in the below
-            # from envs.constants import RETRIEVE_FUNCTION_NAME
-            # retriever_tool = {
-            # 	"name": RETRIEVE_FUNCTION_NAME,
-            # 	"description": "Retrieve document(s) from the collection that best matches the query.",
-            # 	"parameters": {
-            # 		"type": "object",
-            # 		"required": ["collection", "query"],
-            # 		"properties": {
-            # 			"collection": {
-            # 				"description": "Name of the collection to retrieve documents from.",
-            # 				"type": "string",
-            # 				"enum": doc_collections
-            # 			},
-            # 			"query": {
-            # 				"description": "Query for retrieving the document(s).",
-            # 				"type": "string"
-            # 			}
-            # 		}
-            # 	}
-            # }
-            # tools.append(retriever_tool)
-            
-            # # [New Logic] For retriever function per collection
-            from envs.constants import RETRIEVER_FUNCTION_PREFIX
-            for collection_name in doc_collections:
-                domain_name = collection_name.replace("clapnq-", "") if collection_name.startswith(
-                    "clapnq-") else collection_name
-                retriever_tool = {
-                    "name": f"{RETRIEVER_FUNCTION_PREFIX}_clapnq_{domain_name}",
-                    "description": f"Retrieve document(s) from the domain '{domain_name}'.",
-                    "parameters": {
-                        "type": "object",
-                        "required": ["query"],
-                        "properties": {
-                            "query": {
-                                "description": "Query for retrieving the document(s).",
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-                tools.append(retriever_tool)
 
             parsed_sample = {
                 'sample_id': f"{sample_id}",
@@ -538,27 +494,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                                 f"    Collection {collection} not found for sample {sample_id} in available collections: {doc_collections}")
                             raise AssertionError(
                                 f"Collection {collection} not found in available collections: {doc_collections}")
-                        
-                        # # [Old Logic] For common retriever function across collections
-                        # hop_tool_call = {
-                        # 	'name': RETRIEVE_FUNCTION_NAME,
-                        # 	'arguments': {
-                        # 		'collection': collection,
-                        # 		'query': hop_question,
-                        # 	}
-                        # }
-
-                        # # [New Logic] For retriever function per collection
-                        hop_tool_call = {
-                            'name': f"{RETRIEVER_FUNCTION_PREFIX}_clapnq_{hop['db_id']}",
-                            'arguments': {
-                                'query': hop_question
-                            }
-                        }
-                        if isinstance(hop['rag_doc'], list) and len(hop['rag_doc']) > 1:
-                            logger.info(
-                                "    Ground-truth response contains multiple documents. Combining them into one.")
-                            hop_response = "\n".join(hop['rag_doc'])
 
                         if 'output' in hop:
                             if len(hop['output']) == 1:
@@ -596,12 +531,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                             'output': hop_tool_call
                         }
                     )
-
-#                     single_turn_trajectory.append(  # Add n_t+1 = tool call response
-#                         {
-#                             'response': hop_response,
-#                         }
-#                     )
 
                     response_dict = {'response': hop_response}
                     if chunk_info:
@@ -670,24 +599,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
     logger.info(f"\n[Overall Metrics] Total number of parsed samples: {total_samples}")
 
 
-if __name__ == "__main__":
-#     cwd = os.path.dirname(os.path.abspath(__file__))
-    
-#     # # CCC Paths
-#     # _raw_data_dir = '/proj/m3benchmark/bird-train/multi_turn/train_rest_v8_0730'
-#     # _save_parsed_data_at = '/proj/m3benchmark/bird-train/multi_turn/train_parsed'
-#     # _plot_dir = os.path.join(cwd, 'bird/plots')
-#     # dotenv_path=os.path.join(cwd, "../.env")
-    
-#     # # Local Paths
-#     _raw_data_dir = os.path.join(cwd, '../../raw-data/bird-train/multi_turn/train_rest_v6_0730')
-#     _log_dir = os.path.join(cwd, 'bird')
-#     _save_parsed_data_at = os.path.join(cwd, 'bird/parsed')
-#     _save_final_data_at = os.path.join(cwd, 'bird/final')
-#     dotenv_path = os.path.join(cwd, "../.env")
-    
-#     load_dotenv(dotenv_path=os.path.join(cwd, "../.env"))
-    
+if __name__ == "__main__":    
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', '-i', required=True, 
                        help='Path to raw data folder from root directory')
@@ -721,7 +633,7 @@ if __name__ == "__main__":
     logger.add(os.path.join(_log_dir, 'logs_{time}.log'), level="INFO", enqueue=True)
     
     # # 1. Parse the raw data
-    # create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
+    create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
     
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
     # # 2. Create the final training data
