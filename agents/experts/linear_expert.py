@@ -1,20 +1,20 @@
 import json
 import sys
 from typing import List
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, TYPE_CHECKING
 
 from loguru import logger
 
 from agents.base_agent import Agent
 from agents.llm import invoke_llm
 from data_utils import Role
-from data_utils.template import Template
 from data_utils.tool_utils import FunctionCall
-from envs.tool_call_env import ToolCallEnv
-from envs.constants import RETRIEVE_FUNCTION_NAME
 from prompts.utils import get_witness_prompt, get_thought_rewriter_prompt, parse_witness_response, \
     parse_rewriter_response
 
+if TYPE_CHECKING:
+    from data_utils.template import Template
+    from envs.tool_call_env import ToolCallEnv
 
 class LinearExpert(Agent):
     def __init__(
@@ -353,19 +353,20 @@ class M3Expert(LinearExpert):
                 elif item_1['agent'] == "retriever_agent" or item_1[
                     'agent'] == "rag_agent":  # iii) If action is a db retriever call
                     actions.append("RETRIEVE")
-                    # If the trajectory contains queries for hops with retrieval call
                     if isinstance(item_1['output'], str):
-                        action_arguments.append(
-                            {
-                                "thought": item_1["plan"],
-                                "name": RETRIEVE_FUNCTION_NAME,
-                                "arguments": {
-                                    "collection": self.env.es_config["index_name"],
-                                    "query": item_1['output'],
-                                },
-                                "response": hops[hop_idx + 1][0]['response']
-                            }
-                        )
+                        # # [Old Logic] If the trajectory contains queries for hops with retrieval call
+                        # action_arguments.append(
+                        # 	{
+                        # 		"thought": item_1["plan"],
+                        # 		"name": RETRIEVE_FUNCTION_NAME,
+                        # 		"arguments": {
+                        # 			"collection": self.env.es_config["index_name"],
+                        # 			"query": item_1['output'],
+                        # 		},
+                        # 		"response": hops[hop_idx + 1][0]['response']
+                        # 	}
+                        # )
+                        raise ValueError("Trajectory format now uses tool calls for retrieval. Please update the trajectory data.")
                     # If the trajectory contains tool call as retrieval call for hops
                     elif isinstance(item_1['output'], dict):
                         action_arguments.append(
@@ -389,7 +390,6 @@ class M3Expert(LinearExpert):
         return expert_traj
 
     def get_trajectory(self) -> Optional[List[dict]]:
-        # TODO: Adapt this for multi-turn
         curr_instance_data = self.env.data[self.env.curr_instance_idx]
 
         # Following logic to parse the G.T. Trajectory should work for all the tool availability/usage policies

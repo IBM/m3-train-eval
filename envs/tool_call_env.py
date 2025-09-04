@@ -2,19 +2,17 @@ import copy
 import json
 import os
 import random
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional, TYPE_CHECKING
 from pathlib import Path
 
 from loguru import logger
 
 from agents.llm import invoke_llm
-from data_utils.template import Template
 from data_utils.utils import Role
 from envs.apis.rest.call import run_tool, extract_out_dict_from_res
-from envs.base_env import BaseEnv, SubDomain, ToolPolicy
+from envs.base_env import BaseEnv, ToolPolicy
 from envs.expert_assist import ExpertAssist
-from envs.retrievers.elser import ElserRetriever
-from envs.retrievers.m3_retrievers import *
+from envs.retrievers.m3_retrievers import make_retriever
 from envs.utils import reformat_tools
 from invocable_api_hub.tool_calling.sql_to_api.sql_sequencing_dataset_builder import SqlSequencingDatasetBuilder
 from invocable_api_hub.tool_calling.sql_to_api.sql_slot_filling_dataset_builder import SqlSlotFillingDatasetBuilder
@@ -22,6 +20,11 @@ from invocable_api_hub.tool_calling.sql_to_api.utils import execute_single_api
 from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT
 from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer_prompt, parse_overseer_response, \
     get_parser_resolver_prompt
+
+
+if TYPE_CHECKING:
+    from envs.base_env import SubDomain
+    from data_utils.template import Template
 
 ERRONEOUS_CATEGORIES: List[str] = [
     "REWARD_PARSING_ERROR", "REWARD_BAD_TOOL_CALL", "REWARD_BAD_TOOL_CALL", "REWARD_ERROR_NO_CATEGORY",
@@ -55,7 +58,7 @@ ERRORS_BAD_TOOL_CALLS = [
     'MissingKeysError',
     'ToolDoesNotFoundError',
     'ToolMissingArgumentError',
-    'DocumentCollectionNameNotFoundError',  # error specific to retriever tool
+    # 'DocumentCollectionNameNotFoundError',  # error specific to retriever tool
     'ToolCallError'  # This is generic error returned for any issue in env.run_tool_and_get_obs()
 ]
 ERRORS_NO_PENALTY = [
@@ -324,6 +327,9 @@ class ToolCallEnv(BaseEnv):
                     reward = "{REWARD_FINAL_ANSWER_NO_MATCH}"
                 return reward, parsed_response["success"]
 
+            elif action["type"] == "RETRIEVE":
+                reward = "{REWARD_SUCCESS_RETRIEVAL_CALL}"
+                return reward, False
             else:
                 reward = "{REWARD_SUCCESS_TOOL_CALL}"
                 return reward, False
@@ -490,7 +496,7 @@ class ToolCallEnv(BaseEnv):
         return self.user_queries[self.curr_turn]
 
     @property
-    def curr_golden_answer(self) -> Optional[str]:
+    def curr_golden_answer(self) -> Any:
         """The answer the model/agent generates. It is properly wrapped into a sentence."""
         if self.golden_answers is not None:
             return self.golden_answers[self.curr_turn]
@@ -498,7 +504,7 @@ class ToolCallEnv(BaseEnv):
             return None
 
     @property
-    def curr_raw_answer(self) -> Optional[str]:
+    def curr_raw_answer(self) -> Any:
         """The answer the model/agent should have generated. It is unwrapped and json dumped structured object."""
         if self.raw_answers is not None:
             return self.raw_answers[self.curr_turn]
@@ -506,7 +512,7 @@ class ToolCallEnv(BaseEnv):
             return None
 
     @property
-    def final_answer_is_truncated(self) -> bool:
+    def final_answer_is_truncated(self) -> Any:
         """If the tool response was truncated and summarised into the final answer, return True."""
         if self.were_final_answers_truncated is not None:
             return self.were_final_answers_truncated[self.curr_turn]
@@ -753,14 +759,14 @@ class M3ToolCallEnv(ToolCallEnv):
                 builder = SqlSlotFillingDatasetBuilder(
                     dataset_name,
                     database_location,
-                    results_cache_path_unique,
+                    str(results_cache_path_unique),
                     source_dataset_name,
                 )
             else:
                 builder = SqlSequencingDatasetBuilder(
                     dataset_name,
                     database_location,
-                    results_cache_path_unique,
+                    str(results_cache_path_unique),
                     source_dataset_name,
                 )
             builder.build()
@@ -770,22 +776,42 @@ class M3ToolCallEnv(ToolCallEnv):
             except AssertionError:
                 raise AssertionError(f"Initialization specs should not be None for {self.sub_domain.mode}")
 
-            initialization_specs["arguments"]["database_path"] = os.path.join(
-                results_cache_path_unique, f"{dataset_name}.sqlite"
-            )
+            initialization_specs["arguments"]["database_path"] = os.path.join(str(results_cache_path_unique), f"{dataset_name}.sqlite")
             self.callable_api_pool, _ = builder.set_query_specific_api_pool([initialization_specs])
             self.initial_data_csv = self.initialize_sel_slot_data(initialization_specs, self.callable_api_pool)
 
     def setup_document_retrieval_tool(self):
-        self.es_config['username'] = os.getenv("ES_USERNAME", None)
-        self.es_config['password'] = os.getenv("ES_PASSWORD", None)
-        if self.es_config['username'] is None or self.es_config['password'] is None:
-            raise EnvironmentError("Elasticsearch credentials not configured. Provide ES_USERNAME and ES_PASSWORD.")
+        """Set up the retrieval tools here"""
+        
+        # # Old way of setting up
+        # self.es_config['username'] = os.getenv("ES_USERNAME", None)
+        # self.es_config['password'] = os.getenv("ES_PASSWORD", None)
+        # if self.es_config['username'] is None or self.es_config['password'] is None:
+        #     raise EnvironmentError("Elasticsearch credentials not configured. Provide ES_USERNAME and ES_PASSWORD.")
+        #
+        # self.doc_db = ElserRetriever(**self.es_config)  # index name not used here to init
+        #
+        # # provider_env = os.getenv("LLM_PROVIDER", "rits").lower()
+        # logger.info(f"Agent has access to {self.doc_db} document index")
+        
+        # # New way of setting up
+        self.doc_db = {}
+        for collection_name in self.document_collections:
+            domain_name = collection_name.replace("clapnq-", "") if collection_name.startswith(
+                "clapnq-") else collection_name
+            index_name = f"clapnq-{domain_name}"
+            fn_name = f"retriever_clapnq_{domain_name}"
+            try:
+                assert fn_name in self.tool_names
+            except AssertionError:
+                raise AssertionError(
+                    f"Tool list does not have the retriever function {fn_name} for collection {collection_name}")
+            
+            # doc_db is now a list of executable retriever functions
+            self.doc_db[fn_name] = make_retriever(index_name=index_name)
 
-        self.doc_db = ElserRetriever(**self.es_config)  # index name not used here to init
-
-        # provider_env = os.getenv("LLM_PROVIDER", "rits").lower()
-        logger.info(f"Agent has access to {self.doc_db} document index")
+        logger.info(
+            f"Agent has access to {len(self.doc_db)} document retrievers for collections: {self.document_collections}")
 
     def setup_tools(self):
         curr_instance_data = self.data[self.curr_instance_idx]
@@ -828,60 +854,75 @@ class M3ToolCallEnv(ToolCallEnv):
         # 3. Configure the document retrieval tool for the env
         self.setup_document_retrieval_tool()
 
-        # 4. Add the special tool for document retrieval
-        from envs.constants import RETRIEVE_FUNCTION_NAME
-        if RETRIEVE_FUNCTION_NAME not in self.tool_names:
-            retrieval_tool = {
-                "name": RETRIEVE_FUNCTION_NAME,
-                "description": "Retrieve document(s) from the collection that best matches the query.",
-                "parameters": {
-                    "type": "object",
-                    "required": ["collection", "query"],
-                    "properties": {
-                        "collection": {
-                            "description": "Name of the collection to retrieve documents from.",
-                            "type": "string",
-                            "enum": self.document_collections
-                        },
-                        "query": {
-                            "description": "Query for retrieving the document(s).",
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-            tools.append(retrieval_tool)
-
+        # 4. Add the special tool for document retrieval [Old way]
+        # from envs.constants import RETRIEVE_FUNCTION_NAME
+        # if RETRIEVE_FUNCTION_NAME not in self.tool_names:
+        # 	retrieval_tool = {
+        # 		"name": RETRIEVE_FUNCTION_NAME,
+        # 		"description": "Retrieve document(s) from the collection that best matches the query.",
+        # 		"parameters": {
+        # 			"type": "object",
+        # 			"required": ["collection", "query"],
+        # 			"properties": {
+        # 				"collection": {
+        # 					"description": "Name of the collection to retrieve documents from.",
+        # 					"type": "string",
+        # 					"enum": self.document_collections
+        # 				},
+        # 				"query": {
+        # 					"description": "Query for retrieving the document(s).",
+        # 					"type": "string"
+        # 				}
+        # 			}
+        # 		}
+        # 	}
+        # 	tools.append(retrieval_tool)
+        
         # 5. Format the list of final tools into the Google docstring format
         tools = reformat_tools(tools)
         self.tools: str = json.dumps(tools)
 
     def run_doc_retrieval(self, extracted_tool: Dict[str, Any]) -> str:
-
+        
+        # # Old way of calling
+        # retrieval_fn_name = extracted_tool['name']
+        # collection_name = extracted_tool['arguments']['collection']
+        # retrieval_query = extracted_tool['arguments']['query']
+        # logger.info(
+        # 	f"Trying to run tool ({retrieval_fn_name}): Document retrieval from the collection `{collection_name}` using query `{retrieval_query}`")
+        #
+        # if collection_name not in self.document_collections:  # Here we can catch hallucinated collection names
+        # 	error = f"DocumentCollectionNameNotFoundError: The provided collection name '{collection_name}' does not exist in the available collections list {self.document_collections}."
+        # 	observation = f"{error}"
+        # 	return observation
+        #
+        # document_text, metadata = self.doc_db.retrieve_passages(retrieval_query, self.es_config["top_k"],
+        # 														collection_name)
+        # logger.info(f"Retrieval Response Metadata: {json.dumps(metadata, indent=2)}")
+        #
+        # # Cleanup document text
+        # document_text = document_text.split("\n")
+        # document_text = [line for line in document_text if len(line.strip()) > 0]
+        # document_text = "\n".join(document_text)
+        #
+        # observation = f"ToolCallSuccessful: {document_text}"
+        
+        # # New way of calling [Mirrors the API call]
         retrieval_fn_name = extracted_tool['name']
-        collection_name = extracted_tool['arguments']['collection']
-        retrieval_query = extracted_tool['arguments']['query']
-        logger.info(
-            f"Trying to run tool ({retrieval_fn_name}): Document retrieval from the collection `{collection_name}` using query `{retrieval_query}`")
-
-        if collection_name not in self.document_collections:  # Here we can catch hallucinated collection names
-            error = f"DocumentCollectionNameNotFoundError: The provided collection name '{collection_name}' does not exist in the available collections list {self.document_collections}."
+        if retrieval_fn_name not in self.tool_names:  # Here we can catch hallucinated retrieval function names
+            error = f"ToolDoesNotFoundError: The provided tool name '{retrieval_fn_name}' does not exist in the tool list."
             observation = f"{error}"
             return observation
-
-        document_text, metadata = self.doc_db.retrieve_passages(retrieval_query, self.es_config["top_k"],
-                                                                collection_name)
-        logger.info(f"Retrieval Response Metadata: {json.dumps(metadata, indent=2)}")
-
-        # Cleanup document text
-        document_text = document_text.split("\n")
-        document_text = [line for line in document_text if len(line.strip()) > 0]
-        document_text = "\n".join(document_text)
-
-        observation = f"ToolCallSuccessful: {document_text}"
-
-        return observation
-
+        else:
+            retrieval_query = extracted_tool['arguments']['query']
+            logger.info(f"Trying to run tool ({retrieval_fn_name}) for document retrieval with query `{retrieval_query}`")
+            
+            tool_resp = self.doc_db[retrieval_fn_name](retrieval_query)
+            document_text = json.dumps(tool_resp)
+            
+            observation = f"ToolCallSuccessful: {document_text}"
+            return observation
+    
     def run_api(self, extracted_tool: Dict[str, Any]) -> str:
         tool_name = extracted_tool['name']
         tool_args = extracted_tool['arguments']  # Can be extracted_tool['parameters']
@@ -919,7 +960,7 @@ class M3ToolCallEnv(ToolCallEnv):
                     return observation
             else:
                 try:
-                    tool_resp: dict = execute_single_api(
+                    tool_resp = execute_single_api(
                         tool_name,
                         tool_args,
                         api_pool=self.callable_api_pool,

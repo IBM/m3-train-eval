@@ -1,15 +1,16 @@
 import json
 import re
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 
 from agents.base_agent import Agent
 from agents.llm import invoke_llm
-from data_utils.template import Template
-from data_utils.tool_utils import FunctionCall
 from data_utils.utils import Role
-from envs.constants import RETRIEVE_FUNCTION_NAME
+from envs.constants import RETRIEVER_FUNCTION_PREFIX
 from openai import OpenAI
 
+if TYPE_CHECKING:
+    from data_utils.template import Template
+    from data_utils.tool_utils import FunctionCall
 
 class Monolithic(Agent):
 
@@ -79,12 +80,15 @@ class Monolithic(Agent):
         else:
             function_call = actionic_response[0]
             name, arguments = function_call
-            if name == RETRIEVE_FUNCTION_NAME:
+            
+            # # Check: The predicted action should be one of API or RETRIEVE
+            if name.strip().startswith(RETRIEVER_FUNCTION_PREFIX):
                 parsed_response['type'] = "RETRIEVE"
             else:
                 parsed_response['type'] = "API"
             parsed_response['value'] = {"name": name, "arguments": json.loads(arguments)}
-            parsed_response['role'] = Role.FUNCTION.value  # With a successful tool extraction, we designate the Function role
+            parsed_response[
+                'role'] = Role.FUNCTION.value  # With a successful tool extraction, we designate the Function role
 
             # Update the template_free_response to remove the agent template's specific tokens for tool calling
             template_free_response = f"{self.agent_template.thought_words[0]}{thought}{self.agent_template.thought_words[1]}"  # Add the thought

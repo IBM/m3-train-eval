@@ -56,30 +56,32 @@ def reformat_tools(tools: Union[dict, List[dict]]) -> List[dict]:
     return reformatted_tools
 
 
-def get_available_databases_from_tools(tools: list[dict[str, Any]]) -> List[str]:
-    from envs.constants import RETRIEVE_FUNCTION_NAME
-    tool_found = False
-    for tool in tools:
-        tool_name = tool["name"] if 'name' in tool else tool['function']['name']
-        if tool_name == RETRIEVE_FUNCTION_NAME:
-            tool_found = True
-            break
-
-    if not tool_found:
-        raise ValueError("The database retrieval tool was not found!")
-    else:
-        key = 'database'
-        available_databases: List[str] = tool['function']['parameters']['properties'][key]['enum']
-        return available_databases
+# def get_available_databases_from_tools(tools: list[dict[str, Any]]) -> List[str]:
+# 	from envs.constants import RETRIEVE_FUNCTION_NAME
+# 	tool_found = False
+# 	for tool in tools:
+# 		tool_name = tool["name"] if 'name' in tool else tool['function']['name']
+# 		if tool_name == RETRIEVE_FUNCTION_NAME:
+# 			tool_found = True
+# 			break
+#
+# 	if not tool_found:
+# 		raise ValueError("The database retrieval tool was not found!")
+# 	else:
+# 		key = 'database'
+# 		available_databases: List[str] = tool['function']['parameters']['properties'][key]['enum']
+# 		return available_databases
 
 
 def split_retriever_tool_from_rest(tools: list[dict[str, Any]]) -> Tuple[List[dict[str, Any]], dict[str, Any]]:
-    from envs.constants import RETRIEVE_FUNCTION_NAME
+    from envs.constants import RETRIEVER_FUNCTION_PREFIX
     retriever_tool = None
     other_tools = []
     for tool in tools:
         tool_name = tool["name"] if 'name' in tool else tool['function']['name']
-        if tool_name == RETRIEVE_FUNCTION_NAME:
+        # if tool_name == RETRIEVE_FUNCTION_NAME:
+        # 	retriever_tool = copy.deepcopy(tool)
+        if tool_name.strip().startswith(RETRIEVER_FUNCTION_PREFIX):
             retriever_tool = copy.deepcopy(tool)
         else:
             other_tools.append(tool)
@@ -100,10 +102,6 @@ def print_google_docstring_format():
     print(json.dumps(get_json_schema(get_current_weather), indent=4))
 
 
-if __name__ == "__main__":
-    print_google_docstring_format()
-
-
 def ground_tool_availability(tools: list[dict[str, Any]], policy: str) -> list[dict[str, Any]]:
     r"""[My custom added] Ground tool availability instructions to the given policy"""
     other_tools, retriever_tool = split_retriever_tool_from_rest(tools)
@@ -122,3 +120,8 @@ def ground_tool_usage(policy: str) -> str:
     if len(policy) > 0:
         tool_use_constraints = f"\n\n            Tool Usage Constraint: {policy}"
     return tool_use_constraints
+
+
+if __name__ == "__main__":
+    print_google_docstring_format()
+

@@ -422,7 +422,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
 
             # Get the available document collections and add the retriever tool to the tools list
             doc_collections = list(set(sample['retrievers']))  # To avoid repeats
-            # TODO: Add the description for each collection here as a metadata field in the below
 
             parsed_sample = {
                 'sample_id': f"{sample_id}",
@@ -493,7 +492,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                                 f"    Collection {collection} not found for sample {sample_id} in available collections: {doc_collections}")
                             raise AssertionError(
                                 f"Collection {collection} not found in available collections: {doc_collections}")
-                        
+
 
                         if 'output' in hop:
                             if len(hop['output']) == 1:
@@ -633,6 +632,8 @@ if __name__ == "__main__":
     logger.add(os.path.join(_log_dir, 'logs_{time}.log'), level="INFO", enqueue=True)
 
     # # 1. Parse the raw data
+    create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
+
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
 
     # # 2. Create the final training data
