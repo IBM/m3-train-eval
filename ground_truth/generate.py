@@ -200,7 +200,7 @@ def create_and_inject_thoughts(
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
             is_valid_sample = True
             orig_sample = copy.deepcopy(sample)
-            
+
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
 
@@ -423,7 +423,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
             # Get the available document collections and add the retriever tool to the tools list
             doc_collections = list(set(sample['retrievers']))  # To avoid repeats
 
-
             parsed_sample = {
                 'sample_id': f"{sample_id}",
                 'tools': tools,
@@ -484,7 +483,6 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
 
                     else:
                         hop_agent = 'rag_agent'
-                        from envs.constants import RETRIEVE_FUNCTION_NAME, RETRIEVER_FUNCTION_PREFIX
                         # For a document retrieval, we define the function
                         collection = 'clapnq-' + hop['db_id']
                         try:
@@ -494,6 +492,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                                 f"    Collection {collection} not found for sample {sample_id} in available collections: {doc_collections}")
                             raise AssertionError(
                                 f"Collection {collection} not found in available collections: {doc_collections}")
+
 
                         if 'output' in hop:
                             if len(hop['output']) == 1:
@@ -531,11 +530,11 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                             'output': hop_tool_call
                         }
                     )
-
                     response_dict = {'response': hop_response}
                     if chunk_info:
                         response_dict['chunk_info'] = chunk_info
                     single_turn_trajectory.append(response_dict)
+
                 # Add n_T = final answer
                 single_turn_trajectory.append(
                     {
@@ -557,7 +556,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                     final_tool_response_dist[str(len_answer)] = 1
                 else:
                     final_tool_response_dist[str(len_answer)] += 1
-                
+
                 if str(len_answer) not in final_tool_response_dist_domain:
                     final_tool_response_dist_domain[str(len_answer)] = 1
                 else:
@@ -599,7 +598,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
     logger.info(f"\n[Overall Metrics] Total number of parsed samples: {total_samples}")
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', '-i', required=True, 
                        help='Path to raw data folder from root directory')
@@ -631,11 +630,12 @@ if __name__ == "__main__":
     logger.remove()
     logger.add(sys.stdout, colorize=True, level="INFO", enqueue=True)
     logger.add(os.path.join(_log_dir, 'logs_{time}.log'), level="INFO", enqueue=True)
-    
+
     # # 1. Parse the raw data
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
-    
+
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
+
     # # 2. Create the final training data
     _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
     _created_training_data_stats = create_and_inject_thoughts(_save_parsed_data_at, _save_final_data_at,
