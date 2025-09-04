@@ -182,6 +182,8 @@ def run_agent(args):
         env_instances_idxs: List[int] = list(range(total_runs))
 
     for i in tqdm(env_instances_idxs, total=len(env_instances_idxs), desc='Environment instance'):
+        # import pdb
+        # pdb.set_trace()
 
         logger.info("="*100)
         logger.info(f"Environment Instantiated ({i})")

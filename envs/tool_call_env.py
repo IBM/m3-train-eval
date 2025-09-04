@@ -578,7 +578,7 @@ class M3ToolCallEnv(ToolCallEnv):
                 data = json.load(f)
         elif path.is_dir():
             data = []
-            for json_file in path.glob('*_final.json'):
+            for json_file in path.glob('*.json'):
                 with open(json_file, 'r') as f:
                     data.extend(json.load(f))
         else:
