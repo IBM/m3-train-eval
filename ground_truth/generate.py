@@ -445,7 +445,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                 'num_hops': sample['num_hops'],
                 'type': sample['type'],
                 'trajectory': [],
-                'scenarios':{}
+                'scenarios':scenarios
             
             }
 

@@ -662,9 +662,9 @@ class M3ToolCallEnv(ToolCallEnv):
     def setup_scenarios(self):
         curr_instance_data = self.data[self.curr_instance_idx]
         domain=curr_instance_data["domain"]
-        if 'tool_availability_policy' in curr_instance_data and 'tool_usage_policy' in curr_instance_data:
+        if 'tool_availability_policy' in curr_instance_data and 'tool_use_policy' in curr_instance_data:
             #if tool availabilty and usage both are provided 
-            tool_usage_policy=curr_instance_data['tool_usage_policy']
+            tool_usage_policy=curr_instance_data['tool_use_policy']
             use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
             self.tool_policy = ToolPolicy(
                 tool_availability_policy=curr_instance_data['tool_availability_policy'],
@@ -672,7 +672,7 @@ class M3ToolCallEnv(ToolCallEnv):
             )
         elif 'tool_usage_policy' in curr_instance_data:
             #if only tool usage policy is provided. 
-            tool_usage_policy=curr_instance_data['tool_usage_policy']
+            tool_usage_policy=curr_instance_data['tool_use_policy']
             use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
     
             self.tool_policy = ToolPolicy(
