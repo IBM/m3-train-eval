@@ -330,13 +330,13 @@ def get_llm(model_id=None):
         )
     return OpenAI(
         api_key=rits_api_key,
-        base_url="https://inference-3scale-apicast-production.apps.rits.fmaas.res.ibm.com/mixtral-8x22b-instruct-v01/v1",
+        base_url="https://inference-3scale-apicast-production.apps.rits.fmaas.res.ibm.com/mixtral-8x7b-instruct-v01/v1",
         default_headers={"RITS_API_KEY": rits_api_key},
     )
 
 def score_chunks(chunks: List[str], query: str, answer:str)->List[int]:
     chunk_index=[]
-    model_id="mistralai/mixtral-8x22B-instruct-v0.1"
+    model_id="mistralai/mixtral-8x7B-instruct-v0.1"
     llm = get_llm()
     for index,chunk in enumerate(chunks):
         formatted_string = SCORER_PROMPT.format(

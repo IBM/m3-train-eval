@@ -586,6 +586,7 @@ class M3ToolCallEnv(ToolCallEnv):
 
     def setup_user_queries(self):
         curr_instance_data = self.data[self.curr_instance_idx]
+        self.domain = curr_instance_data["domain"]
 
         # For Multi-turn data
         if "turns" in curr_instance_data:

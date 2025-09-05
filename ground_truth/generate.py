@@ -203,6 +203,7 @@ def create_and_inject_thoughts(
 
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
+            domain_name = sample["domain"]
 
             # # For each sample declare scenarios here
             tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
@@ -400,6 +401,8 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
             if "ignore" in list (sample.keys()):
                 continue
 
+            domain_name = domain_file.split("_multiturn")[0] # address_multiturn_bird_chunked.json
+
             sample_id = sample['sample_id']
             logger.info(f"Creating turn level data sample #{sample_id}")
 
@@ -425,6 +428,7 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
 
             parsed_sample = {
                 'sample_id': f"{sample_id}",
+                'domain': f"{domain_name}",
                 'tools': tools,
                 'doc_collections': doc_collections,
                 'num_turns': sample['num_turns'],
@@ -632,8 +636,6 @@ if __name__ == "__main__":
     logger.add(os.path.join(_log_dir, 'logs_{time}.log'), level="INFO", enqueue=True)
 
     # # 1. Parse the raw data
-    create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, os.path.join(_log_dir, 'plots') )
-
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
 
     # # 2. Create the final training data

@@ -68,7 +68,9 @@ def run_agent(args):
 
     logger.info(json.dumps(config, indent=4))
     save_traj_at = os.path.join(config['log_dir'], 'trajectories')
+    save_metadata_at = os.path.join(config['log_dir'], 'metadata')
     os.makedirs(save_traj_at, exist_ok=True)
+    os.makedirs(save_metadata_at, exist_ok=True)
 
     # ########################################## Configure the Agent ########################################## #
     stop_sequences = []
@@ -195,6 +197,7 @@ def run_agent(args):
         expert_agent.initialize(env)
         agent_trajectory = {
             'system': env.system,
+            'domain': env.domain,
             'tools': env.tools,
             'interactions': {},
             'tool_availability_policy': env.tool_policy.tool_availability_policy,
@@ -371,7 +374,7 @@ def run_agent(args):
         with open(os.path.join(save_traj_at, f"trajectory_{i}.json"), "w") as f:
             json.dump(agent_trajectory, f, indent=2)
         # Save its metadata
-        with open(os.path.join(config['log_dir'], f"metadata_{i}.json"), "w") as f:
+        with open(os.path.join(save_metadata_at, f"metadata_{i}.json"), "w") as f:
             json.dump(agent_metadata, f, indent=2)
 
     metrics["total_runs"] = total_runs
