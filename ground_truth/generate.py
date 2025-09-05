@@ -29,11 +29,13 @@ def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: st
     return step_prompt
 
 
-def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str]) -> \
+def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str], tool_use_policy=None) -> \
 List[dict]:
-    from ground_truth.prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT
+    from prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT, SYSTEM_PROMPT_WITH_TOOL_POLICY
     prompt = []
     system_prompt = SYSTEM_PROMPT
+    if tool_use_policy is not None:
+        system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.format(tool_policy=tool_use_policy)
     prompt.append(
         {
             "role": "system",
@@ -67,7 +69,7 @@ List[dict]:
     return prompt
 
 
-def get_answer_generator_prompt(user_query: str, trajectory: str, additional_instruction: str = '') -> List[dict]:
+def get_answer_generator_prompt(user_query: str, trajectory: str, additional_instruction: str = '', tool_use_policy=None) -> List[dict]:
     from ground_truth.prompt_final_answer import SYSTEM_PROMPT, QUERY_PROMPT
     prompt = []
     system_prompt = SYSTEM_PROMPT
@@ -207,7 +209,7 @@ def create_and_inject_thoughts(
 
             # # For each sample declare scenarios here
             tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
-            tool_usage_policy = ""  # This should be the instruction in english to control which tools need to be used
+            tool_usage_policy = get_tool_use_policy(sample['tool_usage_policy'], domain=domain_name)  # This should be the instruction in english to control which tools need to be used
             sample['tool_availability_policy']: str = tool_availability_policy
             sample['tool_usage_policy']: str = tool_usage_policy
 
