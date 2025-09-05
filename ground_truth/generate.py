@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from agents.llm import invoke_llm, get_lm
 from metrics.plot import plot_freq_dist
+from data_utils.tool_utils import get_tool_use_policy
 
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
