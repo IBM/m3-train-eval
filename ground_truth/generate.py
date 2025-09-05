@@ -207,10 +207,12 @@ def create_and_inject_thoughts(
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
             domain_name = sample["domain"]
-
             # # For each sample declare scenarios here
             tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
-            tool_usage_policy = get_tool_use_policy(sample['tool_usage_policy'], domain=domain_name)  # This should be the instruction in english to control which tools need to be used
+            tool_use_policy_field=sample['scenarios']['tool_use_policy']
+            tool_usage_policy = get_tool_use_policy(tool_use_policy_field, domain=domain_name)  # This should be the instruction in english to control which tools need to be used
+            logger.info(f"    Tool Usage Policy from env set to  #{tool_use_policy_field}")
+            logger.info(f"    Agent Policy set to  #{tool_usage_policy}")
             sample['tool_availability_policy']: str = tool_availability_policy
             sample['tool_usage_policy']: str = tool_usage_policy
 
@@ -292,6 +294,7 @@ def create_and_inject_thoughts(
                     previous_dialogue=previous_dialogue,
                     user_query=curr_user_query,
                     step_prompts=step_prompts,
+                    tool_use_policy=tool_usage_policy
                 )
                 try:
                     response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
@@ -429,6 +432,10 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
             # Get the available document collections and add the retriever tool to the tools list
             doc_collections = list(set(sample['retrievers']))  # To avoid repeats
 
+            if 'scenarios' in sample:
+                scenarios=sample['scenarios']
+            else:
+                scenarios={}
             parsed_sample = {
                 'sample_id': f"{sample_id}",
                 'domain': f"{domain_name}",
@@ -438,6 +445,8 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                 'num_hops': sample['num_hops'],
                 'type': sample['type'],
                 'trajectory': [],
+                'scenarios':{}
+            
             }
 
             is_valid_sample: bool = True
