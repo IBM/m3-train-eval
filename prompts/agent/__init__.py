@@ -19,3 +19,25 @@ FINAL_ANSWER_INSUFFICIENCY_TEMPLATES = [
     "If you cannot find adequate information, respond by saying '{fb}'",
     "If the information you have is incomplete, your reply should be '{fb}'"
 ]
+
+TOOL_USE_RAG_TEMPLATES=[
+    "If a user's query pertains to {domains}, make sure you try answering them by only using document retrievers. Do not use other types of tools.",
+    "Use document retrievers to answer questions. Do not use any other type of tool."
+]
+
+TOOL_USE_API_TEMPLATES=[
+    "If a user's query pertains to {domains}, make sure you do not use document retrievers to try answering those questions. Use other types of tools. ",
+    "Do not use document retrievers to answer questions. Use other types of tools."
+]
+
+
+TOOL_FIRST_API_TEMPLATES=[
+    "If a user's query pertains to {domains}, first try answering those questions without invoking document retrievers. ",
+    "If you have to use tools, first try answering them without using document retrievers."
+]
+
+
+TOOL_FIRST_RAG_TEMPLATES=[
+    "If a user's query pertains to {domains}, first try answering those questions by using document retrievers. ",
+    "If you have to use tools, firt try using document retrievers for answering them."
+]
