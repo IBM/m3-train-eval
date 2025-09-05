@@ -95,6 +95,7 @@ The parameters for governing the structure and behavior of the agent and its tas
 | `expert_model_name_or_path`   | RITS Model to serve for expert intervention (corresponding prompt in [observation_witness.py](prompts/judge/observation_witness.py))                    |
 | `resume_instance`             | Resume run specific parameter. ID of environment instance to resume from. See index at the last Environment Instantiated message in log file to find it |
 | `path_to_prev_run_dir`        | Resume run specific parameter. Directory where previous run's trajectories are saved at                                                                 |
+| `include_thoughts`        | Boolean toggle to include or exclude thoughts from the final trajectories. Useful to generate data to train SFT with and without thoughts. |
 
 ---
 
@@ -103,12 +104,13 @@ Here's how the expert intervention mechanism works:
 ![Expert Intervention](sample/expert_intervention.jpg)
 
 The framework supports various expert-assisted settings for supervising or augmenting agent decisions. 
-Controls if and how the expert (which has access to ground-truth trajectories) is used. Set via `expert_mode`:
+Controls if and how the expert (which has access to ground-truth trajectories) is used. Set via `expert_assist_mode`:
 
 | Mode           | Description                                                                  |
 |----------------|------------------------------------------------------------------------------|
 | `None`         | Agent operates independently throughout                                      |
 | `ground_truth` | Expert solves the entire task (for generating LLM-agnostic supervision data) |
+| `ground_truth_non_live` | Same as above, but uses the raw input files as GT reference instead of calling the Tools/Retrievers|
 | `random`       | Coin flip based on `expert_assist_random_epsilon` decides if expert steps in |
 | `informed`     | Expert intervenes based on whether the agent is stuck or repeatedly failing  |
 

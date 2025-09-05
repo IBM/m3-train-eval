@@ -15,7 +15,7 @@ class ExpertAssist:
         if self.mode is None:
             logger.info("Expert Assist mode not set. Agent will not get expert help.")
         else:
-            assert self.mode in ["informed", "random", "ground_truth"]
+            assert self.mode in ["informed", "random", "ground_truth", "ground_truth_non_live"]
 
         assert self.init_limit > 0
         assert self.recent_limit < 0

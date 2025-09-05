@@ -1,20 +1,20 @@
 import json
 import sys
 from typing import List
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, TYPE_CHECKING
 
 from loguru import logger
 
 from agents.base_agent import Agent
 from agents.llm import invoke_llm
 from data_utils import Role
-from data_utils.template import Template
 from data_utils.tool_utils import FunctionCall
-from envs.tool_call_env import ToolCallEnv
-from envs.constants import RETRIEVE_FUNCTION_NAME
 from prompts.utils import get_witness_prompt, get_thought_rewriter_prompt, parse_witness_response, \
     parse_rewriter_response
 
+if TYPE_CHECKING:
+    from data_utils.template import Template
+    from envs.tool_call_env import ToolCallEnv
 
 class LinearExpert(Agent):
     def __init__(
@@ -121,7 +121,7 @@ class LinearExpert(Agent):
         else:
             return False
 
-    def map_idx_to_action(self, act_idx: int) -> Tuple[dict, str]:
+    def map_idx_to_action(self, act_idx: int, include_thoughts: bool) -> Tuple[dict, str]:
         """Get expert action corresponding to the given action index."""
         parsed_response = dict()
 
@@ -140,7 +140,10 @@ class LinearExpert(Agent):
             }
             parsed_response["value"] = tool_call
             parsed_response["role"] = Role.FUNCTION.value  # Assistant invokes a tool
-            parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
+            if include_thoughts is not None and include_thoughts == False:
+                parsed_response["template_free_response"] = f"{json.dumps(tool_call, ensure_ascii=False)}"
+            else:
+                parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
             parsed_response["response"] = f"{self.thought_start}{thought}{self.thought_end}" + self.agent_template.format_tools.tool_utils.function_formatter(
                 [FunctionCall(tool_call["name"], json.dumps(tool_call["arguments"], ensure_ascii=False))]
             )
@@ -153,7 +156,10 @@ class LinearExpert(Agent):
             }
             parsed_response["value"] = tool_call
             parsed_response["role"] = Role.FUNCTION.value  # Assistant invokes a tool
-            parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
+            if include_thoughts is not None and include_thoughts == False:
+                parsed_response["template_free_response"] = f"{json.dumps(tool_call, ensure_ascii=False)}"
+            else:
+                parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}{json.dumps(tool_call, ensure_ascii=False)}"
             parsed_response["response"] = f"{self.thought_start}{thought}{self.thought_end}" + self.agent_template.format_tools.tool_utils.function_formatter(
                 [FunctionCall(tool_call["name"], json.dumps(tool_call["arguments"], ensure_ascii=False))]
             )
@@ -163,7 +169,10 @@ class LinearExpert(Agent):
             final_answer = action_arguments["final_answer"]
             parsed_response["value"] = final_answer
             parsed_response["role"] = Role.ASSISTANT.value  # Assistant simply replies
-            parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}<FINAL>{final_answer}</FINAL>"
+            if include_thoughts is not None and include_thoughts == False:
+                parsed_response["template_free_response"] = f"<FINAL>{final_answer}</FINAL>"
+            else:
+                parsed_response["template_free_response"] = f"{self.thought_start}{thought}{self.thought_end}<FINAL>{final_answer}</FINAL>"
             parsed_response["response"] = f"{self.thought_start}{thought}{self.thought_end}<FINAL>{final_answer}</FINAL>"
 
             observation = 'Done!'
@@ -173,7 +182,7 @@ class LinearExpert(Agent):
         parsed_response['error'] = None
         return parsed_response, observation
 
-    def get_action(self, state) -> Tuple[dict, int]:
+    def get_action(self, state, include_thoughts) -> Tuple[dict, int]:
         """ This function basically represents the transition and output function of the Finite-State Machine (or Finite-State Transducer)
             Based on the agent's execution trace that acts as the input to the FSM,
                 > it transitions to the expert's next internal state
@@ -195,16 +204,22 @@ class LinearExpert(Agent):
         if self.env.expert_assist.mode == "ground_truth":
             # The trajectories are being collected using the expert (no agent presence)
             act_idx = self.get_curr_action_idx()
-            action, observation = self.map_idx_to_action(act_idx)
+            action, observation = self.map_idx_to_action(act_idx, include_thoughts)
             num_transitions += 1
             # No need to update thought
+            return action, num_transitions
+        elif self.env.expert_assist.mode == "ground_truth_non_live":
+            act_idx = self.get_curr_action_idx()
+            action, observation = self.map_idx_to_action(act_idx, include_thoughts)
+            action["ground_truth_observation"] = observation
+            num_transitions += 1
             return action, num_transitions
         else:
             no_error_state = [item for item in state if 'error' not in item["observation"].lower()]
             if len(no_error_state) == 0:
                 # Edge case: This is either the first action requested from the expert or no error-free action was taken by the agent.
                 act_idx = self.get_curr_action_idx()
-                action, observation = self.map_idx_to_action(act_idx)
+                action, observation = self.map_idx_to_action(act_idx, include_thoughts)
                 num_transitions += 1
                 # No need to update thought
                 return action, num_transitions
@@ -214,7 +229,7 @@ class LinearExpert(Agent):
                 act_idx = self.get_curr_action_idx()
                 while act_idx < curr_turn_max_expert_actions or not expert_action_found:
 
-                    action, observation = self.map_idx_to_action(act_idx)
+                    action, observation = self.map_idx_to_action(act_idx, include_thoughts)
                     action_type = action["type"]
 
                     if action_type == "FINAL":
@@ -252,7 +267,7 @@ class LinearExpert(Agent):
                 logger.error("Reached a point where we looked for the next expert action but can not find any.")
                 sys.exit(-1)
 
-    def take_action(self, state, reward: Optional[float] = None) -> Dict[str, Any]:
+    def take_action(self, state, include_thoughts: bool=True, reward: Optional[float] = None) -> Dict[str, Any]:
         """
         :param state: History of agent interactions. List of agentic actions, arguments and observations.
             [
@@ -266,7 +281,7 @@ class LinearExpert(Agent):
         :return:
         """
         # Get the expert action
-        action, num_transitions = self.get_action(state)
+        action, num_transitions = self.get_action(state, include_thoughts)
         # Update the expert's internal state
         while num_transitions > 0:
             self.transition_to_next_action()
@@ -338,19 +353,20 @@ class M3Expert(LinearExpert):
                 elif item_1['agent'] == "retriever_agent" or item_1[
                     'agent'] == "rag_agent":  # iii) If action is a db retriever call
                     actions.append("RETRIEVE")
-                    # If the trajectory contains queries for hops with retrieval call
                     if isinstance(item_1['output'], str):
-                        action_arguments.append(
-                            {
-                                "thought": item_1["plan"],
-                                "name": RETRIEVE_FUNCTION_NAME,
-                                "arguments": {
-                                    "collection": self.env.es_config["index_name"],
-                                    "query": item_1['output'],
-                                },
-                                "response": hops[hop_idx + 1][0]['response']
-                            }
-                        )
+                        # # [Old Logic] If the trajectory contains queries for hops with retrieval call
+                        # action_arguments.append(
+                        # 	{
+                        # 		"thought": item_1["plan"],
+                        # 		"name": RETRIEVE_FUNCTION_NAME,
+                        # 		"arguments": {
+                        # 			"collection": self.env.es_config["index_name"],
+                        # 			"query": item_1['output'],
+                        # 		},
+                        # 		"response": hops[hop_idx + 1][0]['response']
+                        # 	}
+                        # )
+                        raise ValueError("Trajectory format now uses tool calls for retrieval. Please update the trajectory data.")
                     # If the trajectory contains tool call as retrieval call for hops
                     elif isinstance(item_1['output'], dict):
                         action_arguments.append(
@@ -374,7 +390,6 @@ class M3Expert(LinearExpert):
         return expert_traj
 
     def get_trajectory(self) -> Optional[List[dict]]:
-        # TODO: Adapt this for multi-turn
         curr_instance_data = self.env.data[self.env.curr_instance_idx]
 
         # Following logic to parse the G.T. Trajectory should work for all the tool availability/usage policies

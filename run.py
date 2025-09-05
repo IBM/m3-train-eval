@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Optional
 
 from loguru import logger
 from tqdm import tqdm
+import argparse
 
 from envs.expert_assist import setup_expert_assist
 from agents.loader import get_agent, get_expert
@@ -46,7 +47,7 @@ def get_alternate_action_trace(state, env, policy, initiating_actor: str) -> Lis
     return [alternate_interaction]
 
 
-def run_agent():
+def run_agent(args):
     # ########################################## Load the config file ########################################## #
     path_to_config = os.path.join('config_files', 'infer_agent.json')
     with open(path_to_config) as f:
@@ -56,7 +57,10 @@ def run_agent():
     # ############################################## Set up the run ############################################## #
     curr_time = datetime.now()
     curr_time = "_".join(str(curr_time).split(" ")).replace(":", ".")
-    config['log_dir'] = f"./logging/{curr_time}"
+    if args.output_dir:
+        config['log_dir'] = f"{args.output_dir}"
+    else:
+        config['log_dir'] = f"./logging/{curr_time}"
     os.makedirs(config['log_dir'], exist_ok=True)
 
     # Set up the os environment and logging
@@ -64,7 +68,9 @@ def run_agent():
 
     logger.info(json.dumps(config, indent=4))
     save_traj_at = os.path.join(config['log_dir'], 'trajectories')
+    save_metadata_at = os.path.join(config['log_dir'], 'metadata')
     os.makedirs(save_traj_at, exist_ok=True)
+    os.makedirs(save_metadata_at, exist_ok=True)
 
     # ########################################## Configure the Agent ########################################## #
     stop_sequences = []
@@ -156,6 +162,12 @@ def run_agent():
     # ########################################## Run the Agent ########################################## #
     metrics = defaultdict(int)
     total_runs = len(env) # len(env)
+    if "include_thoughts" in config and config["include_thoughts"] == False:
+        include_thoughts = False
+    else:
+        include_thoughts = True
+    logger.info(f"Thought-inclusion in final trajectories has been set to {str(include_thoughts)}")
+
     if config['resume_instance'] is not None:
         env_instances_idxs: List[int] = list(range(config['resume_instance'], total_runs))
         # Calculate the metrics
@@ -179,12 +191,13 @@ def run_agent():
         # ######################################## Reset the environment ######################################## #
         try:
             state, reward, done, env_metadata = env.reset(inst_idx=i)
-        except RuntimeError as e:
+        except Exception as e:
             logger.error(f"Environment Reset Exception for env instance {i}: {e}. Skipping!")
             continue
         expert_agent.initialize(env)
         agent_trajectory = {
             'system': env.system,
+            'domain': env.domain,
             'tools': env.tools,
             'interactions': {},
             'tool_availability_policy': env.tool_policy.tool_availability_policy,
@@ -209,13 +222,17 @@ def run_agent():
             if expert_assist.mode is None:
                 # Only take Agentic Actions
                 logger.info("Tasking Agent to take the action")
-                parsed_response = agent.take_action(state)
+                parsed_response = agent.take_action(
+                                    state=state,
+                                    include_thoughts=include_thoughts)
                 actor = 'agent'
 
-            elif expert_assist.mode == 'ground_truth':
+            elif expert_assist.mode == 'ground_truth' or expert_assist.mode == 'ground_truth_non_live':
                 # Only take Expert actions
                 logger.info("Tasking Expert to take the action")
-                parsed_response = expert_agent.take_action(env.curr_turn_history)
+                parsed_response = expert_agent.take_action(
+                                    state=env.curr_turn_history, 
+                                    include_thoughts=include_thoughts)
                 actor = 'expert'
 
             elif expert_assist.mode == 'random':
@@ -223,25 +240,33 @@ def run_agent():
                 if random.random() < expert_assist.random_epsilon:
                     # Explore using Agentic Actions
                     logger.info("Tasking Agent to take the action")
-                    parsed_response = agent.take_action(state)
+                    parsed_response = agent.take_action(
+                                        state=state,
+                                        include_thoughts=include_thoughts)
                     actor = 'agent'
                 else:
                     # Exploit using the expert policy
                     logger.info("Tasking Expert to take the action")
-                    parsed_response = expert_agent.take_action(env.curr_turn_history)
+                    parsed_response = expert_agent.take_action(
+                                        state=env.curr_turn_history,
+                                        include_thoughts=include_thoughts)
                     actor = 'expert'
 
             elif expert_assist.mode == 'informed':
                 if expert_help_needed:
                     logger.info("Tasking Expert to take the action")
                     actor = 'expert'
-                    parsed_response = expert_agent.take_action(env.curr_turn_history)
+                    parsed_response = expert_agent.take_action(
+                                        state=env.curr_turn_history,
+                                        include_thoughts=include_thoughts)
                     branching_state = copy.deepcopy(state)  # State on which branching actor takes action i.e. agent
 
                 else:
                     logger.info("Tasking Agent to take the action")
                     actor = 'agent'
-                    parsed_response = agent.take_action(state)
+                    parsed_response = agent.take_action(
+                                        state=state,
+                                        include_thoughts=include_thoughts)
                     branching_state = copy.deepcopy(env.curr_turn_history)  # State on which branching actor takes action i.e. expert
 
                     # For training with expert-assistance in multi-turn, the final answer at the current turn
@@ -253,7 +278,9 @@ def run_agent():
                                     "expert instead to take action. For multi-turn, future turn's reasoning must"
                                     "be conditioned on the correct answers to past questions for training purposes.")
                         actor = 'expert'
-                        parsed_response = expert_agent.take_action(env.curr_turn_history)
+                        parsed_response = expert_agent.take_action(
+                                            state=env.curr_turn_history,
+                                            include_thoughts=include_thoughts)
                         branching_state = copy.deepcopy(state)
 
             else:
@@ -347,11 +374,14 @@ def run_agent():
         with open(os.path.join(save_traj_at, f"trajectory_{i}.json"), "w") as f:
             json.dump(agent_trajectory, f, indent=2)
         # Save its metadata
-        with open(os.path.join(config['log_dir'], f"metadata_{i}.json"), "w") as f:
+        with open(os.path.join(save_metadata_at, f"metadata_{i}.json"), "w") as f:
             json.dump(agent_metadata, f, indent=2)
 
     metrics["total_runs"] = total_runs
     logger.info("Metrics: \n{}".format(json.dumps(metrics, indent=2)))
 
 if __name__ == "__main__":
-    run_agent()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to")
+    args = parser.parse_args()
+    run_agent(args)
