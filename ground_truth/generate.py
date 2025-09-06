@@ -32,11 +32,11 @@ def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: st
 
 def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str], tool_use_policy=None) -> \
 List[dict]:
-    from prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT, SYSTEM_PROMPT_WITH_TOOL_POLICY
+    from ground_truth.prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT, SYSTEM_PROMPT_WITH_TOOL_POLICY
     prompt = []
     system_prompt = SYSTEM_PROMPT
     if tool_use_policy is not None:
-        system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.format(tool_policy=tool_use_policy)
+        system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_use_policy)
     prompt.append(
         {
             "role": "system",
