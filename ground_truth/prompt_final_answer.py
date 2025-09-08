@@ -18,6 +18,7 @@ Respond in the following format:
 
 <FINAL>{Answer to the user query}</FINAL>"""
 
+
 QUERY_PROMPT = """User Query: {user_query}
 
 Agent Trajectory: {agent_trajectory}"""

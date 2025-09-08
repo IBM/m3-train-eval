@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from agents.llm import invoke_llm, get_lm
 from metrics.plot import plot_freq_dist
+from data_utils.tool_utils import get_tool_use_policy
 
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
@@ -29,11 +30,13 @@ def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: st
     return step_prompt
 
 
-def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str]) -> \
+def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str], tool_use_policy=None) -> \
 List[dict]:
-    from ground_truth.prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT
+    from ground_truth.prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT, SYSTEM_PROMPT_WITH_TOOL_POLICY
     prompt = []
     system_prompt = SYSTEM_PROMPT
+    if tool_use_policy is not None:
+        system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_use_policy)
     prompt.append(
         {
             "role": "system",
@@ -67,7 +70,7 @@ List[dict]:
     return prompt
 
 
-def get_answer_generator_prompt(user_query: str, trajectory: str, additional_instruction: str = '') -> List[dict]:
+def get_answer_generator_prompt(user_query: str, trajectory: str, additional_instruction: str = '', tool_use_policy=None) -> List[dict]:
     from ground_truth.prompt_final_answer import SYSTEM_PROMPT, QUERY_PROMPT
     prompt = []
     system_prompt = SYSTEM_PROMPT
@@ -204,10 +207,12 @@ def create_and_inject_thoughts(
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
             domain_name = sample["domain"]
-
             # # For each sample declare scenarios here
             tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
-            tool_usage_policy = ""  # This should be the instruction in english to control which tools need to be used
+            tool_use_policy_field=sample['scenarios']['tool_use_policy']
+            tool_usage_policy = get_tool_use_policy(tool_use_policy_field, domain=domain_name)  # This should be the instruction in english to control which tools need to be used
+            logger.info(f"    Tool Usage Policy from env set to  #{tool_use_policy_field}")
+            logger.info(f"    Agent Policy set to  #{tool_usage_policy}")
             sample['tool_availability_policy']: str = tool_availability_policy
             sample['tool_usage_policy']: str = tool_usage_policy
 
@@ -289,6 +294,7 @@ def create_and_inject_thoughts(
                     previous_dialogue=previous_dialogue,
                     user_query=curr_user_query,
                     step_prompts=step_prompts,
+                    tool_use_policy=tool_usage_policy
                 )
                 try:
                     response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
@@ -426,6 +432,10 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
             # Get the available document collections and add the retriever tool to the tools list
             doc_collections = list(set(sample['retrievers']))  # To avoid repeats
 
+            if 'scenarios' in sample:
+                scenarios=sample['scenarios']
+            else:
+                scenarios={}
             parsed_sample = {
                 'sample_id': f"{sample_id}",
                 'domain': f"{domain_name}",
@@ -435,6 +445,8 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
                 'num_hops': sample['num_hops'],
                 'type': sample['type'],
                 'trajectory': [],
+                'scenarios':scenarios
+            
             }
 
             is_valid_sample: bool = True
