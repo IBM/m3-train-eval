@@ -6,3 +6,4 @@ logging/
 .DS_Store
 __pycache__
 .vscode
+runs/
