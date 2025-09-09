@@ -609,6 +609,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', '-o', required=True, 
                        help='Path to output folder directory to write to')
     parser.add_argument('--domain', '-d', help="Specific domain to run chunking for")
+    parser.add_argument("--no_thoughts", "-nt", help="No thoughts generated. Set to yes / true if required.")
     args = parser.parse_args()
 
     project_root = Path.cwd()
@@ -639,9 +640,10 @@ if __name__ == "__main__":
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
 
     # # 2. Create the final training data
-    _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
-    _created_training_data_stats = create_and_inject_thoughts(_save_parsed_data_at, _save_final_data_at,
-                                                              args.domain, _model_name_or_path)
-    logger.info(json.dumps(_created_training_data_stats, indent=4))
-    with open(os.path.join(_log_dir, 'final_training_data_stats.json'), 'w') as f:
-        json.dump(_created_training_data_stats, f, indent=4)
+    if not args.no_thoughts:
+        _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
+        _created_training_data_stats = create_and_inject_thoughts(_save_parsed_data_at, _save_final_data_at,
+                                                                args.domain, _model_name_or_path)
+        logger.info(json.dumps(_created_training_data_stats, indent=4))
+        with open(os.path.join(_log_dir, 'final_training_data_stats.json'), 'w') as f:
+            json.dump(_created_training_data_stats, f, indent=4)

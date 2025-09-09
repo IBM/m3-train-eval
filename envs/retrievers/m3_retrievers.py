@@ -12,7 +12,7 @@ from envs.retrievers.elser import ElserRetriever
 """
 
 ES_CONFIG = {
-    "top_k": 10
+    "top_k": 5
 }
 
 DOMAINS = ["california_schools", "card_games", "codebase_community", "debit_card_specializing", "european_football_2",
@@ -31,12 +31,15 @@ DOMAINS = ["california_schools", "card_games", "codebase_community", "debit_card
            "movie", "world", "movie_3"]
 
 
-def set_retriever_index():
-    try:
+def set_retriever_index(es_config:dict=ES_CONFIG):
+
+    if os.getenv('ES_HOSTNAME'):
         HOST_NAME = os.getenv('ES_HOSTNAME')
-    except BaseException:
+    elif "host_name" in es_config:
+        HOST_NAME=es_config["host_name"]
+    else:
         raise ValueError(
-            "You need to set the env var ES_HOSTNAME to use the retrievers."
+            "You need to set the env var ES_HOSTNAME to use the retrievers or set it in setup_tools.json."
         )
     try:
         USERNAME = os.getenv('ES_USERNAME')
@@ -50,19 +53,25 @@ def set_retriever_index():
         raise ValueError(
             "You need to set the env var ES_PASSWORD to use the retrievers."
         )
-    try:
+    if os.getenv('ES_CERT_PATH'):
         CERT = os.getenv('ES_CERT_PATH')
-    except BaseException:
+    elif "cert" in es_config:
+        CERT=es_config["cert"]
+    else:
         raise ValueError(
-            "You need to set the env var ES_CERT_PATH which points to the certificate to use the retrievers."
+            "You need to set the env var ES_CERT_PATH which points to the certificate to use the retrievers or set it in setup_tools.json ."
         )
+    
+
     retriever = ElserRetriever(host_name=HOST_NAME, username=USERNAME, password=PASSWORD, cert=CERT)
     return retriever
 
 
-def make_retriever(index_name: str = "api-before-rag"):
-    def retriever_clapnq_domain(query: str) -> dict:
-        retriever = set_retriever_index()
+def make_retriever(index_name: str = "api-before-rag", es_config: dict = {}):
+    if "top_k" in es_config:
+        ES_CONFIG["top_k"]=es_config["top_k"]
+    def retriever_clapnq_domain(query: str, es_config: dict) -> dict:
+        retriever = set_retriever_index(es_config)
         docs_lst = retriever.retrieve_passages(query, ES_CONFIG["top_k"], index_name=index_name)[
             1]  # Currently kept constant to api-before-rag will be updated to clapnq-{domain_name}
         observation = []
