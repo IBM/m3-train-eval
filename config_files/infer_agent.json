@@ -1,17 +1,7 @@
 {
   "path_to_env_vars": "./.env",
-  "path_to_env_data": "sample/bird-dev-old/api_before_rag_gt.json",
-  "db_config": {
-    "cert": "./es_cert",
-    "host_name": "https://7f25eae6-4320-4daa-b5ce-58193a338255.974550db55eb4ec0983f023940bf637f.databases.appdomain.cloud:31575",
-    "index_name": "api-before-rag-dev",
-    "top_k": 1
-  },
-  "api_config": {
-    "end_point": "https://invocable-api-hub.1gxwxi8kos9y.us-east.codeengine.appdomain.cloud"
-  },
+  "path_to_env_data": "/proj/m3benchmark/m3data/0828/balanced_rest_v2_generate_with_domain/final/olympics_multiturn_bird_chunked_final.json",
   "horizon": 10,
-  "env_subdomain_mode": "rest",
 
   "resume_instance": null,
   "path_to_prev_run_dir": null,
@@ -30,7 +20,7 @@
   "is_hf_agent": false,
   "path_to_hf_config": "./config_files/infer_base.json",
 
-  "expert_assist_mode": "ground_truth",
+  "expert_assist_mode": "informed",
   "save_alternate_trace": true,
   "include_thoughts": true,
   "expert_assist_init_limit": 2,

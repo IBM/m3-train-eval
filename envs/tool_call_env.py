@@ -542,7 +542,7 @@ class M3ToolCallEnv(ToolCallEnv):
     ):
         self.path_to_env_data = path_to_env_data
         self.es_config = es_config
-        self.api_config = api_config
+        self.api_config_dict = api_config
 
         # Init. the API tools here
         self.tool_names, self.tool_info = [], {}
@@ -587,6 +587,7 @@ class M3ToolCallEnv(ToolCallEnv):
     def setup_user_queries(self):
         curr_instance_data = self.data[self.curr_instance_idx]
         self.domain = curr_instance_data["domain"]
+        self.sample_id = curr_instance_data["sample_id"]
 
         # For Multi-turn data
         if "turns" in curr_instance_data:
@@ -796,11 +797,15 @@ class M3ToolCallEnv(ToolCallEnv):
         # logger.info(f"Agent has access to {self.doc_db} document index")
         
         # # New way of setting up
+        self.es_config['username'] = os.getenv("ES_USERNAME", None)
+        self.es_config['password'] = os.getenv("ES_PASSWORD", None)
+        if self.es_config['username'] is None or self.es_config['password'] is None:
+            raise EnvironmentError("Elasticsearch credentials not configured. Provide ES_USERNAME and ES_PASSWORD.")
         self.doc_db = {}
         for collection_name in self.document_collections:
             domain_name = collection_name.replace("clapnq-", "") if collection_name.startswith(
                 "clapnq-") else collection_name
-            index_name = f"clapnq-{domain_name}"
+            index_name = "clapnq-"+domain_name.replace("_","-") # index_name : clapnq-movies-4 fn_name : retriever_clapnq_movies_4 
             fn_name = f"retriever_clapnq_{domain_name}"
             try:
                 assert fn_name in self.tool_names
@@ -809,7 +814,7 @@ class M3ToolCallEnv(ToolCallEnv):
                     f"Tool list does not have the retriever function {fn_name} for collection {collection_name}")
             
             # doc_db is now a list of executable retriever functions
-            self.doc_db[fn_name] = make_retriever(index_name=index_name)
+            self.doc_db[fn_name] = make_retriever(index_name=index_name, es_config=self.es_config)
 
         logger.info(
             f"Agent has access to {len(self.doc_db)} document retrievers for collections: {self.document_collections}")
@@ -838,10 +843,14 @@ class M3ToolCallEnv(ToolCallEnv):
                 raise AssertionError("For older data, the index name must be set in the config file")
 
             self.document_collections = [self.es_config["index_name"]]
+            self.api_config=self.api_config_dict
         # For New data
         else:
             tools: List[dict] = curr_instance_data['tools']
             self.document_collections = curr_instance_data['doc_collections']
+            self.api_config=self.api_config_dict[self.domain]
+            index_name="clapnq-"+self.domain.replace("_","-")
+            self.es_config["index_name"]=index_name
 
         # 2. Configure the API usage for the env
         if self.sub_domain.mode in ["slot_filling", "selection"]:
@@ -918,7 +927,7 @@ class M3ToolCallEnv(ToolCallEnv):
             retrieval_query = extracted_tool['arguments']['query']
             logger.info(f"Trying to run tool ({retrieval_fn_name}) for document retrieval with query `{retrieval_query}`")
             
-            tool_resp = self.doc_db[retrieval_fn_name](retrieval_query)
+            tool_resp = self.doc_db[retrieval_fn_name](retrieval_query, self.es_config)
             document_text = json.dumps(tool_resp)
             
             observation = f"ToolCallSuccessful: {document_text}"
@@ -950,10 +959,14 @@ class M3ToolCallEnv(ToolCallEnv):
             # Skipping: API Backend converts all parameter values to a string before querying the SQL DB
             if self.sub_domain.mode == "rest":
                 try:
+                    if isinstance(self.api_config,dict):
+                        base_url=self.api_config["end_point"] # Old format support
+                    elif isinstance(self.api_config,str):
+                        base_url=self.api_config                        
                     tool_resp: dict = run_tool(
                         tool_name,
                         tool_args,
-                        base_url=self.api_config["end_point"]
+                        base_url=base_url # It's setup in setup_tools for the new format
                     )
                 except BaseException as e:
                     error = f"ToolCallError({type(e)}): {e}"
