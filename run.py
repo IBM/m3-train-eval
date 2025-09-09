@@ -198,11 +198,11 @@ def run_agent(args):
         logger.info(f"Environment Instantiated ({i})")
 
         # ######################################## Reset the environment ######################################## #
-        try:
-            state, reward, done, env_metadata = env.reset(inst_idx=i)
-        except Exception as e:
-            logger.error(f"Environment Reset Exception for env instance {i}: {e}. Skipping!")
-            continue
+        # try:
+        state, reward, done, env_metadata = env.reset(inst_idx=i)
+        # except Exception as e:
+        #     logger.error(f"Environment Reset Exception for env instance {i}: {e}. Skipping!")
+        #     continue
         expert_agent.initialize(env)
         agent_trajectory = {
             'system': env.system,

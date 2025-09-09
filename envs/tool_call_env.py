@@ -661,19 +661,30 @@ class M3ToolCallEnv(ToolCallEnv):
         self.ordered_sub_ques_composition = ordered_sub_ques_composition
 
     def setup_scenarios(self):
+        """
+        "scenarios": {
+            "tool_use_policy": "ONLY_RAG",
+            "policy_domain": "olympics",
+            "missing_api": null,
+            "tool_availability": null
+        },
+        """
         curr_instance_data = self.data[self.curr_instance_idx]
         domain=curr_instance_data["domain"]
-        if 'tool_availability_policy' in curr_instance_data and 'tool_use_policy' in curr_instance_data:
+        print(curr_instance_data["scenarios"])
+        if 'tool_availability_policy' in curr_instance_data["scenarios"] and 'tool_use_policy' in curr_instance_data["scenarios"]:
             #if tool availabilty and usage both are provided 
-            tool_usage_policy=curr_instance_data['tool_use_policy']
+            tool_usage_policy=curr_instance_data["scenarios"]['tool_use_policy']
             use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
             self.tool_policy = ToolPolicy(
                 tool_availability_policy=curr_instance_data['tool_availability_policy'],
                 tool_usage_policy=use_template_text
             )
-        elif 'tool_usage_policy' in curr_instance_data:
-            #if only tool usage policy is provided. 
-            tool_usage_policy=curr_instance_data['tool_use_policy']
+        elif ('tool_use_policy' in curr_instance_data["scenarios"]) and (curr_instance_data["scenarios"]['tool_use_policy']):
+            temp=curr_instance_data["scenarios"]['tool_use_policy']
+            print(f"HERE {temp}")
+            #if only tool usage policy is provided.
+            tool_usage_policy=curr_instance_data["scenarios"]['tool_use_policy']
             use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
     
             self.tool_policy = ToolPolicy(
