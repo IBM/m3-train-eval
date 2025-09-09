@@ -22,7 +22,7 @@ def get_alternate_action_trace(state, env, policy, initiating_actor: str) -> Lis
     logger.info(f"[Alternate Tracing Call] Tasking {initiating_actor} to take the action")
 
     # 1. Get the action
-    _parsed_response, _num_transitions = policy.get_action(state)
+    _parsed_response, _num_transitions = policy.get_action(state, include_thoughts=True)
 
     # 2. Get the observation if the alternate action had been taken
     _env_role, _observation, _terminated, _truncated = env.get_observation(_parsed_response)
@@ -54,6 +54,12 @@ def run_agent(args):
         config = json.load(f)
     logger.info("Loaded the agent run config from {}".format(path_to_config))
 
+    # ########################################## Load tool config ########################################## #
+    path_to_tool_config = os.path.join('config_files', 'setup_tools.json')
+    with open(path_to_tool_config) as f:
+        config.update(json.load(f))
+    logger.info("Loaded the tools config from {}".format(path_to_tool_config))
+
     # ############################################## Set up the run ############################################## #
     curr_time = datetime.now()
     curr_time = "_".join(str(curr_time).split(" ")).replace(":", ".")
@@ -62,6 +68,9 @@ def run_agent(args):
     else:
         config['log_dir'] = f"./logging/{curr_time}"
     os.makedirs(config['log_dir'], exist_ok=True)
+
+    if args.input_filename:
+        config["path_to_env_data"] = args.input_filename
 
     # Set up the os environment and logging
     set_run_environment(dotenv_path=config['path_to_env_vars'], log_dir=config['log_dir'])
@@ -198,6 +207,7 @@ def run_agent(args):
         agent_trajectory = {
             'system': env.system,
             'domain': env.domain,
+            'sample_id': env.sample_id,
             'tools': env.tools,
             'interactions': {},
             'tool_availability_policy': env.tool_policy.tool_availability_policy,
@@ -356,7 +366,8 @@ def run_agent(args):
 
         # Let's store other metadata as well
         agent_metadata = {
-            "sample_id": env.curr_sample_idx,
+            "sample_id": env.sample_id,
+            "domain": env.domain,
             "truncated": env_metadata['truncated'],
             "terminated": env_metadata['terminated'],
             "success": env_metadata['success'],
@@ -371,10 +382,10 @@ def run_agent(args):
         }
 
         # Save the Agent trajectory
-        with open(os.path.join(save_traj_at, f"trajectory_{i}.json"), "w") as f:
+        with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
             json.dump(agent_trajectory, f, indent=2)
         # Save its metadata
-        with open(os.path.join(save_metadata_at, f"metadata_{i}.json"), "w") as f:
+        with open(os.path.join(save_metadata_at, f"metadata_{env.domain}_{env.sample_id}.json"), "w") as f:
             json.dump(agent_metadata, f, indent=2)
 
     metrics["total_runs"] = total_runs
@@ -383,5 +394,6 @@ def run_agent(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to")
+    parser.add_argument('--input_filename', '-i', default=None, help="Input filename.")
     args = parser.parse_args()
     run_agent(args)
