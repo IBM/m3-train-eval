@@ -213,5 +213,5 @@ def run_tool(
 
 
 if __name__ == "__main__":
-    _base_url = "https://invocable-api-hub.1gxwxi8kos9y.us-east.codeengine.appdomain.cloud"
+    _base_url = "https://invocable-api-dgt-server-6.1gxwxi8kos9y.us-east.codeengine.appdomain.cloud"
     spec = get_spec(_base_url)
