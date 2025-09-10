@@ -455,7 +455,7 @@ class BaseDataset(TorchDataset):
             yield self[i]
 
     def print_data_sample(self):
-        for _ in range(0):
+        for _ in range(2):
             # Get a random sample from the dataset
             random_sample = random.choice(self.processed_samples)
             if random_sample is None:
