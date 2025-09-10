@@ -88,10 +88,5 @@ for model_path, template_type in zip(model_paths, template_types):
             return_text = True)
     results[template_type]['templated_text'] = encoded_convo
 
-try:
-    with open("logging/template_analysis.json", "w") as f:
-        json.dump(results, f)
-except:
-    print("BIG FAILURE")
-    print(results)
-
+with open("logging/template_analysis.json", "w") as f:
+    json.dump(results, f)
