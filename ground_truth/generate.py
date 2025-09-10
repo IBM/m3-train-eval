@@ -368,12 +368,14 @@ def create_and_inject_thoughts(
                     (curr_user_query, curr_raw_answer)
                 )
             if trajectory_modifications_needed:
+                #import pdb
+                #pdb.set_trace()
                 traj_obj=sample['trajectory']
                 new_obj={}
-                new_obj["plan"]=traj_obj[1]["plan"]
-                new_obj["answer"]=traj_obj[-1]["answer"]
-                new_obj["raw_answer"]=traj_obj[-1]["raw_answer"]
-                sample['trajectory']=[traj_obj[0],new_obj]
+                new_obj["plan"]=traj_obj[0][1]["plan"]
+                new_obj["answer"]=traj_obj[0][-1]["answer"]
+                new_obj["raw_answer"]=traj_obj[0][-1]["raw_answer"]
+                sample['trajectory']=[traj_obj[0][0],new_obj]
            
             sample['turns'] = turns
             if not is_valid_sample:
