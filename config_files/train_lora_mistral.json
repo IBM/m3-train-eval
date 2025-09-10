@@ -1,11 +1,11 @@
 {
-  "template": "student_granite3",
+  "template": "student_mistral",
   "cutoff_len": 32768,
   "dataset_dir": "/proj/m3benchmark/ben/",
   "dataset": ["trajectories_meta_data_augmented"],
   "mask_history": true,
 
-  "model_name_or_path": "ibm-granite/granite-3.3-8b-instruct",
+  "model_name_or_path": "mistralai/Mistral-7B-Instruct-v0.3",
   "flash_attn": "fa2",
   "disable_gradient_checkpointing": false,
   "enable_liger_kernel": true,

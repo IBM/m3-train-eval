@@ -14,7 +14,7 @@ from extras.custom import is_rank_0, set_run_environment, make_json_serializable
 
 DEBUG=False
 DEFAULT_DEBUG_PATH='./config_files/debug_train.json'
-DEFAULT_PATH='./config_files/train_lora.json'
+DEFAULT_PATH='./config_files/train_lora_granite.json'
 
 def get_system_cuda_version():
     try:
@@ -65,6 +65,8 @@ if is_rank_0():
         path_to_config = DEFAULT_PATH
     with open(os.path.join(path_to_config), 'r') as f:
         override_args = json.load(f)
+    
+    logger.info(f"USING CONFIG FILE: {path_to_config}")
     datasets = [override_args["dataset"]] if isinstance(override_args["dataset"], str) else override_args["dataset"]
     sample_idx = 0
     total_trajectories = 0

@@ -149,6 +149,7 @@ class Template:
         """
         system = system or self.default_system
         encoded_messages = []
+        plaintext_messages = []
         for i, message in enumerate(messages):
             elements = []
 
@@ -171,7 +172,10 @@ class Template:
                 raise NotImplementedError("Unexpected role: {}".format(message["role"]))
 
             encoded_messages.append(self._convert_elements_to_ids(tokenizer, elements))
+            plaintext_messages.append(elements)
 
+        if kwargs.get("return_text"):
+            return plaintext_messages
         return encoded_messages
 
     @staticmethod
