@@ -133,16 +133,19 @@ class LinearExpert(Agent):
 
         thought = action_arguments["thought"]
         parsed_response["thought"] = thought
-
+        is_policy_applicable=True
         #if there's an expert intervening due to violation in tool policy, generate the final answer instead. Force action type to be FINAL
         if scenario_with_expert_assist_mode and self.env.tool_policy!="":
             #if domain is specified in policy:
             if ":" in self.env.tool_policy:
-                policy_domain=self.env.tool_policy.split(":")[-1].strip()
+                policy_splits=self.env.tool_policy.split(":")
+                if "OUT_DOMAIN" in policy_splits[0].upper():
+                    is_policy_applicable=False
+                policy_domain=policy_splits[1].strip()
             else:
                 policy_domain="ALL"
             #if policy applies to all domains or matches the current domain
-            if policy_domain=="ALL" or policy_domain == self.domain:
+            if policy_domain=="ALL" or (policy_domain == self.domain and is_policy_applicable):
                 action_type="FINAL"
                 action_arguments["final_answer"]="I cannot answer this question."
 
