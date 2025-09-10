@@ -1,5 +1,5 @@
 {
-  "template": "student_granite3",
+  "template": "student_mistral",
   "cutoff_len": 32768,
   "dataset_dir": "sample/bird-dev-old/sft_expert",
   "dataset": ["both_api_rag-api_before_rag"],
