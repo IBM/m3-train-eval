@@ -135,21 +135,21 @@ class LinearExpert(Agent):
 
         thought = action_arguments["thought"]
         parsed_response["thought"] = thought
-        is_policy_applicable=True
+        #is_policy_applicable=True
         #if there's an expert intervening due to violation in tool policy, generate the final answer instead. Force action type to be FINAL
-        if scenario_with_expert_assist_mode and self.env.tool_policy.tool_use_policy is not None:
-            assert ":" in self.env.tool_policy.tool_use_policy_domain
-            #if domain is specified in policy:
-            policy_splits=self.env.tool_policy.split(":")
-            if "OUT_DOMAIN" in policy_splits[0].upper():
-                is_policy_applicable=False
-            policy_domain=policy_splits[1].strip()
-        else:
-            policy_domain="ALL" #Should never be true in new data format. Added as failsafe.
-        #if policy applies to all domains or matches the current domain
-            if policy_domain=="ALL" or (policy_domain == self.domain and is_policy_applicable):
-                action_type="FINAL"
-                action_arguments["final_answer"]="I cannot answer this question."
+        # if scenario_with_expert_assist_mode and self.env.tool_policy.tool_use_policy is not None:
+        #     assert ":" in self.env.tool_policy.tool_use_policy_domain
+        #     #if domain is specified in policy:
+        #     policy_splits=self.env.tool_policy.split(":")
+        #     if "OUT_DOMAIN" in policy_splits[0].upper():
+        #         is_policy_applicable=False
+        #     policy_domain=policy_splits[1].strip()
+        # else:
+        #     policy_domain="ALL" #Should never be true in new data format. Added as failsafe.
+        # #if policy applies to all domains or matches the current domain
+        #     if policy_domain=="ALL" or (policy_domain == self.domain and is_policy_applicable):
+        #         action_type="FINAL"
+        #         action_arguments["final_answer"]="I cannot answer this question."
 
 
         if action_type == "API":
