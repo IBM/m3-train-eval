@@ -646,15 +646,36 @@ def get_tool_utils(name: str) -> "ToolUtils":
 
 import random
 from data_utils.scenario_injector import ToolUsePolicy, ToolAvailability
-from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES, TOOL_USE_API_TEMPLATES, TOOL_USE_RAG_TEMPLATES, TOOL_FIRST_RAG_TEMPLATES, TOOL_FIRST_API_TEMPLATES
-def get_tool_use_policy(tool_use_policy:str, domain:str)->str:
-    use_template_text=None
-    if tool_use_policy==ToolUsePolicy.ONLY_API.name:
-        use_template_text=random.choice(TOOL_USE_API_TEMPLATES).format(domains=domain)
-    elif tool_use_policy==ToolUsePolicy.ONLY_RAG.name:
-        use_template_text=random.choice(TOOL_USE_RAG_TEMPLATES).format(domains=domain)
-    #elif tool_use_policy==ToolUsePolicy.RAG_FIRST.name:
-    #    use_template_text=random.choice(TOOL_FIRST_RAG_TEMPLATES).format(domains=domain)
-    #elif tool_use_policy==ToolUsePolicy.API_FIRST.name:
-    #    use_template_text=random.choice(TOOL_FIRST_API_TEMPLATES).format(domains=domain)
-    return use_template_text
+from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES, TOOL_USE_API_TEMPLATES_GENERAL, TOOL_USE_API_TEMPLATES_WITH_DOMAINS, TOOL_USE_RAG_TEMPLATES_GENERAL, TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS
+
+def create_ToolPolicy(scenarios:dict, current_domain:str=None):
+    if scenarios["tool_use_policy"] is not None and scenarios["policy_domain"] is not None:
+        policy_domain=scenarios["policy_domain"]
+        domain=policy_domain.split(":")[-1].strip()
+        tool_policy=scenarios["tool_use_policy"]
+        can_use_general=False
+        if current_domain is not None and current_domain==domain:
+            can_use_general=True
+        candidate_texts=[]
+        if tool_policy==ToolUsePolicy.ONLY_API.name and can_use_general:
+            candidate_texts.append[TOOL_USE_API_TEMPLATES_GENERAL[:]]
+            candidate_texts.append[TOOL_USE_API_TEMPLATES_WITH_DOMAINS[:]]
+        else:
+            candidate_texts.append[TOOL_USE_API_TEMPLATES_WITH_DOMAINS[:]]
+        
+        if tool_policy==ToolUsePolicy.ONLY_RAG.name and can_use_general:
+            candidate_texts.append[TOOL_USE_RAG_TEMPLATES_GENERAL[:]]
+            candidate_texts.append[TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS[:]]
+        else:
+            candidate_texts.append[TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS[:]]
+        template_text=random.choice(candidate_texts).format(domains=domain)
+        return ToolPolicy(tool_use_policy=tool_policy,tool_usage_policy=template_text,tool_use_policy_domain=policy_domain)       
+    elif scenarios["tool_availability"] is not None:
+        tools_available=scenarios["tool_availability"]
+        return ToolPolicy(tool_availability_policy=tools_available)
+    elif scenarios["missing_api"] is not None:
+        delete_tools_list=scenarios["missing_api"]
+        return ToolPolicy(tool_missing=delete_tools_list)
+    else:
+        return ToolPolicy()
+    
