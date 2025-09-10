@@ -37,6 +37,7 @@ List[dict]:
     prompt = []
     system_prompt = SYSTEM_PROMPT
     if tool_use_policy is not None:
+        logger.info("Generating Thoughts with tool policy"+tool_use_policy)
         system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_use_policy)
     prompt.append(
         {

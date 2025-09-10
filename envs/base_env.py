@@ -19,7 +19,7 @@ class ToolPolicy:
         # assert self.tool_usage_policy in {'api_before_rag', 'rag_before_api', 'only_api', 'only_rag', 'no_policy'}
 
     def __str__(self):
-        return f"Tool Availability Policy: {self.tool_availability_policy}\nTools Missing:{self.tool_missing}\nTool Use Policy Domain:{self.tool_use_policy_domain}\nTool Use Policy:{self.tool_use_policy}\nTool Usage Policy Text: {self.tool_usage_policy}\nFinal Answer Policy: {self.final_answer_policy}"
+        return f"\n Tool Availability Policy: {self.tool_availability_policy}\n Tools Missing:{self.tool_missing}\n Tool Use Policy Domain:{self.tool_use_policy_domain}\n Tool Use Policy:{self.tool_use_policy}\nTool Usage Policy Text: {self.tool_usage_policy}\n Final Answer Policy: {self.final_answer_policy}"
 
     def to_dict(self):
         return {
