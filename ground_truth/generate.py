@@ -131,11 +131,17 @@ def parse_answer_generator_response(response: str, ) -> Optional[dict]:
 def wrap_hop_data_into_trajectory_str(hops) -> str:
     trajectory_str = ""
     for hop_idx, (item_0, item_1) in enumerate(hops):
-        trajectory_str += (f"Agent:\n"
-                           f"    <think>{item_0['plan']}</think>\n"
-                           f"    <tool_call>{json.dumps(item_0['output'], indent=2)}</tool_call>\n"
-                           f"Environment:\n"
-                           f"    <tool_response>{item_1['response']}</tool_response>\n")
+
+        if "output" in item_0 and "response" in item_1:
+            trajectory_str += (f"Agent:\n"
+                            f"    <think>{item_0['plan']}</think>\n"
+                            f"    <tool_call>{json.dumps(item_0['output'], indent=2)}</tool_call>\n"
+                            f"Environment:\n"
+                            f"    <tool_response>{item_1['response']}</tool_response>\n")
+        else:
+            trajectory_str += (f"Agent:\n"
+                            f"    <think>{item_0['plan']}</think>\n")
+            
     return trajectory_str
 
 
@@ -313,13 +319,19 @@ def create_and_inject_thoughts(
                     logger.info(
                         f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
                     break
-                #import pdb
-                #pdb.set_trace()
+                
+                trajectory_modifications_needed=False
                 # Fill in the thought
                 for hop_idx, (item_0, item_1) in enumerate(hops):
                     curr_step_thought: str = parsed_response[hop_idx]
                     item_0['plan'] = curr_step_thought
 
+                    #if the output has a special marker for policy remove the output as its not an API that can be called.
+                    if "policy" in item_0["output"]:
+                        del item_0["output"]
+                        del item_1["response"]
+                        trajectory_modifications_needed=True
+                        
                 # # ############################ Generate final answer and its thought ############################ #
                 # TODO: Inject the previous_dialogue if the final answer of the current turn depends on it
                 trajectory_str = wrap_hop_data_into_trajectory_str(hops)
@@ -354,8 +366,10 @@ def create_and_inject_thoughts(
                 previous_dialogue.append(
                     (curr_user_query, curr_raw_answer)
                 )
-
-            sample['turns'] = turns
+            if trajectory_modifications_needed:
+                sample['turns']=[turns[0][-1]]
+            else:
+                sample['turns'] = turns
             if not is_valid_sample:
                 left_out_domain_data.append(orig_sample)
             else:
