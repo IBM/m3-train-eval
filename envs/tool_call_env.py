@@ -166,11 +166,14 @@ class ToolCallEnv(BaseEnv):
         self.curr_turn = 0
 
         # Setup user queries
+        logger.info("Setting up User Queries")
         self.setup_user_queries()
 
         # Setup tools
+        logger.info("Setting up Tools")
         self.setup_tools()
 
+        logger.info("Setting up Scenarios")
         # Determine the Tool Policy.
         self.setup_scenarios()
 

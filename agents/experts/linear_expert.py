@@ -410,7 +410,7 @@ class M3Expert(LinearExpert):
 
     def get_trajectory(self) -> Optional[List[dict]]:
         curr_instance_data = self.env.data[self.env.curr_instance_idx]
-        self.domain=curr_instance_data["dataset_name"]
+        self.domain=curr_instance_data["domain"]
         # Following logic to parse the G.T. Trajectory should work for all the tool availability/usage policies
         if 'trajectory' in curr_instance_data:
             traj_data = curr_instance_data['trajectory']

@@ -408,8 +408,9 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
             # Ignore the datapoint if the "ignore" key is set
             if "ignore" in list (sample.keys()):
                 continue
-
-            domain_name = domain_file.split("_multiturn")[0] # address_multiturn_bird_chunked.json
+            
+            domain_name=sample['dataset_name']
+            #domain_name = domain_file.split("_multiturn")[0] # address_multiturn_bird_chunked.json
 
             sample_id = sample['sample_id']
             logger.info(f"Creating turn level data sample #{sample_id}")
