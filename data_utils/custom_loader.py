@@ -524,12 +524,14 @@ class AgentTrajectorySFTData(BaseDataset):
                 if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
                     tool_policy = ToolPolicy(
                         tool_availability_policy=traj['tool_availability_policy'],
+                        tool_use_policy=traj["tool_use_policy"],
                         tool_usage_policy=traj['tool_usage_policy'],
                         final_answer_policy=traj['final_answer_policy']
                     )
                 else:
                     tool_policy = ToolPolicy(
                         tool_availability_policy="both_api_rag",
+                        tool_use_policy="",
                         tool_usage_policy="",
                         final_answer_policy=""
                     )
@@ -726,12 +728,14 @@ class AgentTrajectoryPreferenceData(BaseDataset):
                 if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
                     tool_policy = ToolPolicy(
                         tool_availability_policy=traj['tool_availability_policy'],
+                        tool_use_policy=traj["tool_use_policy"],
                         tool_usage_policy=traj['tool_usage_policy'],
                         final_answer_policy=traj['final_answer_policy']
                     )
                 else:
                     tool_policy = ToolPolicy(
                         tool_availability_policy="both_api_rag",
+                        tool_use_policy="",
                         tool_usage_policy="",
                         final_answer_policy=""
                     )
@@ -844,6 +848,7 @@ class AgentTrajectoryPreferenceData(BaseDataset):
                 rejected_input, rejected_output, rejected_turn_mask = split_traj_input_output(rejected_trajectory, False)
                 tool_policy = ToolPolicy(
                     tool_availability_policy = sample["tool_availability_policy"],
+                    tool_use_policy=sample["tool_use_policy"],
                     tool_usage_policy = sample["tool_usage_policy"],
                     final_answer_policy = sample["final_answer_policy"],
                 )

@@ -5,7 +5,7 @@ QUERY_PROMPT = """{query}"""
 
 
 FINAL_ANSWER_FALLBACKS = [
-    "I can not answer!",
+    "Sorry, I cannot answer your query!",   
     "I don't know.",
     "No answer available.",
     "I'm unable to answer.",

@@ -669,19 +669,22 @@ class M3ToolCallEnv(ToolCallEnv):
             use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
             self.tool_policy = ToolPolicy(
                 tool_availability_policy=curr_instance_data['tool_availability_policy'],
+                tool_use_policy=curr_instance_data["scenarios"]["tool_use_policy"],
                 tool_usage_policy=use_template_text
             )
         elif 'tool_usage_policy' in curr_instance_data:
             #if only tool usage policy is provided. 
-            tool_usage_policy=curr_instance_data['tool_use_policy']
+            tool_usage_policy=curr_instance_data['tool_use_policy'],
             use_template_text=get_tool_use_policy(tool_usage_policy=tool_usage_policy,domain=domain)
     
             self.tool_policy = ToolPolicy(
                 tool_availability_policy="both_api_rag",
+                tool_use_policy=curr_instance_data["scenarios"]["tool_use_policy"],
                 tool_usage_policy=use_template_text)
         else:
             self.tool_policy = ToolPolicy(
                 tool_availability_policy="both_api_rag",
+                tool_use_policy="",
                 tool_usage_policy=""
             )
 
