@@ -658,16 +658,16 @@ def create_ToolPolicy(scenarios:dict, current_domain:str=None):
             can_use_general=True
         candidate_texts=[]
         if tool_policy==ToolUsePolicy.ONLY_API.name and can_use_general:
-            candidate_texts.append[TOOL_USE_API_TEMPLATES_GENERAL[:]]
-            candidate_texts.append[TOOL_USE_API_TEMPLATES_WITH_DOMAINS[:]]
+            candidate_texts.append(TOOL_USE_API_TEMPLATES_GENERAL[:])
+            candidate_texts.append(TOOL_USE_API_TEMPLATES_WITH_DOMAINS[:])
         else:
-            candidate_texts.append[TOOL_USE_API_TEMPLATES_WITH_DOMAINS[:]]
+            candidate_texts.append(TOOL_USE_API_TEMPLATES_WITH_DOMAINS[:])
         
         if tool_policy==ToolUsePolicy.ONLY_RAG.name and can_use_general:
-            candidate_texts.append[TOOL_USE_RAG_TEMPLATES_GENERAL[:]]
-            candidate_texts.append[TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS[:]]
+            candidate_texts.append(TOOL_USE_RAG_TEMPLATES_GENERAL[:])
+            candidate_texts.append(TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS[:])
         else:
-            candidate_texts.append[TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS[:]]
+            candidate_texts.append(TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS[:])
         template_text=random.choice(candidate_texts).format(domains=domain)
         return ToolPolicy(tool_use_policy=tool_policy,tool_usage_policy=template_text,tool_use_policy_domain=policy_domain)       
     elif scenarios["tool_availability"] is not None:
