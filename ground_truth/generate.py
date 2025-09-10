@@ -14,7 +14,8 @@ from tqdm import tqdm
 
 from agents.llm import invoke_llm, get_lm
 from metrics.plot import plot_freq_dist
-from data_utils.tool_utils import get_tool_use_policy
+from data_utils.tool_utils import create_ToolPolicy
+from envs.tool_call_env import ToolPolicy
 
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
@@ -207,15 +208,10 @@ def create_and_inject_thoughts(
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
             domain_name = sample["domain"]
-            # # For each sample declare scenarios here
-            tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
-            tool_use_policy_field=sample['scenarios']['tool_use_policy']
-            tool_usage_policy = get_tool_use_policy(tool_use_policy_field, domain=domain_name)  # This should be the instruction in english to control which tools need to be used
-            logger.info(f"    Tool Usage Policy from env set to  #{tool_use_policy_field}")
-            logger.info(f"    Agent Policy set to  #{tool_usage_policy}")
-            sample['tool_availability_policy']: str = tool_availability_policy
-            sample['tool_usage_policy']: str = tool_usage_policy
-
+            tool_policy=create_ToolPolicy(scenarios=sample["scenarios"],current_domain=domain_name)
+            tool_usage_policy=tool_policy.tool_usage_policy
+            logger.info(f"    Tool Policy: {tool_policy}")
+           
             # # Spawn on-the-go additional instr. to compress tool response into the final answer. This will go into the
             # # agentic system prompt to be used for all turns (only during generation not during conditioning on context-response pairs)
             # Spawn a random integer between min to max
