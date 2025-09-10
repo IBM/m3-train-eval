@@ -321,6 +321,7 @@ def create_and_inject_thoughts(
                     break
                 
                 trajectory_modifications_needed=False
+                #new_trajectory=curr_turn_trajectory
                 # Fill in the thought
                 for hop_idx, (item_0, item_1) in enumerate(hops):
                     curr_step_thought: str = parsed_response[hop_idx]
@@ -367,9 +368,14 @@ def create_and_inject_thoughts(
                     (curr_user_query, curr_raw_answer)
                 )
             if trajectory_modifications_needed:
-                sample['turns']=[turns[0][-1]]
-            else:
-                sample['turns'] = turns
+                traj_obj=sample['trajectory']
+                new_obj={}
+                new_obj["plan"]=traj_obj[1]["plan"]
+                new_obj["answer"]=traj_obj[-1]["answer"]
+                new_obj["raw_answer"]=traj_obj[-1]["raw_answer"]
+                sample['trajectory']=[traj_obj[0],new_obj]
+           
+            sample['turns'] = turns
             if not is_valid_sample:
                 left_out_domain_data.append(orig_sample)
             else:
