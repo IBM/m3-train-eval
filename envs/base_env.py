@@ -15,7 +15,7 @@ class ToolPolicy:
 
     def __post_init__(self):
         #assert self.tool_availability_policy in {'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'}
-        assert self.tool_use_policy in {'ONLY_API','ONLY_RAG'}
+        assert self.tool_use_policy is None or self.tool_use_policy in {'ONLY_API','ONLY_RAG'}
         # assert self.tool_usage_policy in {'api_before_rag', 'rag_before_api', 'only_api', 'only_rag', 'no_policy'}
 
     def __str__(self):

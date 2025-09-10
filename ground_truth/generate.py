@@ -270,7 +270,12 @@ def create_and_inject_thoughts(
                         if curr_tool_name == tool['name']:
                             tool_description_str = json.dumps(tool, indent=2)
                             break
-                    assert len(tool_description_str) > 0  # Check to make sure the used tool is in tool universe
+                    if tool_policy.tool_missing is None:
+                        assert len(tool_description_str) > 0# Check to make sure the used tool is in tool universe
+                    else:
+                        # TODO: HOW DO WE UPDATE TOOL UNIVERSE
+                        print("CODE MISSING: TOOL MISSING SCENARIO")
+                        continue
                     prefix = "            "  # constant indentation from the prompt
                     tool_description_str = "\n".join(prefix + line for line in tool_description_str.splitlines())
 
