@@ -12,7 +12,7 @@ from data_utils.processor.processor_utils import infer_seqlen
 from data_utils.utils import Role
 from envs.tool_call_env import ERRONEOUS_CATEGORIES
 from extras.constants import IGNORE_INDEX, PREFERENCE_KEYS
-
+from data_utils.tool_utils import create_ToolPolicy
 from envs.base_env import ToolPolicy
 from extras.custom import make_json_serializable
 
@@ -520,21 +520,23 @@ class AgentTrajectorySFTData(BaseDataset):
             for traj in trajectories:
 
                 system, tools = traj['system'], traj['tools']
+                tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
+                
                 # Determine the Tool Policy
-                if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
-                    tool_policy = ToolPolicy(
-                        tool_availability_policy=traj['tool_availability_policy'],
-                        tool_use_policy=traj["tool_use_policy"],
-                        tool_usage_policy=traj['tool_usage_policy'],
-                        final_answer_policy=traj['final_answer_policy']
-                    )
-                else:
-                    tool_policy = ToolPolicy(
-                        tool_availability_policy="both_api_rag",
-                        tool_use_policy="",
-                        tool_usage_policy="",
-                        final_answer_policy=""
-                    )
+                # if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
+                #     tool_policy = ToolPolicy(
+                #         tool_availability_policy=traj['tool_availability_policy'],
+                #         tool_use_policy=traj["tool_use_policy"],
+                #         tool_usage_policy=traj['tool_usage_policy'],
+                #         final_answer_policy=traj['final_answer_policy']
+                #     )
+                # else:
+                #     tool_policy = ToolPolicy(
+                #         tool_availability_policy="both_api_rag",
+                #         tool_use_policy="",
+                #         tool_usage_policy="",
+                #         final_answer_policy=""
+                #     )
 
                 time_steps = list(traj['interactions'].keys())
                 time_steps = sorted(time_steps, key=lambda x: int(x))
@@ -724,21 +726,22 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             for traj in trajectories:
 
                 system, tools = traj['system'], traj['tools']
+                tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
                 # Determine the Tool Policy
-                if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
-                    tool_policy = ToolPolicy(
-                        tool_availability_policy=traj['tool_availability_policy'],
-                        tool_use_policy=traj["tool_use_policy"],
-                        tool_usage_policy=traj['tool_usage_policy'],
-                        final_answer_policy=traj['final_answer_policy']
-                    )
-                else:
-                    tool_policy = ToolPolicy(
-                        tool_availability_policy="both_api_rag",
-                        tool_use_policy="",
-                        tool_usage_policy="",
-                        final_answer_policy=""
-                    )
+                # if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
+                #     tool_policy = ToolPolicy(
+                #         tool_availability_policy=traj['tool_availability_policy'],
+                #         tool_use_policy=traj["tool_use_policy"],
+                #         tool_usage_policy=traj['tool_usage_policy'],
+                #         final_answer_policy=traj['final_answer_policy']
+                #     )
+                # else:
+                #     tool_policy = ToolPolicy(
+                #         tool_availability_policy="both_api_rag",
+                #         tool_use_policy="",
+                #         tool_usage_policy="",
+                #         final_answer_policy=""
+                #     )
 
                 time_steps = list(traj['interactions'].keys())
                 time_steps = sorted(time_steps, key=lambda x: int(x))
