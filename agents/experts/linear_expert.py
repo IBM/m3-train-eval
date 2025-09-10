@@ -125,7 +125,9 @@ class LinearExpert(Agent):
     def map_idx_to_action(self, act_idx: int, include_thoughts: bool, scenario_with_expert_assist_mode=False) -> Tuple[dict, str]:
         """Get expert action corresponding to the given action index."""
         parsed_response = dict()
-
+        #import pdb
+        #pdb.set_trace()
+        #print("MAP IDX TO ACTION")
         curr_turn_trajectory = self.trajectory[self.env.curr_turn]
         action_type = curr_turn_trajectory["actions"][act_idx]
         action_arguments = curr_turn_trajectory["action_arguments"][act_idx]
@@ -136,7 +138,7 @@ class LinearExpert(Agent):
         is_policy_applicable=True
         #if there's an expert intervening due to violation in tool policy, generate the final answer instead. Force action type to be FINAL
         if scenario_with_expert_assist_mode and self.env.tool_policy.tool_use_policy is not None:
-            assert ":" in self.tool_policy.tool_use_policy_domain
+            assert ":" in self.env.tool_policy.tool_use_policy_domain
             #if domain is specified in policy:
             policy_splits=self.env.tool_policy.split(":")
             if "OUT_DOMAIN" in policy_splits[0].upper():
@@ -218,6 +220,8 @@ class LinearExpert(Agent):
                 num_transitions: How many transitions to perform from current expert's action to get the next (this is a function of agent's observations)
         """
         num_transitions = 0
+        #import pdb
+        #pdb.set_trace()
         if self.env.expert_assist.mode == "ground_truth":
             # The trajectories are being collected using the expert (no agent presence)
             act_idx = self.get_curr_action_idx()

@@ -313,7 +313,8 @@ def create_and_inject_thoughts(
                     logger.info(
                         f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
                     break
-
+                import pdb
+                pdb.set_trace()
                 # Fill in the thought
                 for hop_idx, (item_0, item_1) in enumerate(hops):
                     curr_step_thought: str = parsed_response[hop_idx]

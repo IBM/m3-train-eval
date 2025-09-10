@@ -847,10 +847,10 @@ class AgentTrajectoryPreferenceData(BaseDataset):
                 chosen_input, chosen_output, chosen_turn_mask = split_traj_input_output(chosen_trajectory, True)
                 rejected_input, rejected_output, rejected_turn_mask = split_traj_input_output(rejected_trajectory, False)
                 tool_policy = ToolPolicy(
-                    tool_availability_policy = sample["tool_availability_policy"],
-                    tool_use_policy=sample["tool_use_policy"],
-                    tool_usage_policy = sample["tool_usage_policy"],
-                    final_answer_policy = sample["final_answer_policy"],
+                    tool_availability_policy = sample["scenarios"]["tool_availability_policy"],
+                    tool_use_policy=sample["scenarios"]["tool_use_policy"],
+                    tool_usage_policy = sample["scenarios"]["tool_usage_policy"],
+                    final_answer_policy = sample["scenarios"]["final_answer_policy"],
                 )
                 data.append(
                     {

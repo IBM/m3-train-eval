@@ -931,6 +931,8 @@ class M3ToolCallEnv(ToolCallEnv):
             return observation
     
     def run_api(self, extracted_tool: Dict[str, Any]) -> str:
+        #import pdb
+        #pdb.set_trace()
         tool_name = extracted_tool['name']
         tool_args = extracted_tool['arguments']  # Can be extracted_tool['parameters']
         logger.info(f"Trying to run tool: {tool_name} with arguments {tool_args}")
@@ -1018,6 +1020,9 @@ class M3ToolCallEnv(ToolCallEnv):
                     return f"ToolCallSuccessful: {tool_resp}"
 
     def run_tool_and_get_obs(self, action: Dict[str, Any]) -> str:
+        #if type(action["value"]) is isinstance(str):
+        #import pdb
+        #pdb.set_trace()
         if action["type"] == "API":
             observation = self.run_api(action["value"])
         elif action["type"] == "RETRIEVE":
