@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from copy import deepcopy
 import json
 from enum import Enum, unique
+import random
 from typing import TYPE_CHECKING, Any, Optional, TypedDict, Union
 
 import fsspec
@@ -184,3 +186,40 @@ def read_cloud_json(cloud_path: str) -> list[Any]:
         raise ValueError(f"No JSON/JSONL files found in the specified path: {cloud_path}.")
 
     return sum([_read_json_with_fs(fs, file) for file in files], [])
+
+
+# =============================
+# Downsample tool/API pool to fit in context
+# =============================
+
+def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required_tools: list[str] = None, keep_retrievers: bool = True) -> list[dict]:
+
+    pool = deepcopy(tool_pool) # Don't modify the original pool
+    if isinstance(pool, str):
+        pool = json.loads(pool)
+
+    pool = {p['name']: p for p in pool}
+    downsampled_tools = []
+    if required_tools:
+        for req in required_tools:
+            tool = pool.pop(req)
+            downsampled_tools.append(tool)
+
+    if keep_retrievers:
+        retrievers = [k for k in pool.keys() if k.startswith("retriever_")]
+        retriever_list = [pool.pop(t) for t in retrievers]
+        downsampled_tools.extend(retriever_list)
+    
+    assert len(downsampled_tools) <= max_tools, f"The list of {len(downsampled_tools)} is longer than the specified length: {max_tools}"
+
+    distractor_count = max_tools - len(downsampled_tools)
+
+    if distractor_count >= len(pool):
+        # Just return the original pool
+        return tool_pool
+    
+    distractors = random.sample(list(pool.values()), distractor_count)
+    downsampled_tools.extend(distractors)
+    random.shuffle(downsampled_tools)
+    return downsampled_tools
+
