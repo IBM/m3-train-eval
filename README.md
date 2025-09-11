@@ -41,6 +41,21 @@ pip install -r requirements.txt
 
 This will install all required packages for running the agentic pipeline, including support for LoRA training, multi-turn inference, DeepSpeed, and more.
 
+If you intend to tune granite 4, you will also need to install the following packages from source (not PyPi)
+
+- causal-conv1d>=1.4.0
+- mamba-ssm[causal-conv1d]==2.2.4
+
+```
+git clone git@github.com:Dao-AILab/causal-conv1d.git
+cd causal-conv1d
+pip install .
+cd ..
+git clone git@github.com:state-spaces/mamba.git
+cd mamba
+pip install -e .
+```
+
 ---
 
 ## 🧭 Agentic Inference Environment

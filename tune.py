@@ -1,6 +1,8 @@
+print("STARTING IMPORTS")
 import json
 import os
 from datetime import datetime
+import subprocess
 
 from loguru import logger
 from transformers.utils import is_flash_attn_2_available
@@ -9,19 +11,88 @@ from transformers.utils.generic import strtobool
 from hparams import get_train_args
 from extras.custom import is_rank_0, set_run_environment, make_json_serializable, gpu_supports_fa2, create_dir
 
+
+DEBUG=False
+DEFAULT_DEBUG_PATH='./config_files/debug_train.json'
+DEFAULT_PATH='./config_files/train_lora_granite.json'
+
+def get_system_cuda_version():
+    try:
+        output = subprocess.check_output(['nvcc', '--version'], stderr=subprocess.STDOUT).decode()
+        for line in output.split('\n'):
+            if 'release' in line:
+                version = line.strip().split('release')[-1].split(',')[0].strip()
+                return version
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+def verify_cuda():
+    import torch
+
+    def check_all_gpus():
+        if not torch.cuda.is_available():
+            raise Exception("❌ CUDA is not available. No GPUs detected by PyTorch.")
+
+        num_gpus = torch.cuda.device_count()
+        logger.info(f"✅ {num_gpus} CUDA device(s) available.\n")
+
+        for i in range(num_gpus):
+            logger.info(f"--- GPU {i} ---")
+            logger.info(f"Name         : {torch.cuda.get_device_name(i)}")
+            logger.info(f"Capability   : {torch.cuda.get_device_capability(i)}")
+            logger.info(f"Memory (MB)  : {round(torch.cuda.get_device_properties(i).total_memory / 1024**2)}")
+
+    logger.info("=== PyTorch CUDA Compatibility Check ===")
+    # 1. Check CUDA enabled devices
+    check_all_gpus()
+
+    # 2. PyTorch compiled CUDA version
+    torch_cuda_version = torch.version.cuda
+    logger.info(f"PyTorch compiled with CUDA version: {torch_cuda_version}")
+
+    # 3. Actual system CUDA version (from nvcc)
+    system_cuda_version = get_system_cuda_version()
+    logger.info(f"System CUDA (nvcc) version: {system_cuda_version or 'nvcc not found'}")
+
+
 if is_rank_0():
     set_run_environment(dotenv_path="./.env")
 
-# # Login with the hf_token
-# from huggingface_hub import login
-# login(token=os.environ.get("HF_TOKEN", ""))
-
-def main(debug=False):
-    # Load the user-specified training configuration
-    if debug:
-        path_to_config = './config_files/debug_train.json'
+    # Check that data exists before we start up. 
+    if DEBUG:
+        path_to_config = DEFAULT_DEBUG_PATH
     else:
-        path_to_config = './config_files/train_lora.json'
+        path_to_config = DEFAULT_PATH
+    with open(os.path.join(path_to_config), 'r') as f:
+        override_args = json.load(f)
+    
+    logger.info(f"USING CONFIG FILE: {path_to_config}")
+    datasets = [override_args["dataset"]] if isinstance(override_args["dataset"], str) else override_args["dataset"]
+    sample_idx = 0
+    total_trajectories = 0
+    task_idxs, data = [], []
+    for dataset in datasets:
+        dataset_dir = os.path.join(override_args["dataset_dir"], dataset)
+        files = os.listdir(dataset_dir)
+        files = [f for f in files if f.startswith("trajectory")]
+        logger.info(f"There are {len(files)} trajectories found in {dataset_dir}. ")
+        assert len(files) > 0, f"Failed to find any trajectories files in {dataset_dir}"
+
+    verify_cuda()
+
+    print("LOGGING IN")
+    # Login with the hf_token
+    from huggingface_hub import login
+    login(token=os.environ.get("HF_TOKEN", ""))
+
+def main():
+
+    verify_cuda()
+    # Load the user-specified training configuration
+    if DEBUG:
+        path_to_config = DEFAULT_DEBUG_PATH
+    else:
+        path_to_config = DEFAULT_PATH
     with open(os.path.join(path_to_config), 'r') as f:
         override_args = json.load(f)
 
