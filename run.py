@@ -242,7 +242,7 @@ def run_agent(args):
                 logger.info("Tasking Expert to take the action")
                 parsed_response = expert_agent.take_action(
                                     state=env.curr_turn_history, 
-                                    include_thoughts=include_thoughts)
+                                    include_thoughts=include_thoughts,scenario_with_assist_mode=args.scenario_with_assist_mode)
                 actor = 'expert'
 
             elif expert_assist.mode == 'random':
@@ -395,5 +395,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to")
     parser.add_argument('--input_filename', '-i', default=None, help="Input filename.")
+    parser.add_argument('-s', action='store_true')
     args = parser.parse_args()
     run_agent(args)
