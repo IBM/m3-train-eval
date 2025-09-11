@@ -42,6 +42,7 @@ class LinearExpert(Agent):
         self.trajectory: Optional[List[Dict[str, Any]]] = None
         self.global_action_idx: int = -1  # Action idx that traverses multiple-turns
         self.local_action_idx: int = -1  # Action idx that traverses multiple steps/hops within a turn
+        self.domain=""
 
     def get_trajectory(self) -> Optional[dict]:
         """
@@ -121,10 +122,12 @@ class LinearExpert(Agent):
         else:
             return False
 
-    def map_idx_to_action(self, act_idx: int, include_thoughts: bool) -> Tuple[dict, str]:
+    def map_idx_to_action(self, act_idx: int, include_thoughts: bool, scenario_with_expert_assist_mode=False) -> Tuple[dict, str]:
         """Get expert action corresponding to the given action index."""
         parsed_response = dict()
-
+        #import pdb
+        #pdb.set_trace()
+        #print("MAP IDX TO ACTION")
         curr_turn_trajectory = self.trajectory[self.env.curr_turn]
         action_type = curr_turn_trajectory["actions"][act_idx]
         action_arguments = curr_turn_trajectory["action_arguments"][act_idx]
@@ -132,6 +135,22 @@ class LinearExpert(Agent):
 
         thought = action_arguments["thought"]
         parsed_response["thought"] = thought
+        #is_policy_applicable=True
+        #if there's an expert intervening due to violation in tool policy, generate the final answer instead. Force action type to be FINAL
+        # if scenario_with_expert_assist_mode and self.env.tool_policy.tool_use_policy is not None:
+        #     assert ":" in self.env.tool_policy.tool_use_policy_domain
+        #     #if domain is specified in policy:
+        #     policy_splits=self.env.tool_policy.split(":")
+        #     if "OUT_DOMAIN" in policy_splits[0].upper():
+        #         is_policy_applicable=False
+        #     policy_domain=policy_splits[1].strip()
+        # else:
+        #     policy_domain="ALL" #Should never be true in new data format. Added as failsafe.
+        # #if policy applies to all domains or matches the current domain
+        #     if policy_domain=="ALL" or (policy_domain == self.domain and is_policy_applicable):
+        #         action_type="FINAL"
+        #         action_arguments["final_answer"]="I cannot answer this question."
+
 
         if action_type == "API":
             tool_call = {
@@ -182,7 +201,7 @@ class LinearExpert(Agent):
         parsed_response['error'] = None
         return parsed_response, observation
 
-    def get_action(self, state, include_thoughts) -> Tuple[dict, int]:
+    def get_action(self, state, include_thoughts, scenario_with_expert_assist_mode=False) -> Tuple[dict, int]:
         """ This function basically represents the transition and output function of the Finite-State Machine (or Finite-State Transducer)
             Based on the agent's execution trace that acts as the input to the FSM,
                 > it transitions to the expert's next internal state
@@ -201,16 +220,18 @@ class LinearExpert(Agent):
                 num_transitions: How many transitions to perform from current expert's action to get the next (this is a function of agent's observations)
         """
         num_transitions = 0
+        #import pdb
+        #pdb.set_trace()
         if self.env.expert_assist.mode == "ground_truth":
             # The trajectories are being collected using the expert (no agent presence)
             act_idx = self.get_curr_action_idx()
-            action, observation = self.map_idx_to_action(act_idx, include_thoughts)
+            action, observation = self.map_idx_to_action(act_idx, include_thoughts, scenario_with_expert_assist_mode=scenario_with_expert_assist_mode)
             num_transitions += 1
             # No need to update thought
             return action, num_transitions
         elif self.env.expert_assist.mode == "ground_truth_non_live":
             act_idx = self.get_curr_action_idx()
-            action, observation = self.map_idx_to_action(act_idx, include_thoughts)
+            action, observation = self.map_idx_to_action(act_idx, include_thoughts, scenario_with_expert_assist_mode=scenario_with_expert_assist_mode)
             action["ground_truth_observation"] = observation
             num_transitions += 1
             return action, num_transitions
@@ -219,7 +240,7 @@ class LinearExpert(Agent):
             if len(no_error_state) == 0:
                 # Edge case: This is either the first action requested from the expert or no error-free action was taken by the agent.
                 act_idx = self.get_curr_action_idx()
-                action, observation = self.map_idx_to_action(act_idx, include_thoughts)
+                action, observation = self.map_idx_to_action(act_idx, include_thoughts, scenario_with_expert_assist_mode=scenario_with_expert_assist_mode)
                 num_transitions += 1
                 # No need to update thought
                 return action, num_transitions
@@ -229,7 +250,7 @@ class LinearExpert(Agent):
                 act_idx = self.get_curr_action_idx()
                 while act_idx < curr_turn_max_expert_actions or not expert_action_found:
 
-                    action, observation = self.map_idx_to_action(act_idx, include_thoughts)
+                    action, observation = self.map_idx_to_action(act_idx, include_thoughts,scenario_with_expert_assist_mode=scenario_with_expert_assist_mode)
                     action_type = action["type"]
 
                     if action_type == "FINAL":
@@ -267,7 +288,7 @@ class LinearExpert(Agent):
                 logger.error("Reached a point where we looked for the next expert action but can not find any.")
                 sys.exit(-1)
 
-    def take_action(self, state, include_thoughts: bool=True, reward: Optional[float] = None) -> Dict[str, Any]:
+    def take_action(self, state, include_thoughts: bool=True, reward: Optional[float] = None, scenario_with_assist_mode=False) -> Dict[str, Any]:
         """
         :param state: History of agent interactions. List of agentic actions, arguments and observations.
             [
@@ -281,7 +302,7 @@ class LinearExpert(Agent):
         :return:
         """
         # Get the expert action
-        action, num_transitions = self.get_action(state, include_thoughts)
+        action, num_transitions = self.get_action(state, include_thoughts, scenario_with_expert_assist_mode=scenario_with_assist_mode)
         # Update the expert's internal state
         while num_transitions > 0:
             self.transition_to_next_action()
@@ -320,6 +341,8 @@ class M3Expert(LinearExpert):
     ):
         super().__init__(tokenizer_id_hf=tokenizer_id_hf, hf_token=hf_token, llm=llm, llm_parameters=llm_parameters,
                          agent_template=agent_template)
+        
+        self.domain=""
 
     def get_single_turn_trajectory(self, trajectory) -> Dict[str, Any]:
         actions, action_arguments = [], []
@@ -391,7 +414,7 @@ class M3Expert(LinearExpert):
 
     def get_trajectory(self) -> Optional[List[dict]]:
         curr_instance_data = self.env.data[self.env.curr_instance_idx]
-
+        self.domain=curr_instance_data["domain"]
         # Following logic to parse the G.T. Trajectory should work for all the tool availability/usage policies
         if 'trajectory' in curr_instance_data:
             traj_data = curr_instance_data['trajectory']

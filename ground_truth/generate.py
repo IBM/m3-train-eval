@@ -14,7 +14,8 @@ from tqdm import tqdm
 
 from agents.llm import invoke_llm, get_lm
 from metrics.plot import plot_freq_dist
-from data_utils.tool_utils import get_tool_use_policy
+from data_utils.tool_utils import create_ToolPolicy
+from envs.tool_call_env import ToolPolicy
 
 
 def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: str, tool_call: str,
@@ -36,6 +37,7 @@ List[dict]:
     prompt = []
     system_prompt = SYSTEM_PROMPT
     if tool_use_policy is not None:
+        logger.info("Generating Thoughts with tool policy"+tool_use_policy)
         system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_use_policy)
     prompt.append(
         {
@@ -129,11 +131,17 @@ def parse_answer_generator_response(response: str, ) -> Optional[dict]:
 def wrap_hop_data_into_trajectory_str(hops) -> str:
     trajectory_str = ""
     for hop_idx, (item_0, item_1) in enumerate(hops):
-        trajectory_str += (f"Agent:\n"
-                           f"    <think>{item_0['plan']}</think>\n"
-                           f"    <tool_call>{json.dumps(item_0['output'], indent=2)}</tool_call>\n"
-                           f"Environment:\n"
-                           f"    <tool_response>{item_1['response']}</tool_response>\n")
+
+        if "output" in item_0 and "response" in item_1:
+            trajectory_str += (f"Agent:\n"
+                            f"    <think>{item_0['plan']}</think>\n"
+                            f"    <tool_call>{json.dumps(item_0['output'], indent=2)}</tool_call>\n"
+                            f"Environment:\n"
+                            f"    <tool_response>{item_1['response']}</tool_response>\n")
+        else:
+            trajectory_str += (f"Agent:\n"
+                            f"    <think>{item_0['plan']}</think>\n")
+            
     return trajectory_str
 
 
@@ -207,15 +215,10 @@ def create_and_inject_thoughts(
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
             domain_name = sample["domain"]
-            # # For each sample declare scenarios here
-            tool_availability_policy = "both_api_rag"  # We support 'only_rag', 'only_api', 'both_api_rag', 'neither_api_rag'
-            tool_use_policy_field=sample['scenarios']['tool_use_policy']
-            tool_usage_policy = get_tool_use_policy(tool_use_policy_field, domain=domain_name)  # This should be the instruction in english to control which tools need to be used
-            logger.info(f"    Tool Usage Policy from env set to  #{tool_use_policy_field}")
-            logger.info(f"    Agent Policy set to  #{tool_usage_policy}")
-            sample['tool_availability_policy']: str = tool_availability_policy
-            sample['tool_usage_policy']: str = tool_usage_policy
-
+            tool_policy=create_ToolPolicy(scenarios=sample["scenarios"],current_domain=domain_name)
+            tool_usage_policy=tool_policy.tool_usage_policy
+            logger.info(f"    Tool Policy: {tool_policy}")
+           
             # # Spawn on-the-go additional instr. to compress tool response into the final answer. This will go into the
             # # agentic system prompt to be used for all turns (only during generation not during conditioning on context-response pairs)
             # Spawn a random integer between min to max
@@ -273,7 +276,12 @@ def create_and_inject_thoughts(
                         if curr_tool_name == tool['name']:
                             tool_description_str = json.dumps(tool, indent=2)
                             break
-                    assert len(tool_description_str) > 0  # Check to make sure the used tool is in tool universe
+                    if tool_policy.tool_missing is None:
+                        assert len(tool_description_str) > 0# Check to make sure the used tool is in tool universe
+                    else:
+                        # TODO: HOW DO WE UPDATE TOOL UNIVERSE
+                        print("CODE MISSING: TOOL MISSING SCENARIO")
+                        continue
                     prefix = "            "  # constant indentation from the prompt
                     tool_description_str = "\n".join(prefix + line for line in tool_description_str.splitlines())
 
@@ -311,12 +319,20 @@ def create_and_inject_thoughts(
                     logger.info(
                         f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
                     break
-
+                
+                trajectory_modifications_needed=False
+                #new_trajectory=curr_turn_trajectory
                 # Fill in the thought
                 for hop_idx, (item_0, item_1) in enumerate(hops):
                     curr_step_thought: str = parsed_response[hop_idx]
                     item_0['plan'] = curr_step_thought
 
+                    #if the output has a special marker for policy remove the output as its not an API that can be called.
+                    if "policy" in item_0["output"]:
+                        del item_0["output"]
+                        del item_1["response"]
+                        trajectory_modifications_needed=True
+                        
                 # # ############################ Generate final answer and its thought ############################ #
                 # TODO: Inject the previous_dialogue if the final answer of the current turn depends on it
                 trajectory_str = wrap_hop_data_into_trajectory_str(hops)
@@ -351,7 +367,16 @@ def create_and_inject_thoughts(
                 previous_dialogue.append(
                     (curr_user_query, curr_raw_answer)
                 )
-
+            if trajectory_modifications_needed:
+                #import pdb
+                #pdb.set_trace()
+                traj_obj=sample['trajectory']
+                new_obj={}
+                new_obj["plan"]=traj_obj[0][1]["plan"]
+                new_obj["answer"]=traj_obj[0][-1]["answer"]
+                new_obj["raw_answer"]=traj_obj[0][-1]["raw_answer"]
+                sample['trajectory']=[traj_obj[0][0],new_obj]
+           
             sample['turns'] = turns
             if not is_valid_sample:
                 left_out_domain_data.append(orig_sample)
@@ -406,8 +431,9 @@ def create_multi_turn_data(raw_data_dir, save_data_at, domain, plot_dir):
             # Ignore the datapoint if the "ignore" key is set
             if "ignore" in list (sample.keys()):
                 continue
-
-            domain_name = domain_file.split("_multiturn")[0] # address_multiturn_bird_chunked.json
+            
+            domain_name=sample['dataset_name']
+            #domain_name = domain_file.split("_multiturn")[0] # address_multiturn_bird_chunked.json
 
             sample_id = sample['sample_id']
             logger.info(f"Creating turn level data sample #{sample_id}")

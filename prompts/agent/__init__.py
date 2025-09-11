@@ -5,7 +5,7 @@ QUERY_PROMPT = """{query}"""
 
 
 FINAL_ANSWER_FALLBACKS = [
-    "I can not answer!",
+    "Sorry, I cannot answer your query!",   
     "I don't know.",
     "No answer available.",
     "I'm unable to answer.",
@@ -20,13 +20,22 @@ FINAL_ANSWER_INSUFFICIENCY_TEMPLATES = [
     "If the information you have is incomplete, your reply should be '{fb}'"
 ]
 
-TOOL_USE_RAG_TEMPLATES=[
+TOOL_USE_RAG_TEMPLATES_WITH_DOMAINS=[
     "If a user's query pertains to {domains}, make sure you try answering them by only using document retrievers. Do not use other types of tools.",
+ ]
+
+
+TOOL_USE_RAG_TEMPLATES_GENERAL=[
     "Use document retrievers to answer questions. Do not use any other type of tool."
 ]
 
-TOOL_USE_API_TEMPLATES=[
+
+
+TOOL_USE_API_TEMPLATES_WITH_DOMAINS=[
     "If a user's query pertains to {domains}, make sure you do not use document retrievers to try answering those questions. Use other types of tools. ",
+]
+
+TOOL_USE_API_TEMPLATES_GENERAL=[
     "Do not use document retrievers to answer questions. Use other types of tools."
 ]
 

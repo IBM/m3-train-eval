@@ -7,3 +7,4 @@ logging/
 __pycache__
 .vscode
 runs/
+data/

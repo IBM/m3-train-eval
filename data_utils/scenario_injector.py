@@ -33,8 +33,8 @@ class ToolUsePolicy(Enum):
     """
     ONLY_API = "Do not use RAG, only use API."
     ONLY_RAG = "Do not use API, only use RAG."
-    RAG_FIRST = "Must use RAG tool first"
-    API_FIRST = "Must use API tool first."
+    #RAG_FIRST = "Must use RAG tool first"
+    #API_FIRST = "Must use API tool first."
 
 
 class ToolAvailability(Enum):
@@ -115,36 +115,40 @@ class SetToolUsePolicy(Operation):
             if v == ToolUsePolicy.ONLY_API:
                 if "RAG" in question_merge_type and policy_domain == data_domain:
                     turn["answer"] = "I can not answer."
-                    rag_api_slots = question_merge_type.replace("(","").replace(")","").split("-")
-                    if len(rag_api_slots) >= 2:
-                        idx = rag_api_slots.index('RAG') #loc first RAG and mute the rest
-                        for i in range(idx, len(rag_api_slots)):
-                            turn["gold_sequence"][i]["answer"] = "I can not answer."
+                    rag_api_slots = question_merge_type.replace(")(","-").replace(")","").replace("(","").split("-")
+                    #if len(rag_api_slots) >= 2:
+                    idx = rag_api_slots.index('RAG') #loc first RAG and mute the rest
+                    for i in range(idx, len(rag_api_slots)):
+                        turn["gold_sequence"][i]["answer"] = "I can not answer."
+                        turn["gold_sequence"][i]["output"][0]["policy_status"]="POLICY ERROR: Tool is a document retriever. Tool not allowed."
+
 
             elif v == ToolUsePolicy.ONLY_RAG:
                 if "API" in question_merge_type and policy_domain == data_domain:
                     turn["answer"] = "I can not answer."
-                    rag_api_slots = question_merge_type.replace("(", "").replace(")", "").split("-")
-                    if len(rag_api_slots) >= 2:
-                        idx = rag_api_slots.index('API') #loc first API and mute the rest
-                        for i in range(idx,len(rag_api_slots)):
-                            turn["gold_sequence"][i]["answer"] = "I can not answer."
+                    rag_api_slots = question_merge_type.replace(")(","-").replace(")","").replace("(","").split("-")
+#                    if len(rag_api_slots) >= 2:
+                    idx = rag_api_slots.index('API') #loc first API and mute the rest
+                    for i in range(idx,len(rag_api_slots)):
+                        turn["gold_sequence"][i]["answer"] = "I can not answer."
+                        turn["gold_sequence"][i]["output"][0]["policy_status"]="POLICY ERROR: Tool is not a document retriever. Tool not allowed."
 
-            elif v == ToolUsePolicy.RAG_FIRST:
-                rag_api_slots = question_merge_type.replace("(", "").replace(")", "").split("-")
-                if rag_api_slots[0] != "RAG" and policy_domain == data_domain:
-                    turn["answer"] = "I can not answer."
-                    if len(rag_api_slots) >= 2:
-                        for i in range(len(rag_api_slots)):
-                            turn["gold_sequence"][i]["answer"] = "I can not answer."
 
-            elif v == ToolUsePolicy.API_FIRST:
-                rag_api_slots = question_merge_type.replace("(", "").replace(")", "").split("-")
-                if rag_api_slots[0] != "API" and policy_domain == data_domain:
-                    turn["answer"] = "I can not answer."
-                    if len(rag_api_slots) >= 2:
-                        for i in range(len(rag_api_slots)):
-                            turn["gold_sequence"][i]["answer"] = "I can not answer."
+            # elif v == ToolUsePolicy.RAG_FIRST:
+            #     rag_api_slots = question_merge_type.replace("(", "").replace(")", "").split("-")
+            #     if rag_api_slots[0] != "RAG" and policy_domain == data_domain:
+            #         turn["answer"] = "I can not answer."
+            #         if len(rag_api_slots) >= 2:
+            #             for i in range(len(rag_api_slots)):
+            #                 turn["gold_sequence"][i]["answer"] = "I can not answer."
+
+            # elif v == ToolUsePolicy.API_FIRST:
+            #     rag_api_slots = question_merge_type.replace("(", "").replace(")", "").split("-")
+            #     if rag_api_slots[0] != "API" and policy_domain == data_domain:
+            #         turn["answer"] = "I can not answer."
+            #         if len(rag_api_slots) >= 2:
+            #             for i in range(len(rag_api_slots)):
+            #                 turn["gold_sequence"][i]["answer"] = "I can not answer."
         return json_data_copy
 
 class SetToolAvailability(Operation):
@@ -160,11 +164,13 @@ class SetToolAvailability(Operation):
             if v == ToolAvailability.ONLY_API:
                 if "RAG" in question_merge_type:
                     turn["answer"] = "I can not answer."
-                    rag_api_slots = question_merge_type.replace("(", "").replace(")", "").split("-")
-                    if len(rag_api_slots) >= 2:
-                        idx = rag_api_slots.index('RAG')  # loc first RAG and mute the rest
-                        for i in range(idx, len(rag_api_slots)):
-                            turn["gold_sequence"][i]["answer"] = "I can not answer"
+                    #rag_api_slots = question_merge_type.replace("(", "").replace(")", "").split("-")
+                    #if len(rag_api_slots) >= 2:
+                    idx = rag_api_slots.index('RAG')  # loc first RAG and mute the rest
+                    for i in range(idx, len(rag_api_slots)):
+                        turn["gold_sequence"][i]["answer"] = "I can not answer"
+                        turn["gold_sequence"][i][""]
+                        
 
             elif v == ToolAvailability.ONLY_RAG:
                 if "API" in question_merge_type:
@@ -174,6 +180,7 @@ class SetToolAvailability(Operation):
                         idx = rag_api_slots.index('API')  # loc first API and mute the rest
                         for i in range(idx, len(rag_api_slots)):
                             turn["gold_sequence"][i]["answer"] = "I can not answer."
+                            turn["gold_sequence"][i]["output"]["policy"]="POLICY ERROR: Tool not a document retriever. Tool not allowed."
 
             elif v == ToolAvailability.NEITHER_API_RAG:
                 turn["answer"] = "I can not answer."
@@ -273,32 +280,32 @@ class InjectionPipeline:
             #rand_domain = random.choice(operations_dict.get(OperationType.SET_POLICY_DOMAIN.name))
             in_domain = json_data["dataset_name"]
             out_domain = random.choice([ dm for dm in operations_dict.get(OperationType.SET_POLICY_DOMAIN.name) if dm != in_domain])
-            #rand_policy = random.choice(operations_dict.get(OperationType.SET_TOOL_USE_POLICY.name))
-            rand_policy = ToolUsePolicy.RAG_FIRST
+            rand_policy = random.choice(operations_dict.get(OperationType.SET_TOOL_USE_POLICY.name))
+            #rand_policy = ToolUsePolicy.RAG_FIRST
             sd_in = self.set_domain.apply(in_domain, json_data)
             sp_in = self.set_policy.apply(rand_policy, sd_in)  # depends on policy domain
 
             sd_out = self.set_domain.apply(out_domain, json_data)
             sp_out = self.set_policy.apply(rand_policy, sd_out)
 
-            rand_tool_avail = random.choice(operations_dict.get(OperationType.SET_TOOL_AVAILABILITY.name))
-            rand_api_avail = random.choice(operations_dict.get(OperationType.SET_API_AVAILABILITY.name))
-            st = self.set_tool_avail.apply(rand_tool_avail, json_data)
-            sa = self.set_api_avail.apply(rand_api_avail, json_data)
-            res.extend( [x for x in [json_data,sp_in,sp_out,st,sa] if x is not None])
+            # rand_tool_avail = random.choice(operations_dict.get(OperationType.SET_TOOL_AVAILABILITY.name))
+            # rand_api_avail = random.choice(operations_dict.get(OperationType.SET_API_AVAILABILITY.name))
+            # st = self.set_tool_avail.apply(rand_tool_avail, json_data)
+            # sa = self.set_api_avail.apply(rand_api_avail, json_data)
+            res.extend( [x for x in [json_data,sp_in,sp_out] if x is not None])
         return res
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_file', type=str, default="/Users/siyuhuo/Desktop/GithubRepo/agentic-middleware-playground/data/bird/car_retails_multiturn_bird.json",
+    parser.add_argument('--data_file', type=str, default="/proj/m3benchmark/praveen/data/0905/m3_train_test_ood_rest_v2/train_chunked/olympics_multiturn_bird_chunked.json",
                         help='api data file')
     parser.add_argument('--cluster_file', type=str,
                         default="/Users/siyuhuo/Desktop/GithubRepo/agentic-middleware-playground/agentic_bench/generated/domain_cluster_N.json",
                         help='api data file')
     parser.add_argument('--output_file', type=str,
-                        default="generated/airline_multiturn_bird_scenarios.json", help='output file')
+                        default="/proj/m3benchmark/danish/m3_data/0905/train_chunked_scenarios/olympics_multiturn_bird_chunked_scenarios.json", help='output file')
     parser.add_argument('--n', type=int, default=-1, help='inject scenarios based on n samples.')
 
     config = parser.parse_args()
@@ -318,8 +325,8 @@ if __name__ == "__main__":
     operations_dict = {
         OperationType.SET_POLICY_DOMAIN.name: domain_names,
         OperationType.SET_TOOL_USE_POLICY.name: tool_use_policy,
-        OperationType.SET_TOOL_AVAILABILITY.name: tool_availability,
-        OperationType.SET_API_AVAILABILITY.name: apis_availability
+        #OperationType.SET_TOOL_AVAILABILITY.name: tool_availability,
+        #OperationType.SET_API_AVAILABILITY.name: apis_availability
     }
     pipeline = InjectionPipeline(data_file)
     output_json = pipeline.apply_operations(operations_dict, n)
