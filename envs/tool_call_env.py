@@ -168,7 +168,7 @@ class ToolCallEnv(BaseEnv):
         # Setup user queries
         logger.info("Setting up User Queries")
         self.setup_user_queries()
-
+        
         # Setup tools
         logger.info("Setting up Tools")
         self.setup_tools()
