@@ -104,7 +104,7 @@ def parse_thought_generator_response(response: str, num_steps: int) -> Optional[
             return None
 
     response = response.split("\n\nAnswer")[0]
-    pattern = re.compile(r"Thought_([\w{}]+):\s*(.*?)(?=\nThought_[\w{}]+:|$)", re.DOTALL)
+    pattern = re.compile(r"Thought_(\d+):\s*(.*?)(?=\nThought_\d+:|$)", re.DOTALL)
     matches = pattern.findall(response)
 
     result = {}
@@ -218,6 +218,7 @@ def create_and_inject_thoughts(
         parsing_error_data, length_error_data = [], []
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
             is_valid_sample = True
+            is_long_response_sample = False
             orig_sample = copy.deepcopy(sample)
             if "scenarios" not in sample or "tool_use_policy" not in sample["scenarios"]:
                 sample["scenarios"]={"tool_use_policy": None,"policy_domain": None,"missing_api": None,"tool_availability":None}
@@ -371,7 +372,13 @@ def create_and_inject_thoughts(
                     trajectory=trajectory_str,
                     additional_instruction=answer_generator_additional_instr
                 )
-                response = invoke_llm(llm, llm_parameters, answer_generator_prompt)
+                try:
+                    response = invoke_llm(llm, llm_parameters, answer_generator_prompt)
+                except Exception as e:
+                    # If RITS generation fails, skip and continue to next trajectory
+                    left_out_domain_data.append(orig_sample)
+                    logger.error(f"Error invoking RITS LLM for Final answer thought generation: {e}")
+                    continue
                 logger.info(f"\nFinal answer generator response[turn #{turn_idx}]:\n{response}")
                 parsed_response = parse_answer_generator_response(response)
                 if parsed_response is None:
