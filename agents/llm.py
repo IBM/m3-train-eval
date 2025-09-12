@@ -367,16 +367,20 @@ def invoke_llm(llm, llm_parameters: Dict[str, Any], messages: List[Dict[str, str
         return response  # .content
 
     elif isinstance(llm, OpenAI):
-        try:
-            response = llm.chat.completions.create(
-                model=llm_parameters['model_name_or_path'],
-                messages=messages,
-                temperature=llm_parameters['temperature'],
-                max_tokens=llm_parameters['max_new_tokens'],
-                stop=llm_parameters['stop_sequences'],
-            )
-        except BaseException as e:
-            raise e
+        max_retries=3
+        for retries in range(max_retries):
+            try:
+                response = llm.chat.completions.create(
+                    model=llm_parameters['model_name_or_path'],
+                    messages=messages,
+                    temperature=llm_parameters['temperature'],
+                    max_tokens=llm_parameters['max_new_tokens'],
+                    stop=llm_parameters['stop_sequences'],
+                )
+                break
+            except BaseException as e:
+                if retries==max_retries:
+                    raise e
         return response.choices[0].message.content
 
     elif isinstance(llm, HFLLM):
