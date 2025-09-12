@@ -37,7 +37,7 @@ List[dict]:
     prompt = []
     system_prompt = SYSTEM_PROMPT
     if tool_use_policy is not None:
-        logger.info("Generating Thoughts with tool policy"+tool_use_policy)
+        logger.info("Generating Thoughts with tool policy: "+tool_use_policy)
         system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_use_policy)
     prompt.append(
         {
@@ -211,7 +211,8 @@ def create_and_inject_thoughts(
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
             is_valid_sample = True
             orig_sample = copy.deepcopy(sample)
-
+            if "scenarios" not in sample or "tool_use_policy" not in sample["scenarios"]:
+                sample["scenarios"]={"tool_use_policy": None,"policy_domain": None,"missing_api": None,"tool_availability":None}
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
             domain_name = sample["domain"]
