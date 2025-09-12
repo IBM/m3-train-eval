@@ -423,6 +423,7 @@ class M3Expert(LinearExpert):
 
         # Parse
         if self.env.sub_domain.mode == "rest":
+
             # For Multi-turn data
             if isinstance(traj_data[0], list):
                 trajectory = [self.get_single_turn_trajectory(curr_turn_traj) for curr_turn_traj in traj_data]
