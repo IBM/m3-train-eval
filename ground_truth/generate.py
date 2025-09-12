@@ -104,7 +104,7 @@ def parse_thought_generator_response(response: str, num_steps: int) -> Optional[
             return None
 
     response = response.split("\n\nAnswer")[0]
-    pattern = re.compile(r"Thought_(\d+):\s*(.*?)(?=\nThought_\d+:|$)", re.DOTALL)
+    pattern = re.compile(r"(?:- )?Thought_(\d+):\s*(.*?)(?=\n(?:- )?Thought_\d+:|$)", re.DOTALL)
     matches = pattern.findall(response)
 
     result = {}
