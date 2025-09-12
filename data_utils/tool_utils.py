@@ -651,11 +651,15 @@ from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEM
 def create_ToolPolicy(scenarios:dict, current_domain:str=None):
     if scenarios["tool_use_policy"] is not None and scenarios["policy_domain"] is not None:
         policy_domain=scenarios["policy_domain"]
-        domain=policy_domain.split(":")[-1].strip()
+        domain_splits=policy_domain.split(":")
+        domain=domain_splits[-1].strip().replace(".","").strip()
+        policy_applicable=domain_splits[0].strip()
         tool_policy=scenarios["tool_use_policy"]
         can_use_general=False
-        if current_domain is not None and current_domain==domain:
+        if policy_applicable=='IN_DOMAIN':
             can_use_general=True
+        #if current_domain is not None and current_domain==domain:
+        #    can_use_general=True
         candidate_texts=[]
         if tool_policy==ToolUsePolicy.ONLY_API.name and can_use_general:
             candidate_texts.extend(TOOL_USE_API_TEMPLATES_GENERAL[:])

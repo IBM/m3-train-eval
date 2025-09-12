@@ -37,7 +37,7 @@ List[dict]:
     prompt = []
     system_prompt = SYSTEM_PROMPT
     if tool_use_policy is not None:
-        logger.info("Generating Thoughts with tool policy"+tool_use_policy)
+        logger.info("Generating Thoughts with tool policy: "+tool_use_policy)
         system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_use_policy)
     prompt.append(
         {
@@ -211,7 +211,8 @@ def create_and_inject_thoughts(
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
             is_valid_sample = True
             orig_sample = copy.deepcopy(sample)
-
+            if "scenarios" not in sample or "tool_use_policy" not in sample["scenarios"]:
+                sample["scenarios"]={"tool_use_policy": None,"policy_domain": None,"missing_api": None,"tool_availability":None}
             sample_id = sample['sample_id']
             logger.info(f"    Generating thoughts and final answer for Sample #{sample_id}")
             domain_name = sample["domain"]
@@ -231,6 +232,7 @@ def create_and_inject_thoughts(
 
             previous_dialogue = []
             turns = []  # For storing turn-level query-answer pairs
+            trajectories=[]
             for turn_idx, curr_turn_trajectory in enumerate(sample['trajectory']):
                 curr_user_query: str = curr_turn_trajectory[0]['input']
                 curr_raw_answer = copy.deepcopy(curr_turn_trajectory[-1]['answer'])
@@ -323,14 +325,18 @@ def create_and_inject_thoughts(
                 trajectory_modifications_needed=False
                 #new_trajectory=curr_turn_trajectory
                 # Fill in the thought
+                #import pdb
+                modified_indices=[]
                 for hop_idx, (item_0, item_1) in enumerate(hops):
                     curr_step_thought: str = parsed_response[hop_idx]
+                    modified_indices.append(hop_idx)
                     item_0['plan'] = curr_step_thought
-
                     #if the output has a special marker for policy remove the output as its not an API that can be called.
                     if "policy" in item_0["output"]:
                         del item_0["output"]
                         del item_1["response"]
+                        if "chunk_info" in item_1:
+                            del item_1['chunk_info']
                         trajectory_modifications_needed=True
                         
                 # # ############################ Generate final answer and its thought ############################ #
@@ -367,16 +373,37 @@ def create_and_inject_thoughts(
                 previous_dialogue.append(
                     (curr_user_query, curr_raw_answer)
                 )
-            if trajectory_modifications_needed:
-                #import pdb
-                #pdb.set_trace()
-                traj_obj=sample['trajectory']
-                new_obj={}
-                new_obj["plan"]=traj_obj[0][1]["plan"]
-                new_obj["answer"]=traj_obj[0][-1]["answer"]
-                new_obj["raw_answer"]=traj_obj[0][-1]["raw_answer"]
-                sample['trajectory']=[traj_obj[0][0],new_obj]
-           
+                
+                delete_step=[]
+                for idx,traj_step in enumerate(curr_turn_trajectory):
+                    #print(traj_step)
+                    #import pdb
+                    #pdb.set_trace()
+                    if traj_step == {}:
+                        curr_turn_trajectory[idx+1]["plan"]=curr_turn_trajectory[idx-1]["plan"]
+                        delete_step.append(idx)
+                        delete_step.append(idx-1)
+                #if len(delete_step)>0:
+                curr_turn_trajectory = [step for i, step in enumerate(curr_turn_trajectory) if i not in delete_step]
+                trajectories.append(curr_turn_trajectory)
+            
+                
+                
+                        #del step
+                # if trajectory_modifications_needed:
+                #     #import pdb
+                #     #pdb.set_trace()
+                #     traj_obj=sample['trajectory']
+                #     new_obj={}
+                #     new_obj["plan"]=traj_obj[-1][1]["plan"]
+                #     new_obj["answer"]=traj_obj[-1][-1]["answer"]
+                #     new_obj["raw_answer"]=traj_obj[-1][-1]["raw_answer"]
+                #     traj_obj[-1][-1]=new_obj
+
+            
+                #sample['trajectory'] = traj_obj[-1][:-1] + [new_obj]
+            
+            sample['trajectory']=trajectories
             sample['turns'] = turns
             if not is_valid_sample:
                 left_out_domain_data.append(orig_sample)
