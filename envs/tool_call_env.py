@@ -873,9 +873,10 @@ class M3ToolCallEnv(ToolCallEnv):
 
         # 4. Get list of required tools
         required=[]
-        for traj in self.data["trajectory"]:
-            if "output" in traj:
-                required.append(traj['output']['name'])
+        for item in curr_instance_data["trajectory"]:
+            for traj in item:
+                if "output" in traj:
+                    required.append(traj['output']['name']) # TODO : Required list needs to be updated for scenarios
         tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
 
         # 4. Add the special tool for document retrieval [Old way]
