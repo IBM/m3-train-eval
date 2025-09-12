@@ -103,7 +103,8 @@ def parse_thought_generator_response(response: str, num_steps: int) -> Optional[
             logger.error(f"    Thought not found for step {step_idx + 1}")
             return None
 
-    pattern = re.compile(r"Thought_(\d+):\s*(.*?)(?=\nThought_\d+:|$)", re.DOTALL)
+    response = response.split("\n\nAnswer")[0]
+    pattern = re.compile(r"Thought_([\w{}]+):\s*(.*?)(?=\nThought_[\w{}]+:|$)", re.DOTALL)
     matches = pattern.findall(response)
 
     result = {}
@@ -128,16 +129,22 @@ def parse_answer_generator_response(response: str, ) -> Optional[dict]:
     }
 
 
-def wrap_hop_data_into_trajectory_str(hops) -> str:
+def wrap_hop_data_into_trajectory_str(hops, is_long_response_sample) -> str:
     trajectory_str = ""
     for hop_idx, (item_0, item_1) in enumerate(hops):
 
         if "output" in item_0 and "response" in item_1:
+            response = item_1['response']
+
+            # TODO: Handle long tool responses for multi-hop scenarios
+            if is_long_response_sample:
+                response = response[:100] + '...(truncated)'
+
             trajectory_str += (f"Agent:\n"
                             f"    <think>{item_0['plan']}</think>\n"
                             f"    <tool_call>{json.dumps(item_0['output'], indent=2)}</tool_call>\n"
                             f"Environment:\n"
-                            f"    <tool_response>{item_1['response']}</tool_response>\n")
+                            f"    <tool_response>{response}</tool_response>\n")
         else:
             trajectory_str += (f"Agent:\n"
                             f"    <think>{item_0['plan']}</think>\n")
@@ -208,6 +215,7 @@ def create_and_inject_thoughts(
 
         logger.info(f"\n# ===================================== {domain_file} ===================================== #")
         final_domain_data, left_out_domain_data = [], []  # Segregate chosen and rejected (in orig format) samples
+        parsing_error_data, length_error_data = [], []
         for sample in tqdm(domain_data, total=len(domain_data), desc=f"Generating thoughts for domain {domain_file}"):
             is_valid_sample = True
             orig_sample = copy.deepcopy(sample)
@@ -242,17 +250,23 @@ def create_and_inject_thoughts(
 
                 if isinstance(curr_raw_answer, list) and len(curr_raw_answer) > resp_cutoff_thresh:
                     if len(curr_raw_answer) > max_tool_resp_cut_off:
-                        # Ignore samples for which tool response is tool long
-                        logger.info(
-                            f"    Discarding the sample since length of its tool response at end of turn #{turn_idx} {len(curr_raw_answer)} > {max_tool_resp_cut_off}")
-                        is_valid_sample = False
-                        break
+                        if sample["num_hops"][turn_idx] != 1:
+                            # Ignore samples where the tool response is very long and is part of a multi-hop setting
+                            logger.info(
+                                f"    Discarding the sample since length of its tool response at end of turn #{turn_idx} {len(curr_raw_answer)} > {max_tool_resp_cut_off}")
+                            is_valid_sample = False
+                            length_error_sample = copy.deepcopy(sample)
+                            length_error_data.append(length_error_sample)
+                            break
+                        else:
+                            is_long_response_sample = True
 
                 else:
                     # For the current turn's thought generation, we discard the resp_cutoff_inst instruction if the
                     # agent can pick all the objects and construct the final answer around it. (No Truncation)
                     turn_resp_cutoff_thresh = None
                     answer_generator_additional_instr = ''
+                    is_long_response_sample = False
 
                 # Collect hop-level data
                 current_turn_tool_call_trajectory = curr_turn_trajectory[1:-1]  # Exclude user query and final answer
@@ -288,7 +302,13 @@ def create_and_inject_thoughts(
                     tool_description_str = "\n".join(prefix + line for line in tool_description_str.splitlines())
 
                     # 3. Create the tool-response-str
-                    tool_response_str = item_1['response']
+                    if is_long_response_sample:
+                        # TODO: Current logic assumes that we are trying to truncate response for long tool outputs
+                        # Only in a single-hop setting. This is the primary scenario based on the data. 
+                        # In the future, for multi-hop, we will need to modify the prompt and also track which hop output needs truncation
+                        tool_response_str = item_1['response'][:100] + ' ...(truncated)'
+                    else:
+                        tool_response_str = item_1['response']
 
                     curr_step_prompt: str = get_step_query_prompt(
                         hop_idx + 1,
@@ -320,6 +340,10 @@ def create_and_inject_thoughts(
                     is_valid_sample = False
                     logger.info(
                         f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
+                    parsing_error_sample = copy.deepcopy(sample)
+                    parsing_error_sample['error_raw_response'] = response
+                    parsing_error_sample['error_parsed_response'] = parsed_response
+                    parsing_error_data.append(parsing_error_sample)
                     break
                 
                 trajectory_modifications_needed=False
@@ -341,7 +365,7 @@ def create_and_inject_thoughts(
                         
                 # # ############################ Generate final answer and its thought ############################ #
                 # TODO: Inject the previous_dialogue if the final answer of the current turn depends on it
-                trajectory_str = wrap_hop_data_into_trajectory_str(hops)
+                trajectory_str = wrap_hop_data_into_trajectory_str(hops, is_long_response_sample)
                 answer_generator_prompt = get_answer_generator_prompt(
                     user_query=curr_user_query,
                     trajectory=trajectory_str,
@@ -353,6 +377,10 @@ def create_and_inject_thoughts(
                 if parsed_response is None:
                     is_valid_sample = False
                     logger.info(f"    Parsing error (final answer) for sample {sample['sample_id']} failed. Ignoring!")
+                    parsing_error_sample = copy.deepcopy(sample)
+                    parsing_error_sample['error_raw_response'] = response
+                    parsing_error_sample['error_parsed_response'] = parsed_response
+                    parsing_error_data.append(parsing_error_sample)
                     break
 
                 # # Fill in the answer
@@ -423,6 +451,15 @@ def create_and_inject_thoughts(
         # Save the data that got left out
         with open(os.path.join(_save_data_at, domain_file.replace(".json", "_left_out.json")), 'w') as f:
             json.dump(left_out_domain_data, f, indent=4)
+        
+        if length_error_data:
+            with open(os.path.join(_save_data_at, domain_file.replace(".json", "_length_error.json")), 'w') as f:
+                json.dump(length_error_data, f, indent=4)
+
+        if parsing_error_data:
+            with open(os.path.join(_save_data_at, domain_file.replace(".json", "_parsing_error.json")), 'w') as f:
+                json.dump(parsing_error_data, f, indent=4)
+
 
     return training_data_stats
 

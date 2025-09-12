@@ -11,6 +11,7 @@ Your task is to generate a concise, coherent thought for each step that must:
     - Reflect how its arguments were determined, based on reasoning so far and any previous tool responses
     - Naturally follows from the previous step’s thought and outcome
     - Reflect how the step contributes to answering the current query
+    - You must explicitly mention the tool call used in each step
 
 You must generate all thoughts at once, one for each step. Respond in the following format:
 Thought_{step_number}: [Your thought here for step {step_number} here. Do not include any extra commentary or formatting—just the filled placeholders.]
@@ -36,6 +37,7 @@ Your task is to generate a concise, coherent thought for each step that must:
     - Naturally follows from the previous step’s thought and outcome
     - Reflect how the step contributes to answering the current query
     - Do not attempt to answer the question based on external knowledge.
+    - You must explicitly mention the tool call used in each step
 
 You must generate all thoughts at once, one for each step. Respond in the following format:
 Thought_{step_number}: [Your thought here for step {step_number} here. Do not include any extra commentary or formatting—just the filled placeholders.]
