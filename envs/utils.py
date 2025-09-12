@@ -117,7 +117,7 @@ def ground_tool_availability(tools: list[dict[str, Any]], policy: str) -> list[d
 def ground_tool_usage(policy: str) -> str:
     r"""[My custom added] Ground tool usage instructions to the given policy"""
     tool_use_constraints = ""
-    if len(policy) > 0:
+    if policy is not None and len(policy) > 0:
         tool_use_constraints = f"\n\n            Tool Usage Constraint: {policy}"
     return tool_use_constraints
 
