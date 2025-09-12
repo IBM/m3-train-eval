@@ -9,7 +9,7 @@ from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
 
 from data_utils.processor.processor_utils import infer_seqlen
-from data_utils.utils import Role
+from data_utils.utils import Role, downsample_tools
 from envs.tool_call_env import ERRONEOUS_CATEGORIES
 from extras.constants import IGNORE_INDEX, PREFERENCE_KEYS
 from data_utils.tool_utils import create_ToolPolicy
@@ -522,6 +522,15 @@ class AgentTrajectorySFTData(BaseDataset):
                 system, tools = traj['system'], traj['tools']
                 tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
                 
+                # Downsample the tools to fit in memory
+                interactions = traj['interactions']
+                required = []
+                for i in interactions:
+                    if i['metadata']['action'] == "API":
+                        # if RAG, this will already be include because keep_retrievers=True
+                        required.append(i['metadata']['action_arguments']['name'])
+                tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
+
                 # Determine the Tool Policy
                 # if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
                 #     tool_policy = ToolPolicy(

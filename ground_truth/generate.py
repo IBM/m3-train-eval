@@ -331,7 +331,6 @@ def create_and_inject_thoughts(
                     curr_step_thought: str = parsed_response[hop_idx]
                     modified_indices.append(hop_idx)
                     item_0['plan'] = curr_step_thought
-                    #pdb.set_trace()
                     #if the output has a special marker for policy remove the output as its not an API that can be called.
                     if "policy" in item_0["output"]:
                         del item_0["output"]
