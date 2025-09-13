@@ -30,8 +30,13 @@ from loguru import logger
 
 
 SLOTS = list[Union[str, set[str], dict[str, str]]]
-RETRIEVERS_TO_IGNORE = ["retriever_clapnq_california_schools", "retriever_clapnq_card_games", "retriever_clapnq_codebase_community", "retriever_clapnq_european_football_2"
-                        , "retriever_clapnq_formula_1", "retriever_clapnq_superhero", "retriever_clapnq_toxicology", "retriever_clapnq_debit_card_specializing", "retriever_clapnq_financial", "retriever_clapnq_student_club", "retriever_clapnq_thrombosis_prediction"]
+RETRIEVERS_TO_IGNORE = ["retriever_clapnq_california_schools", "retriever_clapnq_card_games", "retriever_clapnq_codebase_community", "retriever_clapnq_european_football_2" # BIRD Train
+                        , "retriever_clapnq_formula_1", "retriever_clapnq_superhero", "retriever_clapnq_toxicology", "retriever_clapnq_debit_card_specializing" # BIRD Train
+                        , "retriever_clapnq_financial", "retriever_clapnq_student_club", "retriever_clapnq_thrombosis_prediction" # BIRD Train
+                        , "retriever_clapnq_car_retails", "retriever_clapnq_synthea", "retriever_clapnq_shipping", "retriever_clapnq_cs_semester", "retriever_clapnq_food_inspection_2" # RED Domains
+                        , "retriever_clapnq_sales", "retriever_clapnq_software_company", "retriever_clapnq_social_media", "retriever_clapnq_human_resources", "retriever_clapnq_regional_sales" # RED Domains
+                        , "retriever_clapnq_works_cycles", "retriever_clapnq_retails", "retriever_clapnq_retail_world", "retriever_clapnq_retail_complains", "retriever_clapnq_shooting", "retriever_clapnq_superstore" # RED Domains
+                        ]
 
 @unique
 class Role(str, Enum):
@@ -232,5 +237,7 @@ def update_retrieval_tools(tool_pool: Union[str, list]) -> list[dict]:
         pool = json.loads(pool)
 
     pool = {p['name']: p for p in pool}
+    retrievers = [k for k in pool.keys() if (k.startswith("retriever_")) and (k not in RETRIEVERS_TO_IGNORE)]
+    assert len(retrievers) != 0, "No retrivers left after removing RED domain and BIRD Train retrivers."
     updated_tool = [v for k, v in pool.items() if k not in RETRIEVERS_TO_IGNORE]
     return updated_tool
