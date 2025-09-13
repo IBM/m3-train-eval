@@ -21,6 +21,7 @@ from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT
 from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer_prompt, parse_overseer_response, \
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
+from data_utils.utils import downsample_tools 
 
 
 
@@ -475,8 +476,17 @@ class ToolCallEnv(BaseEnv):
             agent_history=agent_history,  # TODO: Should for multi-turn, we use the complete history or recent history?
             ordered_sub_ques_composition=self.ordered_sub_ques_composition[self.curr_turn]
         )
-        response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
-        parsed_response = parse_overseer_response(response)
+
+        # Adding a retry step if the LLM invocation doesn't get the right keys like Conclusion, thought, etc.
+        max_retries = 3
+        for retries in range(max_retries):
+            try:
+                response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
+                parsed_response = parse_overseer_response(response)
+                break
+            except Exception as e:
+                if retries == max_retries:
+                    raise
 
         logger.info(f"[External Agent Call] Agent = Overseer")
         logger.info(f"Asking Overseer whether the agent is stuck with history: {json.dumps(agent_history, indent=2)}.")
@@ -860,6 +870,14 @@ class M3ToolCallEnv(ToolCallEnv):
 
         # 3. Configure the document retrieval tool for the env
         self.setup_document_retrieval_tool()
+
+        # 4. Get list of required tools
+        required=[]
+        for item in curr_instance_data["trajectory"]:
+            for traj in item:
+                if "output" in traj:
+                    required.append(traj['output']['name']) # TODO : Required list needs to be updated for scenarios
+        tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)        
 
         # 4. Add the special tool for document retrieval [Old way]
         # from envs.constants import RETRIEVE_FUNCTION_NAME
