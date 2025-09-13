@@ -480,7 +480,7 @@ class ToolCallEnv(BaseEnv):
         # Adding a retry step if the LLM invocation doesn't get the right keys like Conclusion, thought, etc.
         # if ("thought" not in response.lower()) or ("conclusion" not in response.lower()):
         #     response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
-        max_retries = 3
+        max_retries = 3 # This retry is different than the retry in invoke. This retries to add keys conclusion and thought in the response.
         for retries in range(max_retries):
             try:
                 response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)

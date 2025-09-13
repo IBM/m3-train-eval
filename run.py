@@ -178,6 +178,7 @@ def run_agent(args):
         include_thoughts = True
     logger.info(f"Thought-inclusion in final trajectories has been set to {str(include_thoughts)}")
 
+    # TODO: Get this part of resume run working or updated. Also, add a new key for errors like context length etc.
     if config['resume_instance'] is not None:
         env_instances_idxs: List[int] = list(range(config['resume_instance'], total_runs))
         # Calculate the metrics
