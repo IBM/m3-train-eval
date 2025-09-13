@@ -677,7 +677,7 @@ class M3ToolCallEnv(ToolCallEnv):
 
     def setup_scenarios(self):
         curr_instance_data = self.data[self.curr_instance_idx]
-        if "scenarios" not in curr_instance_data:
+        if "scenarios" not in curr_instance_data.keys():
             curr_instance_data["scenarios"]= {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
         domain=curr_instance_data["domain"]
         scenarios=curr_instance_data["scenarios"]
