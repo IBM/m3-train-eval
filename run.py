@@ -210,7 +210,7 @@ def run_agent(args):
         # Skip example if informed trajectory already created. Checks trajectory based on filename.
         output_filename=f"{save_traj_at}/trajectory_{env.domain}_{env.sample_id}.json"
         if (expert_assist.mode == "informed") and (os.path.exists(output_filename)):
-            logger.warning(f"Trajectory already generated to run agent in mode {expert_assist.mode} for env instance {i}. Skipping!")
+            logger.warning(f"Trajectory already generated to run agent in mode {expert_assist.mode} for env instance {i} sample_id {env.sample_id} output filename {output_filename}. Skipping!")
 
         expert_agent.initialize(env)
         agent_trajectory = {
