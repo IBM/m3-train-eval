@@ -30,7 +30,8 @@ from loguru import logger
 
 
 SLOTS = list[Union[str, set[str], dict[str, str]]]
-
+RETRIEVERS_TO_IGNORE = ["retriever_clapnq_california_schools", "retriever_clapnq_card_games", "retriever_clapnq_codebase_community", "retriever_clapnq_european_football_2"
+                        , "retriever_clapnq_formula_1", "retriever_clapnq_superhero", "retriever_clapnq_toxicology", "retriever_clapnq_debit_card_specializing", "retriever_clapnq_financial", "retriever_clapnq_student_club", "retriever_clapnq_thrombosis_prediction"]
 
 @unique
 class Role(str, Enum):
@@ -202,8 +203,9 @@ def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required
     downsampled_tools = []
     if required_tools:
         for req in required_tools:
-            tool = pool.pop(req)
-            downsampled_tools.append(tool)
+            if req in pool: # TODO : Temporary bug fix for retrieval tools wherein BIRD Train domains are added by mistake.
+                tool = pool.pop(req)
+                downsampled_tools.append(tool)
 
     if keep_retrievers:
         retrievers = [k for k in pool.keys() if k.startswith("retriever_")]
@@ -223,3 +225,12 @@ def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required
     random.shuffle(downsampled_tools)
     return downsampled_tools
 
+
+def update_retrieval_tools(tool_pool: Union[str, list]) -> list[dict]:
+    pool = deepcopy(tool_pool) # Don't modify the original pool
+    if isinstance(pool, str):
+        pool = json.loads(pool)
+
+    pool = {p['name']: p for p in pool}
+    updated_tool = [v for k, v in pool.items() if k not in RETRIEVERS_TO_IGNORE]
+    return updated_tool

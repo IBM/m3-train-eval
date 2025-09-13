@@ -21,7 +21,7 @@ from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT
 from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer_prompt, parse_overseer_response, \
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
-from data_utils.utils import downsample_tools 
+from data_utils.utils import downsample_tools, update_retrieval_tools
 
 
 
@@ -875,7 +875,10 @@ class M3ToolCallEnv(ToolCallEnv):
         # 3. Configure the document retrieval tool for the env
         self.setup_document_retrieval_tool()
 
-        # 4. Get list of required tools
+        # 4. TODO : Remove retreivers belonging to BIRD train. Temporary fix needs to be fixed in data.
+        tools=update_retrieval_tools(tools)
+
+        # 5. Get list of required tools
         required=[]
         for item in curr_instance_data["trajectory"]:
             for traj in item:
