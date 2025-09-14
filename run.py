@@ -319,10 +319,21 @@ def run_agent(args):
                                     "expert instead to take action. For multi-turn, future turn's reasoning must"
                                     "be conditioned on the correct answers to past questions for training purposes.")
                         actor = 'expert'
-                        parsed_response = expert_agent.take_action(
-                                            state=env.curr_turn_history,
-                                            include_thoughts=include_thoughts)
-                        branching_state = copy.deepcopy(state)
+                        # parsed_response = expert_agent.take_action(
+                        #                     state=env.curr_turn_history,
+                        #                     include_thoughts=include_thoughts)
+                        # branching_state = copy.deepcopy(state)
+                        try:
+                            parsed_response = expert_agent.take_action(
+                                                state=env.curr_turn_history,
+                                                include_thoughts=include_thoughts)
+                            branching_state = copy.deepcopy(state)
+                        except Exception as e:
+                            logger.error(f"Couldn't process example for env instance {i} within FINAL state due to error {e}. Skipping!")
+                            traceback.print_exc()
+                            next_example=True
+                            break
+
 
             else:
                 raise NotImplementedError(f"Expert Assist mode not yet implemented for {expert_assist.mode}")
@@ -386,18 +397,31 @@ def run_agent(args):
                 if actor == 'expert':
                     # [Trigger Branch out for saving the alternate actionic trace] Expert intervention (except final)
                     if config['save_alternate_trace'] and parsed_response["type"] != "FINAL":
-                        alternate_trace.extend(
-                            get_alternate_action_trace(branching_state, env, agent, 'agent')
-                        )
+                        try:
+                            alternate_trace.extend(
+                                get_alternate_action_trace(branching_state, env, agent, 'agent')
+                            )
+                        except Exception as e:
+                            logger.error(f"Couldn't generate alternate trace for env instance {i} due to error {e}. Skipping!")
+                            traceback.print_exc()
+                            next_example=True
+                            break
+
                 else:
                     # [Trigger Branch out for saving the alternate actionic trace] Agent mistake (except final)
                     if config['save_alternate_trace'] and parsed_response["type"] != "FINAL":
                         for error in ERRONEOUS_CATEGORIES:
                             if error in curr_interaction["reward"]:
-                                alternate_trace.extend(
-                                    get_alternate_action_trace(branching_state, env, expert_agent, 'expert')
-                                )
-                                break
+                                try:
+                                    alternate_trace.extend(
+                                        get_alternate_action_trace(branching_state, env, expert_agent, 'expert')
+                                    )
+                                    break
+                                except Exception as e:
+                                    logger.error(f"Couldn't generate alternate trace for env instance {i} due to error {e}. Skipping!")
+                                    traceback.print_exc()
+                                    next_example=True
+                                    break
             curr_interaction["alternate_trace"] = alternate_trace
             # Store the current interaction in the agent trajectory
             agent_trajectory['interactions'][t] = curr_interaction
