@@ -377,11 +377,12 @@ def invoke_llm(llm, llm_parameters: Dict[str, Any], messages: List[Dict[str, str
                     max_tokens=llm_parameters['max_new_tokens'],
                     stop=llm_parameters['stop_sequences'],
                 )
+                answer = response.choices[0].message.content
                 break
             except BaseException as e:
-                if retries==max_retries:
+                if (retries+1)==max_retries:
                     raise e
-        return response.choices[0].message.content
+        return answer
 
     elif isinstance(llm, HFLLM):
         return invoke_hf_model(llm, llm_parameters, messages)

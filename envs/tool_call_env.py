@@ -487,7 +487,7 @@ class ToolCallEnv(BaseEnv):
                 parsed_response = parse_overseer_response(response)
                 break
             except Exception as e:
-                if retries == max_retries:
+                if (retries+1) == max_retries:
                     raise e
 
         logger.info(f"[External Agent Call] Agent = Overseer")
