@@ -875,7 +875,7 @@ class M3ToolCallEnv(ToolCallEnv):
         # 3. Configure the document retrieval tool for the env
         self.setup_document_retrieval_tool()
 
-        # 4. TODO : Remove retreivers belonging to BIRD train. Temporary fix needs to be fixed in data.
+        # 4. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
         tools=update_retrieval_tools(tools)
 
         # 5. Get list of required tools

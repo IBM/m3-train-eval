@@ -237,7 +237,9 @@ def update_retrieval_tools(tool_pool: Union[str, list]) -> list[dict]:
         pool = json.loads(pool)
 
     pool = {p['name']: p for p in pool}
+    retrievers_present = [k for k in pool.keys() if (k.startswith("retriever_"))]
     retrievers = [k for k in pool.keys() if (k.startswith("retriever_")) and (k not in RETRIEVERS_TO_IGNORE)]
-    assert len(retrievers) != 0, "No retrivers left after removing RED domain and BIRD Train retrivers."
+    if len(retrievers_present) != 0: # Single turn dataset don't have retrievers at all by design.
+        assert len(retrievers) != 0, "No retrivers left after removing RED domain and BIRD Train retrivers."
     updated_tool = [v for k, v in pool.items() if k not in RETRIEVERS_TO_IGNORE]
     return updated_tool
