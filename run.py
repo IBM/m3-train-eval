@@ -2,6 +2,7 @@ import copy
 import json
 import os
 import random
+import traceback
 from collections import defaultdict
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -177,6 +178,7 @@ def run_agent(args):
         include_thoughts = True
     logger.info(f"Thought-inclusion in final trajectories has been set to {str(include_thoughts)}")
 
+    # TODO: Get this part of resume run working or updated. Also, add a new key for errors like context length etc.
     if config['resume_instance'] is not None:
         env_instances_idxs: List[int] = list(range(config['resume_instance'], total_runs))
         # Calculate the metrics
@@ -202,7 +204,15 @@ def run_agent(args):
             state, reward, done, env_metadata = env.reset(inst_idx=i)
         except Exception as e:
             logger.error(f"Environment Reset Exception for env instance {i}: {e}. Skipping!")
+            traceback.print_exc()
             continue
+
+        # Skip example if informed trajectory already created. Checks trajectory based on filename.
+        output_filename=f"{save_traj_at}/trajectory_{env.domain}_{env.sample_id}.json"
+        if (expert_assist.mode == "informed") and (os.path.exists(output_filename)):
+            logger.warning(f"Trajectory already generated to run agent in mode {expert_assist.mode} for env instance {i} sample_id {env.sample_id} output filename {output_filename}. Skipping!")
+            continue
+
         expert_agent.initialize(env)
         agent_trajectory = {
             'system': env.system,
@@ -225,6 +235,7 @@ def run_agent(args):
         expert_assistance_tracker = []
         t = 0
         expert_help_needed = False
+        next_example=False        
         while not done:
             logger.info(f"Current time step: {t}")
             alternate_trace = []  # List to save data for alternate actions if taken at the same state
@@ -266,18 +277,38 @@ def run_agent(args):
                 if expert_help_needed:
                     logger.info("Tasking Expert to take the action")
                     actor = 'expert'
-                    parsed_response = expert_agent.take_action(
-                                        state=env.curr_turn_history,
-                                        include_thoughts=include_thoughts)
-                    branching_state = copy.deepcopy(state)  # State on which branching actor takes action i.e. agent
+                    # parsed_response = expert_agent.take_action(
+                    #                     state=env.curr_turn_history,
+                    #                     include_thoughts=include_thoughts)
+                    # branching_state = copy.deepcopy(state)  # State on which branching actor takes action i.e. agent
+                    try:
+                        parsed_response = expert_agent.take_action(
+                                            state=env.curr_turn_history,
+                                            include_thoughts=include_thoughts)
+                        branching_state = copy.deepcopy(state)  # State on which branching actor takes action i.e. agent
+                    except Exception as e:
+                        logger.error(f"Couldn't process example for env instance {i} within Expert to take action task due to error {e}. Skipping!")
+                        traceback.print_exc()
+                        next_example=True
+                        break
 
                 else:
                     logger.info("Tasking Agent to take the action")
                     actor = 'agent'
-                    parsed_response = agent.take_action(
-                                        state=state,
-                                        include_thoughts=include_thoughts)
-                    branching_state = copy.deepcopy(env.curr_turn_history)  # State on which branching actor takes action i.e. expert
+                    # parsed_response = agent.take_action(
+                    #                     state=state,
+                    #                     include_thoughts=include_thoughts)
+                    # branching_state = copy.deepcopy(env.curr_turn_history)  # State on which branching actor takes action i.e. expert
+                    try:
+                        parsed_response = agent.take_action(
+                                            state=state,
+                                            include_thoughts=include_thoughts)
+                        branching_state = copy.deepcopy(env.curr_turn_history)  # State on which branching actor takes action i.e. expert
+                    except Exception as e:
+                        logger.error(f"Couldn't process example for env instance {i} within Agent to take action task due to error {e}. Skipping!")
+                        traceback.print_exc()
+                        next_example=True
+                        break
 
                     # For training with expert-assistance in multi-turn, the final answer at the current turn
                     # should be correct before transitioning to the next turn as it will be used for follow-up
@@ -288,10 +319,21 @@ def run_agent(args):
                                     "expert instead to take action. For multi-turn, future turn's reasoning must"
                                     "be conditioned on the correct answers to past questions for training purposes.")
                         actor = 'expert'
-                        parsed_response = expert_agent.take_action(
-                                            state=env.curr_turn_history,
-                                            include_thoughts=include_thoughts)
-                        branching_state = copy.deepcopy(state)
+                        # parsed_response = expert_agent.take_action(
+                        #                     state=env.curr_turn_history,
+                        #                     include_thoughts=include_thoughts)
+                        # branching_state = copy.deepcopy(state)
+                        try:
+                            parsed_response = expert_agent.take_action(
+                                                state=env.curr_turn_history,
+                                                include_thoughts=include_thoughts)
+                            branching_state = copy.deepcopy(state)
+                        except Exception as e:
+                            logger.error(f"Couldn't process example for env instance {i} within FINAL state due to error {e}. Skipping!")
+                            traceback.print_exc()
+                            next_example=True
+                            break
+
 
             else:
                 raise NotImplementedError(f"Expert Assist mode not yet implemented for {expert_assist.mode}")
@@ -301,6 +343,9 @@ def run_agent(args):
                 expert_assistance_tracker.append(0)
             else:
                 expert_assistance_tracker.append(1)
+
+            if next_example:
+                break # Break out of the while loop because informed mode is erroring out. 
 
             # # Trajectory contains the state-action pairs for training/evaluation
             # - Store the state w/o system prompt.
@@ -321,7 +366,7 @@ def run_agent(args):
             }
 
             # #################################### Step through the environment #################################### #
-            state, reward, done, env_metadata = env.step(action=parsed_response)
+            state, reward, done, env_metadata = env.step(action=parsed_response) # Generally shouldn't fail as it is just getting the API or retrieval response.
 
             curr_observation = state[-1]["content"]
             logger.info(f"(t={t}) Observation: {json.dumps(curr_observation, indent=2)}")
@@ -331,7 +376,18 @@ def run_agent(args):
             curr_interaction["reward"] = reward  # Here the reward placeholder is added, not the actual value
 
             # Determine if the agent is stuck. Do this independent of expert_assist.mode
-            expert_help_needed = env.is_expert_help_needed(last_action_was_experts=actor=='expert')
+            # expert_help_needed = env.is_expert_help_needed(last_action_was_experts=actor=='expert')
+            try:
+                expert_help_needed = env.is_expert_help_needed(last_action_was_experts=actor=='expert')
+            except Exception as e:
+                logger.error(f"Couldn't identify if agent is stuck for env instance {i} due to error {e}. Skipping!")
+                traceback.print_exc()
+                next_example=True
+                break
+
+            if next_example:
+                break # Break out of the while loop because we couldn't verigy is agent is stuck.
+
             if expert_help_needed:
                 # Add the stuck penalty to the last action
                 curr_interaction["reward"] += '+{REWARD_AGENT_STUCK}'
@@ -341,23 +397,40 @@ def run_agent(args):
                 if actor == 'expert':
                     # [Trigger Branch out for saving the alternate actionic trace] Expert intervention (except final)
                     if config['save_alternate_trace'] and parsed_response["type"] != "FINAL":
-                        alternate_trace.extend(
-                            get_alternate_action_trace(branching_state, env, agent, 'agent')
-                        )
+                        try:
+                            alternate_trace.extend(
+                                get_alternate_action_trace(branching_state, env, agent, 'agent')
+                            )
+                        except Exception as e:
+                            logger.error(f"Couldn't generate alternate trace for env instance {i} due to error {e}. Skipping!")
+                            traceback.print_exc()
+                            next_example=True
+                            break
+
                 else:
                     # [Trigger Branch out for saving the alternate actionic trace] Agent mistake (except final)
                     if config['save_alternate_trace'] and parsed_response["type"] != "FINAL":
                         for error in ERRONEOUS_CATEGORIES:
                             if error in curr_interaction["reward"]:
-                                alternate_trace.extend(
-                                    get_alternate_action_trace(branching_state, env, expert_agent, 'expert')
-                                )
-                                break
+                                try:
+                                    alternate_trace.extend(
+                                        get_alternate_action_trace(branching_state, env, expert_agent, 'expert')
+                                    )
+                                    break
+                                except Exception as e:
+                                    logger.error(f"Couldn't generate alternate trace for env instance {i} due to error {e}. Skipping!")
+                                    traceback.print_exc()
+                                    next_example=True
+                                    break
             curr_interaction["alternate_trace"] = alternate_trace
             # Store the current interaction in the agent trajectory
             agent_trajectory['interactions'][t] = curr_interaction
 
             t += 1
+        
+        # Continue to the next example in for loop.
+        if next_example:
+            continue
 
         # ###################################### Compute metrics/Save Metadata ###################################### #
         metrics["truncated"] += env_metadata['truncated']
@@ -395,6 +468,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to")
     parser.add_argument('--input_filename', '-i', default=None, help="Input filename.")
-    parser.add_argument('-s', action='store_true')
+    parser.add_argument('-s', action='store_true',help="Run for scenario mode.")
     args = parser.parse_args()
     run_agent(args)

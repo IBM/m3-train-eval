@@ -18,7 +18,10 @@ Important:
 Respond in the following format:
 
 Thought: [Your reasoning here — identify any signs of stagnation, looping, or unproductive action patterns, and justify your conclusion]
-Conclusion: [Only say Yes or No without any additional text, punctuation, explanation, or formatting]"""
+Conclusion: [Only say Yes or No without any additional text, punctuation, explanation, or formatting]
+
+Ensure the keywords 'Thought' and 'Conclusion' are always in your response.
+"""
 
 QUERY_PROMPT = """User Query: {query}
 

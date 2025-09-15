@@ -9,7 +9,7 @@ from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
 
 from data_utils.processor.processor_utils import infer_seqlen
-from data_utils.utils import Role, downsample_tools
+from data_utils.utils import Role, downsample_tools, update_retrieval_tools
 from envs.tool_call_env import ERRONEOUS_CATEGORIES
 from extras.constants import IGNORE_INDEX, PREFERENCE_KEYS
 from data_utils.tool_utils import create_ToolPolicy
@@ -529,6 +529,7 @@ class AgentTrajectorySFTData(BaseDataset):
                     if i['metadata']['action'] == "API":
                         # if RAG, this will already be include because keep_retrievers=True
                         required.append(i['metadata']['action_arguments']['name'])
+                tools = update_retrieval_tools(tools)
                 tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
 
                 # Determine the Tool Policy

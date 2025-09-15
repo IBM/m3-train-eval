@@ -21,6 +21,7 @@ from prompts.agent import SYSTEM_PROMPT, QUERY_PROMPT
 from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer_prompt, parse_overseer_response, \
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
+from data_utils.utils import downsample_tools, update_retrieval_tools
 
 
 
@@ -475,8 +476,19 @@ class ToolCallEnv(BaseEnv):
             agent_history=agent_history,  # TODO: Should for multi-turn, we use the complete history or recent history?
             ordered_sub_ques_composition=self.ordered_sub_ques_composition[self.curr_turn]
         )
-        response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
-        parsed_response = parse_overseer_response(response)
+
+        # Adding a retry step if the LLM invocation doesn't get the right keys like Conclusion, thought, etc.
+        # if ("thought" not in response.lower()) or ("conclusion" not in response.lower()):
+        #     response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
+        max_retries = 3 # This retry is different than the retry in invoke. This retries to add keys conclusion and thought in the response.
+        for retries in range(max_retries):
+            try:
+                response = invoke_llm(self.overseer_llm, self.overseer_llm_parameters, overseer_prompt)
+                parsed_response = parse_overseer_response(response)
+                break
+            except Exception as e:
+                if (retries+1) == max_retries:
+                    raise e
 
         logger.info(f"[External Agent Call] Agent = Overseer")
         logger.info(f"Asking Overseer whether the agent is stuck with history: {json.dumps(agent_history, indent=2)}.")
@@ -665,6 +677,8 @@ class M3ToolCallEnv(ToolCallEnv):
 
     def setup_scenarios(self):
         curr_instance_data = self.data[self.curr_instance_idx]
+        if "scenarios" not in curr_instance_data.keys():
+            curr_instance_data["scenarios"]= {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
         domain=curr_instance_data["domain"]
         scenarios=curr_instance_data["scenarios"]
         self.tool_policy=create_ToolPolicy(scenarios=scenarios,current_domain=domain)
@@ -861,6 +875,17 @@ class M3ToolCallEnv(ToolCallEnv):
         # 3. Configure the document retrieval tool for the env
         self.setup_document_retrieval_tool()
 
+        # 4. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
+        tools=update_retrieval_tools(tools)
+
+        # 5. Get list of required tools
+        required=[]
+        for item in curr_instance_data["trajectory"]:
+            for traj in item:
+                if "output" in traj:
+                    required.append(traj['output']['name']) # TODO : Required list needs to be updated for scenarios
+        tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)        
+
         # 4. Add the special tool for document retrieval [Old way]
         # from envs.constants import RETRIEVE_FUNCTION_NAME
         # if RETRIEVE_FUNCTION_NAME not in self.tool_names:
@@ -931,8 +956,6 @@ class M3ToolCallEnv(ToolCallEnv):
             return observation
     
     def run_api(self, extracted_tool: Dict[str, Any]) -> str:
-        #import pdb
-        #pdb.set_trace()
         tool_name = extracted_tool['name']
         tool_args = extracted_tool['arguments']  # Can be extracted_tool['parameters']
         logger.info(f"Trying to run tool: {tool_name} with arguments {tool_args}")
@@ -1020,9 +1043,6 @@ class M3ToolCallEnv(ToolCallEnv):
                     return f"ToolCallSuccessful: {tool_resp}"
 
     def run_tool_and_get_obs(self, action: Dict[str, Any]) -> str:
-        #if type(action["value"]) is isinstance(str):
-        #import pdb
-        #pdb.set_trace()
         if action["type"] == "API":
             observation = self.run_api(action["value"])
         elif action["type"] == "RETRIEVE":

@@ -30,7 +30,13 @@ from loguru import logger
 
 
 SLOTS = list[Union[str, set[str], dict[str, str]]]
-
+RETRIEVERS_TO_IGNORE = ["retriever_clapnq_california_schools", "retriever_clapnq_card_games", "retriever_clapnq_codebase_community", "retriever_clapnq_european_football_2" # BIRD Train
+                        , "retriever_clapnq_formula_1", "retriever_clapnq_superhero", "retriever_clapnq_toxicology", "retriever_clapnq_debit_card_specializing" # BIRD Train
+                        , "retriever_clapnq_financial", "retriever_clapnq_student_club", "retriever_clapnq_thrombosis_prediction" # BIRD Train
+                        , "retriever_clapnq_car_retails", "retriever_clapnq_synthea", "retriever_clapnq_shipping", "retriever_clapnq_cs_semester", "retriever_clapnq_food_inspection_2" # RED Domains
+                        , "retriever_clapnq_sales", "retriever_clapnq_software_company", "retriever_clapnq_social_media", "retriever_clapnq_human_resources", "retriever_clapnq_regional_sales" # RED Domains
+                        , "retriever_clapnq_works_cycles", "retriever_clapnq_retails", "retriever_clapnq_retail_world", "retriever_clapnq_retail_complains", "retriever_clapnq_shooting", "retriever_clapnq_superstore" # RED Domains
+                        ]
 
 @unique
 class Role(str, Enum):
@@ -202,8 +208,9 @@ def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required
     downsampled_tools = []
     if required_tools:
         for req in required_tools:
-            tool = pool.pop(req)
-            downsampled_tools.append(tool)
+            if req in pool: # TODO : Temporary bug fix for retrieval tools wherein BIRD Train domains are added by mistake.
+                tool = pool.pop(req)
+                downsampled_tools.append(tool)
 
     if keep_retrievers:
         retrievers = [k for k in pool.keys() if k.startswith("retriever_")]
@@ -223,3 +230,16 @@ def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required
     random.shuffle(downsampled_tools)
     return downsampled_tools
 
+
+def update_retrieval_tools(tool_pool: Union[str, list]) -> list[dict]:
+    pool = deepcopy(tool_pool) # Don't modify the original pool
+    if isinstance(pool, str):
+        pool = json.loads(pool)
+
+    pool = {p['name']: p for p in pool}
+    retrievers_present = [k for k in pool.keys() if (k.startswith("retriever_"))]
+    retrievers = [k for k in pool.keys() if (k.startswith("retriever_")) and (k not in RETRIEVERS_TO_IGNORE)]
+    if len(retrievers_present) != 0: # Single turn dataset don't have retrievers at all by design.
+        assert len(retrievers) != 0, "No retrivers left after removing RED domain and BIRD Train retrivers."
+    updated_tool = [v for k, v in pool.items() if k not in RETRIEVERS_TO_IGNORE]
+    return updated_tool
