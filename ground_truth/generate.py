@@ -31,14 +31,18 @@ def get_step_query_prompt(step_idx: int, sub_question: str, tool_description: st
     return step_prompt
 
 
-def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str], tool_use_policy=None) -> \
+def get_thought_generator_prompt(previous_dialogue: List[Tuple[str, str]], user_query: str, step_prompts: List[str], tool_policy=None) -> \
 List[dict]:
-    from ground_truth.prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT, SYSTEM_PROMPT_WITH_TOOL_POLICY
+    from ground_truth.prompt_thought_generator import SYSTEM_PROMPT, QUERY_PROMPT, SYSTEM_PROMPT_WITH_TOOL_POLICY, SYSTEM_PROMPT_WITH_TOOLS_DOWN
     prompt = []
     system_prompt = SYSTEM_PROMPT
-    if tool_use_policy is not None:
-        logger.info("Generating Thoughts with tool policy: "+tool_use_policy)
-        system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_use_policy)
+    if tool_policy is not None and tool_policy.tool_use_policy is not None:
+        logger.info("Generating Thoughts with tool policy: "+tool_policy.tool_use_policy)
+        system_prompt=SYSTEM_PROMPT_WITH_TOOL_POLICY.replace("{tool_policy}",tool_policy.tool_use_policy)
+    elif tool_policy is not None and tool_policy.tool_availability_policy is not None:
+        logger.info("Generating Thoughts - Assuming the following tools are down: "+str(tool_policy.tool_availability_policy))
+        system_prompt=SYSTEM_PROMPT_WITH_TOOLS_DOWN
+        
     prompt.append(
         {
             "role": "system",
@@ -277,7 +281,13 @@ def create_and_inject_thoughts(
                 # Create step-level information for the thought-generator prompt
                 step_prompts = []
                 for hop_idx, (item_0, item_1) in enumerate(hops):
-
+                    if tool_policy.tool_availability_policy is not None:
+                        item_0["OUTPUT_AFTER_EXECUTING_API"]="Error Invoking Tool"
+                        #if isinstance(item_0['output'])==dict:
+                        item_0["output"]["tool_status"]="Tool Unavailable" # Update String
+                          
+                        #item_0["output"][0]["tool_status"]="Tool Unavailable" # Update String
+                       
                     # 1. Create the tool-call-str
                     tool_call_str = "\n" + json.dumps(item_0['output'], indent=2) if isinstance(item_0['output'],
                                                                                                 dict) else item_0[
@@ -325,7 +335,7 @@ def create_and_inject_thoughts(
                     previous_dialogue=previous_dialogue,
                     user_query=curr_user_query,
                     step_prompts=step_prompts,
-                    tool_use_policy=tool_usage_policy
+                    tool_policy=tool_policy
                 )
                 try:
                     response = invoke_llm(llm, llm_parameters, thought_generator_prompt)

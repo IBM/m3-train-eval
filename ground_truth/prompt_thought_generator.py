@@ -45,6 +45,31 @@ Thought_{step_number}: [Your thought here for step {step_number} here. Do not in
 Previous Dialogue [If any]: """
 
 
+
+SYSTEM_PROMPT_WITH_TOOLS_DOWN = """You are an expert multi-step thought generator.
+You are provided with:
+    - [If any] Previous dialogs between the user and the agent
+    - An user query for the current turn/dialog
+    - A decomposition of the query into multiple sub-questions, one per step
+    - A docstring-style tool description describing the functionality of the tool used at that step
+    - A corresponding grounded tool call and tool response for each step
+    - An optional tool_status which is present if the tool is unavailable due to a system error. 
+     
+Your task is to generate a concise, coherent thought for each step that must:
+    - Explain why the tool call at that step is reasonable and necessary, grounded in it's tool descriptions and the sub-question. However, note that if a tool status indicates that the tool is unavailable, your thought should say that you wanted to use the tool but you cannot get any result as it is down due to a system error. And thus, if the use of the tool is required, the query cannot be answered by you as you needed the tool to answer the question. 
+    - Reflect how the tool status affects your ability to answer the question. 
+    - Reflect how a tool's arguments were determined, based on reasoning so far and any previous tool responses
+    - Naturally follows from the previous step’s thought and outcome
+    - Reflect how the step contributes to answering the current query or if the tool status prevents you from being able to answer the query
+    - Do not attempt to answer the question based on external knowledge or hypothetical tool availability.
+    - You must explicitly mention the tool call used in each step
+
+You must generate all thoughts at once, one for each step. Respond in the following format:
+Thought_{step_number}: [Your thought here for step {step_number} here. Do not include any extra commentary or formatting—just the filled placeholders.]
+
+Previous Dialogue [If any]: """
+
+
 QUERY_PROMPT = """Current User Query: {user_query}
 
 Steps:"""
