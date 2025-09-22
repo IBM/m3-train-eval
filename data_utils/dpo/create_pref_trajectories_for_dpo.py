@@ -7,10 +7,20 @@ import os
 import random
 
 save_pref_data_at = './data/pairwise_pref'
-CHANGE_FILE = "./data/change_stat.json"
+CHANGE_FILES = [
+    "./data/change_stat_train_multiturn.json",
+    "./data/change_stat_train_single_turn.json"
+]
+IGNORE_FILES = [
+    "./data/inconsistency_by_domain.json", 
+    "./data/inconsistency_by_domain.json", 
+    "./data/inconsistency_by_domain_single_turn.json", 
+    "./data/inconsistency_by_domain_single_turn.json", 
+]
 scenario_mixing_probability = 0.5
 
-
+OOD_DOMAINS = ["video_games", "chicago_crime", "simpson_episodes",
+               "public_review_platform", "movie","movie_3", "movielens", "movies_4"]
 
 EXPLORATORY_TRAJECTORY_DIRS = [
     '/proj/m3benchmark/m3data/0905/balanced_rest_v4_exploratory_trajectory',
@@ -22,12 +32,12 @@ EXPLORATORY_TRAJECTORY_DIRS = [
     ]
 
 GROUND_TRUTH_TRAJECTORY_DIRS = [
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_after_generate',
-    '/proj/m3benchmark/danish/m3data/0905/m3_train_test_ood_rest_v2_chunked_scenarios_gt',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_after_generate',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_chunked_scenarios_st_gt',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_gt',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_scenarios_chunked' # TODO: update this path
+    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_expert',
+    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_scenarios_expert',
+    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_expert',
+    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_scenarios_expert',
+    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_gt',
+    # 'proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_scenarios'
     ]
 
 DATASET_SPLIT_LABELS = [
@@ -35,8 +45,13 @@ DATASET_SPLIT_LABELS = [
     'train_multi_turn_with_scenarios',
     'train_single_turn_no_scenarios',
     'train_single_turn_with_scenarios',
-    'test_multi_turn_no_scenarios',
-    'test_multi_turn_with_scenarios'
+    # 'test_multi_turn_no_scenarios',
+    # 'test_multi_turn_with_scenarios'
+    ]
+MIXED_SCENARIO_LABELS = [
+    "train_multi_turn", 
+    "train_single_turn", 
+    # "test_multi_turn"
     ]
 
 if not os.path.exists(save_pref_data_at):
@@ -69,32 +84,40 @@ def get_turn_wise_data(trajectory, with_alt: bool = True):
     return turn_wise_data
 
 
-def collect_agent_data(agent_dir, with_alt: bool = True):
+def collect_agent_data(agent_dir, ignore_list, with_alt: bool = True):
     sample_to_traj = {}
     files = list(os.listdir(os.path.join(agent_dir, "trajectories")))
     print(f"Found {len(files)} trajectory files, starting with {files[0]}")
+    skipped_count = 0
+    ood_skipped = 0
     for file in files:
         if file.startswith("trajectory_") and file.endswith(".json"):
             idx = file.split("_", 1)[1].split(".")[0]
+            if idx in ignore_list:
+                skipped_count += 1
+                continue
             trajectory_path = os.path.join(agent_dir, "trajectories", file)
             trajectory = load_trajectories(trajectory_path)
-
+            if trajectory['domain'] in OOD_DOMAINS:
+                ood_skipped += 1
+                continue
             sample_to_traj[idx] = {
                 "sample_id": trajectory['sample_id'], 
                 "domain": trajectory["domain"], 
                 "tool_availability_policy": trajectory["tool_availability_policy"],
                 "tool_usage_policy": trajectory["tool_usage_policy"],
                 "turn_wise_interactions": get_turn_wise_data(trajectory, with_alt=with_alt), 
-                "tools": trajectory["tools"]
+                "tools": trajectory["tools"], 
+                "system": trajectory["system"]
             }
         else:
             print(f"WARNING, FOUND ANOMALOUS FILE: {file}")
-    print(f"We loaded {len(sample_to_traj)} files. ")
+    print(f"We loaded {len(sample_to_traj)} files, and skipped {skipped_count} inconsistent files and {ood_skipped} OOD files. ")
     return sample_to_traj
 
-def split_trajectories_at_interventions(actor_agent_dir):
+def split_trajectories_at_interventions(actor_agent_dir, ignore_list):
 
-    agent_data = collect_agent_data(actor_agent_dir)
+    agent_data = collect_agent_data(actor_agent_dir, ignore_list)
 
     # Match common sample_ids
     grouped = []
@@ -131,6 +154,7 @@ def split_trajectories_at_interventions(actor_agent_dir):
                     "tool_availability_policy": agent_data[trajectory_id]['tool_availability_policy'],
                     "tool_usage_policy": agent_data[trajectory_id]['tool_usage_policy'],
                     "tools": agent_data[trajectory_id]["tools"],
+                    "system": agent_data[trajectory_id]["system"], 
                     "chosen": chosen,
                     "rejected": rejected
                 }
@@ -149,28 +173,30 @@ def group_by_original_sample_id(data: list[dict]):
         grouped_data[original_sample_id].append(d)
     return grouped_data
 
-def get_mixed_data(label, changed_ids, unchanged_ids):
-    with open(os.path.join(save_pref_data_at, label+"_no_scenarios.json")) as f:
+def get_mixed_data(label, changed_ids, suffix: str):
+    with open(os.path.join(save_pref_data_at, label+"_no_scenarios" + suffix + ".json")) as f:
         no_scenarios = json.load(f)
     grouped_no_scenarios = group_by_original_sample_id(no_scenarios)
 
-    with open(os.path.join(save_pref_data_at, label+"_with_scenarios.json")) as f:
+    with open(os.path.join(save_pref_data_at, label+"_with_scenarios" + suffix + ".json")) as f:
         with_scenarios = json.load(f)
     grouped_with_scenarios = group_by_original_sample_id(with_scenarios)
 
     keep_scenarios = []
+    changed_count = 0
+    unchanged_count = 0
     for scen_id, scenes in grouped_no_scenarios.items():
         if scen_id in grouped_with_scenarios:
-            matches = [(g['sample_id'], g) for g in grouped_with_scenarios[scen_id]]
+            matches = [(g['domain'] + '_' + g['sample_id'], g) for g in grouped_with_scenarios[scen_id]]
             unchanged_matches = defaultdict(list)
             # Keep all the trajectories where the scenario altered the ground truth
             for idx, idx_scene in matches:
                 if idx in changed_ids:
                     keep_scenarios.append(idx_scene)
-                elif idx in unchanged_ids:
-                    unchanged_matches[idx].append(idx_scene)
+                    changed_count +=1
                 else:
-                    raise Exception(f"Missing id {idx}, not in changed or unchanged list. ")
+                    unchanged_matches[idx].append(idx_scene)
+                    unchanged_count +=1
             
             # If there are any trajectories where the scenario did not change the ground truth
             # 1. flip a coin to decide if we keep the trajectory with scenario or the original, then
@@ -185,17 +211,25 @@ def get_mixed_data(label, changed_ids, unchanged_ids):
         else:
             keep_scenarios.extend(scenes)
 
-    print(f"Created a total of {len(keep_scenarios)} DPO pairs for label {label} after filtering. ")
+    print(f"Created a total of {len(keep_scenarios)} DPO pairs for label {label} after filtering. Starting from {len(grouped_no_scenarios)} without scenarios and {len(grouped_with_scenarios)} with scenarios.  ")
+    print(f"Total of {changed_count} changed and {unchanged_count} unchanged trajectories. ")
     return keep_scenarios
 
 
 def format_overseer_pairs(mix_scenarios: bool):
 
     # Read the trajectories of pair of agents and create preference data
-    for agent_dir, dataset in zip(EXPLORATORY_TRAJECTORY_DIRS, DATASET_SPLIT_LABELS):
+    for agent_dir, dataset, ignore_file in zip(EXPLORATORY_TRAJECTORY_DIRS, DATASET_SPLIT_LABELS, IGNORE_FILES):
+        ignore_list = []
+        if ignore_file is not None:
+            assert os.path.isfile(ignore_file), f"File not found: {ignore_file}"
+            with open(ignore_file) as f:
+                ignore = json.load(f)
+            for domain, domain_list in ignore.items():
+                ignore_list.extend([domain+"_"+i for i in domain_list])
         print(f'\n\n Creating DPO data for dataset: {dataset}\n\n')
         grouped_data = split_trajectories_at_interventions(
-            agent_dir
+            agent_dir, ignore_list
         )
         print(f"Created {len(grouped_data)} DPO trajectory pairs. ")
         with open(os.path.join(save_pref_data_at, f"{dataset}.json"), "w") as f:
@@ -203,44 +237,52 @@ def format_overseer_pairs(mix_scenarios: bool):
 
 
     if mix_scenarios:
-        assert os.path.isfile(CHANGE_FILE), f"File not found: {CHANGE_FILE}"
-        with open(CHANGE_FILE) as f:
-            changes = json.load(f)
-        changed_ids = changes['changed']
-        unchanged_ids = changes['unchanged']
-
         for label in DATASET_SPLIT_LABELS:
-            assert os.path.isfile(os.path.join(save_pref_data_at, label+".json")), f"File not found: {os.path.join(save_pref_data_at, label)}"
+            assert os.path.isfile(os.path.join(save_pref_data_at, label+".json")), f"File not found: {os.path.join(save_pref_data_at, label+'.json')}"
 
-        filtered_labels = [
-            "train_multi_turn", 
-            "train_single_turn", 
-            "test_multi_turn"
-        ]
-        for label in filtered_labels:
-            mixed_data = get_mixed_data(label, changed_ids, unchanged_ids)
+        for label, change_file in zip(MIXED_SCENARIO_LABELS, CHANGE_FILES):
+            assert os.path.isfile(change_file), f"File not found: {change_file}"
+            with open(change_file) as f:
+                changes = json.load(f)
+        
+            changed_ids = []
+            for domain, domain_list in changes.items():
+                changed_ids.extend([domain+"_"+i for i in domain_list])
+            mixed_data = get_mixed_data(label, changed_ids, "")
 
-        with open(os.path.join(save_pref_data_at, label+"_mixed.json"), "w") as f:
-            json.dump(mixed_data, f)
+            with open(os.path.join(save_pref_data_at, label+"_mixed.json"), "w") as f:
+                json.dump(mixed_data, f)
 
 
 def format_ground_truth_pairs(mix_scenarios: bool):
 
-    def group_pref_data_by_sample_id(chosen_agent_dir, rejected_agent_dir):
+    def group_pref_data_by_sample_id(chosen_agent_dir, rejected_agent_dir, ignore_file):
 
-        chosen_agent_data = collect_agent_data(chosen_agent_dir, with_alt=False)
-        rejected_agent_data = collect_agent_data(rejected_agent_dir, with_alt=False)
+        assert os.path.isfile(ignore_file), f"File not found: {ignore_file}"
+        with open(ignore_file) as f:
+            ignore = json.load(f)
+        ignore_list = []
+        for domain, domain_list in ignore.items():
+            ignore_list.extend([domain+"_"+i for i in domain_list])
+    
+        chosen_agent_data = collect_agent_data(chosen_agent_dir, ignore_list, with_alt=False)
+        rejected_agent_data = collect_agent_data(rejected_agent_dir, ignore_list, with_alt=False)
 
         # Match common sample_ids
         common_sample_ids = set(chosen_agent_data.keys()) & set(rejected_agent_data.keys())
         grouped = []
 
+        match_failures = 0
         for trajectory_id in common_sample_ids:
 
-            assert chosen_agent_data[trajectory_id]["system"] == rejected_agent_data[trajectory_id]["system"]
-            assert chosen_agent_data[trajectory_id]["tools"] == rejected_agent_data[trajectory_id]["tools"]
-            assert chosen_agent_data[trajectory_id]["tool_availability_policy"] == rejected_agent_data[trajectory_id]["tool_availability_policy"]
-            assert chosen_agent_data[trajectory_id]["tool_usage_policy"] == rejected_agent_data[trajectory_id]["tool_usage_policy"]
+            try:
+                assert chosen_agent_data[trajectory_id]["system"] == rejected_agent_data[trajectory_id]["system"]
+                assert chosen_agent_data[trajectory_id]["tools"] == rejected_agent_data[trajectory_id]["tools"]
+                assert chosen_agent_data[trajectory_id]["tool_availability_policy"] == rejected_agent_data[trajectory_id]["tool_availability_policy"]
+                assert chosen_agent_data[trajectory_id]["tool_usage_policy"] == rejected_agent_data[trajectory_id]["tool_usage_policy"]
+            except:
+                match_failures += 1
+                continue
 
             dpo_guid = chosen_agent_data[trajectory_id]["domain"] + "_" + chosen_agent_data[trajectory_id]["sample_id"] + "_gt_vs_exp"
             grouped.append({
@@ -254,32 +296,49 @@ def format_ground_truth_pairs(mix_scenarios: bool):
                 "chosen_trajectory": chosen_agent_data[trajectory_id]['turn_wise_interactions'],
                 "rejected_trajectory": rejected_agent_data[trajectory_id]['turn_wise_interactions'],
             })
-
+        print(f"FAILED TO MATCH FIELDS FOR {match_failures} SAMPLES")
         return grouped
 
-    # Read the trajectories of pair of agents and create preference data
-    for agent_dir, gt_dir, dataset in zip(EXPLORATORY_TRAJECTORY_DIRS, GROUND_TRUTH_TRAJECTORY_DIRS, DATASET_SPLIT_LABELS):
-        print(f'\n\n Creating DPO data for dataset: {dataset}\n\n')
-        grouped_data = group_pref_data_by_sample_id(
-            gt_dir, 
-            agent_dir
-        )
-        print(f"Created {len(grouped_data)} DPO trajectory pairs from ground truth vs expert trajectories. ")
-        with open(os.path.join(save_pref_data_at, f"{dataset}_gt_vs_expert.json"), "w") as f:
-            json.dump(grouped_data, f, indent=4)
+    # # Read the trajectories of pair of agents and create preference data
+    # for agent_dir, gt_dir, dataset, ignore in zip(EXPLORATORY_TRAJECTORY_DIRS, GROUND_TRUTH_TRAJECTORY_DIRS, DATASET_SPLIT_LABELS, IGNORE_FILES):
+    #     grouped_data = group_pref_data_by_sample_id(
+    #         gt_dir, 
+    #         agent_dir,
+    #         ignore
+    #     )
+    #     print(f"Created {len(grouped_data)} DPO trajectory pairs from ground truth vs expert trajectories. ")
+    #     with open(os.path.join(save_pref_data_at, f"{dataset}_gt_vs_expert.json"), "w") as f:
+    #         json.dump(grouped_data, f, indent=4)
+        
+    if mix_scenarios:
+        for label in DATASET_SPLIT_LABELS:
+            assert os.path.isfile(os.path.join(save_pref_data_at, label+"_gt_vs_expert.json")), f"File not found: {os.path.join(save_pref_data_at, label+'_gt_vs_expert.json')}"
 
+        for label, change_file in zip(MIXED_SCENARIO_LABELS, CHANGE_FILES):
+            assert os.path.isfile(change_file), f"File not found: {change_file}"
+            with open(change_file) as f:
+                changes = json.load(f)
+        
+            changed_ids = []
+            for domain, domain_list in changes.items():
+                changed_ids.extend([domain+"_"+i for i in domain_list])
+            mixed_data = get_mixed_data(label, changed_ids, "_gt_vs_expert")
+
+            with open(os.path.join(save_pref_data_at, label+"_gt_vs_expert_mixed.json"), "w") as f:
+                json.dump(mixed_data, f)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--no_format_overseer', '-fo', action='store_false', help="Should we format the expert vs agent trajectories")
-    parser.add_argument('--no_format_ground_truth', '-fgt', action='store_false', help="Should we format the ground truth vs expert trajectories")
-    parser.add_argument('--no_filter_scenarios', '-scen', action='store_false', help="Should we combine with and without scenarios")
+    parser.add_argument('--style', '-s', required=True, choices=['overseer', 'ground_truth'])
     args = parser.parse_args()
     
+    style = args.style
+
     # if not args.no_format_overseer:
-    if False:
-        format_overseer_pairs(not args.no_filter_scenarios)
-            
-    # if not args.no_format_ground_truth:
-    format_ground_truth_pairs(not args.no_filter_scenarios)
+    if style == "overseer":
+        format_overseer_pairs(True)
+    elif style == "ground_truth":
+        format_ground_truth_pairs(True)
+    else:
+        raise Exception("Which one do we do?")
