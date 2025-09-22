@@ -83,6 +83,8 @@ def main():
         domain_names=[i.split("_multiturn_")[0] for i in os.listdir(foldername_no_scenario)]
         mixed_data=[]
         for domain in tqdm(domain_names):
+            if domain in ["video_games", "chicago_crime", "simpson_episodes","public_review_platform","movie","movie_3","movielens","movies_4"]:
+                continue
             data_no_scenarios=load_metadata(f"{foldername_no_scenario}/{domain}_multiturn_bird_chunked.json")
             data_with_scenario=load_metadata(f"{foldername_with_scenario}/{domain}_multiturn_bird_chunked.json")
             change_stat_domain=change_dict[domain]
