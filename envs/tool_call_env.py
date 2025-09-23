@@ -605,7 +605,6 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         self.domain = curr_instance_data["domain"]
         self.sample_id = curr_instance_data["sample_id"]
-        self.scenarios = curr_instance_data["scenarios"]
 
         # For Multi-turn data
         if "turns" in curr_instance_data:
@@ -680,8 +679,10 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         if ("scenarios" not in curr_instance_data.keys()) and ("_sc_" not in curr_instance_data["sample_id"]): # Make this more specific for only the data points without scenarios
             curr_instance_data["scenarios"]= {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
+            self.scenarios = curr_instance_data["scenarios"]
         domain=curr_instance_data["domain"]
         scenarios=curr_instance_data["scenarios"]
+        self.scenarios = curr_instance_data["scenarios"]
         self.tool_policy=create_ToolPolicy(scenarios=scenarios,current_domain=domain)
         # Determine the final answer instructions and replace the slot
         final_answer_instructions = self.get_final_answer_instructions()
