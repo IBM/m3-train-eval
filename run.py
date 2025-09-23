@@ -220,6 +220,7 @@ def run_agent(args):
             'sample_id': env.sample_id,
             'tools': env.tools,
             'interactions': {},
+            'scenarios': env.scenarios,
             'tool_availability_policy': env.tool_policy.tool_availability_policy,
             'tool_usage_policy': env.tool_policy.tool_usage_policy,
             "final_answer_policy": env.tool_policy.final_answer_policy
