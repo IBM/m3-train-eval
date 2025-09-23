@@ -78,9 +78,7 @@ def run_agent(args):
 
     logger.info(json.dumps(config, indent=4))
     save_traj_at = os.path.join(config['log_dir'], 'trajectories')
-    save_metadata_at = os.path.join(config['log_dir'], 'metadata')
     os.makedirs(save_traj_at, exist_ok=True)
-    os.makedirs(save_metadata_at, exist_ok=True)
 
     # ########################################## Configure the Agent ########################################## #
     stop_sequences = []
@@ -454,13 +452,11 @@ def run_agent(args):
                 "tracker": expert_assistance_tracker
             }
         }
+        agent_trajectory['metadata'] = agent_metadata
 
         # Save the Agent trajectory
         with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
             json.dump(agent_trajectory, f, indent=2)
-        # Save its metadata
-        with open(os.path.join(save_metadata_at, f"metadata_{env.domain}_{env.sample_id}.json"), "w") as f:
-            json.dump(agent_metadata, f, indent=2)
 
     metrics["total_runs"] = total_runs
     logger.info("Metrics: \n{}".format(json.dumps(metrics, indent=2)))

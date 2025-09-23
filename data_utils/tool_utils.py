@@ -676,13 +676,32 @@ def create_ToolPolicy(scenarios:dict, current_domain:str=None):
             template_text=random.choice(candidate_texts).format(domains=domain)
         else:
             template_text=None
-        return ToolPolicy(tool_use_policy=tool_policy,tool_usage_policy=template_text,tool_use_policy_domain=policy_domain)       
+        tool_policy_object = ToolPolicy(tool_use_policy=tool_policy,tool_usage_policy=template_text,tool_use_policy_domain=policy_domain)       
     elif scenarios["tool_availability"] is not None:
         tools_available=scenarios["tool_availability"]
-        return ToolPolicy(tool_availability_policy=tools_available)
+        tool_policy_object = ToolPolicy(tool_availability_policy=tools_available)
     elif scenarios["missing_api"] is not None:
         delete_tools_list=scenarios["missing_api"]
-        return ToolPolicy(tool_missing=delete_tools_list)
+        tool_policy_object = ToolPolicy(tool_missing=delete_tools_list)
     else:
-        return ToolPolicy()
+        tool_policy_object = ToolPolicy()
+
+    # Determine the guidance for generating final answer
+    final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
+
+    # [1] For the case when scenarios render the question unanswerable
+    chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
+    chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
+    instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
+    final_answer_instructions += "\n                  > " + instr_insufficient_information
+
+    # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
+    if scenarios.get('resp_cutoff_inst') and len(scenarios['resp_cutoff_inst']) > 0:
+        # This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
+        # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
+        instr_resp_cutoff = scenarios['resp_cutoff_inst']
+        final_answer_instructions += "\n                  > " + instr_resp_cutoff
+
+    tool_policy_object.final_answer_policy = final_answer_instructions
+    return tool_policy_object
     

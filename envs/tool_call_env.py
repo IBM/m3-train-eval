@@ -679,35 +679,11 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         if ("scenarios" not in curr_instance_data.keys()) and ("_sc_" not in curr_instance_data["sample_id"]): # Make this more specific for only the data points without scenarios
             curr_instance_data["scenarios"]= {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
-            self.scenarios = curr_instance_data["scenarios"]
         domain=curr_instance_data["domain"]
         scenarios=curr_instance_data["scenarios"]
         self.scenarios = curr_instance_data["scenarios"]
         self.tool_policy=create_ToolPolicy(scenarios=scenarios,current_domain=domain)
-        # Determine the final answer instructions and replace the slot
-        final_answer_instructions = self.get_final_answer_instructions()
-        self.tool_policy.final_answer_policy = final_answer_instructions
 
-    def get_final_answer_instructions(self) -> str:
-        # Determine the guidance for generating final answer
-        final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
-
-        # [1] For the case when scenarios render the question unanswerable
-        from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
-        chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
-        chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
-        instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
-        final_answer_instructions += "\n                  > " + instr_insufficient_information
-
-        # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
-        curr_instance_data = self.data[self.curr_instance_idx]
-        if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
-            # This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
-            # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
-            instr_resp_cutoff = curr_instance_data['resp_cutoff_inst']
-            final_answer_instructions += "\n                  > " + instr_resp_cutoff
-
-        return final_answer_instructions
 
     def initialize_sel_slot_data(self, initialization_specs: dict, callable_api_pool: dict) -> str:
         # Perform the initialization step
