@@ -6,14 +6,16 @@ import json
 import os
 import random
 
+import pdb
+
 save_pref_data_at = './data/pairwise_pref'
 CHANGE_FILES = [
-    "./data/change_stat_train_multiturn.json",
+    # "./data/change_stat_train_multiturn.json",
     "./data/change_stat_train_single_turn.json"
 ]
 IGNORE_FILES = [
-    "./data/inconsistency_by_domain.json", 
-    "./data/inconsistency_by_domain.json", 
+    # "./data/inconsistency_by_domain.json", 
+    # "./data/inconsistency_by_domain.json", 
     "./data/inconsistency_by_domain_single_turn.json", 
     "./data/inconsistency_by_domain_single_turn.json", 
 ]
@@ -23,17 +25,17 @@ OOD_DOMAINS = ["video_games", "chicago_crime", "simpson_episodes",
                "public_review_platform", "movie","movie_3", "movielens", "movies_4"]
 
 EXPLORATORY_TRAJECTORY_DIRS = [
-    '/proj/m3benchmark/m3data/0905/balanced_rest_v4_exploratory_trajectory',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_chunked_scenarios_exp',
+    # '/proj/m3benchmark/m3data/0905/balanced_rest_v4_exploratory_trajectory',
+    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_chunked_scenarios_exp',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_exploratory_trajectory',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_chunked_scenarios_st_exp',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_gt_exp',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_scenarios_chunked_exp'
+    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_gt_exp',
+    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_scenarios_chunked_exp'
     ]
 
 GROUND_TRUTH_TRAJECTORY_DIRS = [
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_expert',
-    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_scenarios_expert',
+    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_expert',
+    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_scenarios_expert',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_expert',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_scenarios_expert',
     # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_gt',
@@ -41,15 +43,15 @@ GROUND_TRUTH_TRAJECTORY_DIRS = [
     ]
 
 DATASET_SPLIT_LABELS = [
-    'train_multi_turn_no_scenarios',
-    'train_multi_turn_with_scenarios',
+    # 'train_multi_turn_no_scenarios',
+    # 'train_multi_turn_with_scenarios',
     'train_single_turn_no_scenarios',
     'train_single_turn_with_scenarios',
     # 'test_multi_turn_no_scenarios',
     # 'test_multi_turn_with_scenarios'
     ]
 MIXED_SCENARIO_LABELS = [
-    "train_multi_turn", 
+    # "train_multi_turn", 
     "train_single_turn", 
     # "test_multi_turn"
     ]
@@ -267,17 +269,25 @@ def format_ground_truth_pairs(mix_scenarios: bool):
     
         chosen_agent_data = collect_agent_data(chosen_agent_dir, ignore_list, with_alt=False)
         rejected_agent_data = collect_agent_data(rejected_agent_dir, ignore_list, with_alt=False)
-
+        pdb.set_trace()
         # Match common sample_ids
         common_sample_ids = set(chosen_agent_data.keys()) & set(rejected_agent_data.keys())
         grouped = []
 
         match_failures = 0
+        system_failures = 0
+        tool_failures = 0
         for trajectory_id in common_sample_ids:
 
             try:
                 assert chosen_agent_data[trajectory_id]["system"] == rejected_agent_data[trajectory_id]["system"]
-                assert chosen_agent_data[trajectory_id]["tools"] == rejected_agent_data[trajectory_id]["tools"]
+            except:
+                system_failures+=1
+                continue
+            
+            # Downsampling makes these non-equivalent. Just keep the exploratory one. 
+            # assert chosen_agent_data[trajectory_id]["tools"] == rejected_agent_data[trajectory_id]["tools"]
+            try:
                 assert chosen_agent_data[trajectory_id]["tool_availability_policy"] == rejected_agent_data[trajectory_id]["tool_availability_policy"]
                 assert chosen_agent_data[trajectory_id]["tool_usage_policy"] == rejected_agent_data[trajectory_id]["tool_usage_policy"]
             except:
@@ -290,25 +300,27 @@ def format_ground_truth_pairs(mix_scenarios: bool):
                 "sample_id": chosen_agent_data[trajectory_id]["sample_id"],
                 "domain": chosen_agent_data[trajectory_id]["domain"], 
                 "system": chosen_agent_data[trajectory_id]["system"],
-                "tools": chosen_agent_data[trajectory_id]["tools"],
+                "tools": rejected_agent_data[trajectory_id]["tools"], # Use tools from exploratory trajectory not GT
                 "tool_availability_policy": chosen_agent_data[trajectory_id]['tool_availability_policy'],
                 "tool_usage_policy": chosen_agent_data[trajectory_id]['tool_usage_policy'],
                 "chosen_trajectory": chosen_agent_data[trajectory_id]['turn_wise_interactions'],
                 "rejected_trajectory": rejected_agent_data[trajectory_id]['turn_wise_interactions'],
             })
-        print(f"FAILED TO MATCH FIELDS FOR {match_failures} SAMPLES")
+        print(f"FAILED TO MATCH FIELDS FOR {match_failures} SAMPLES, TOOLS FOR {tool_failures} SAMPLES, AND SYSTEM PROMPTS FOR {system_failures} SAMPLES")
+        pdb.set_trace()
         return grouped
 
-    # # Read the trajectories of pair of agents and create preference data
-    # for agent_dir, gt_dir, dataset, ignore in zip(EXPLORATORY_TRAJECTORY_DIRS, GROUND_TRUTH_TRAJECTORY_DIRS, DATASET_SPLIT_LABELS, IGNORE_FILES):
-    #     grouped_data = group_pref_data_by_sample_id(
-    #         gt_dir, 
-    #         agent_dir,
-    #         ignore
-    #     )
-    #     print(f"Created {len(grouped_data)} DPO trajectory pairs from ground truth vs expert trajectories. ")
-    #     with open(os.path.join(save_pref_data_at, f"{dataset}_gt_vs_expert.json"), "w") as f:
-    #         json.dump(grouped_data, f, indent=4)
+    # Read the trajectories of pair of agents and create preference data
+    for agent_dir, gt_dir, dataset, ignore in zip(EXPLORATORY_TRAJECTORY_DIRS, GROUND_TRUTH_TRAJECTORY_DIRS, DATASET_SPLIT_LABELS, IGNORE_FILES):
+        pdb.set_trace()
+        grouped_data = group_pref_data_by_sample_id(
+            gt_dir, 
+            agent_dir,
+            ignore
+        )
+        print(f"Created {len(grouped_data)} DPO trajectory pairs from ground truth vs expert trajectories. ")
+        with open(os.path.join(save_pref_data_at, f"{dataset}_gt_vs_expert.json"), "w") as f:
+            json.dump(grouped_data, f, indent=4)
         
     if mix_scenarios:
         for label in DATASET_SPLIT_LABELS:
