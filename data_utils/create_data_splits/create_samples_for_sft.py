@@ -109,9 +109,7 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsis
                 scenario_to_keep["guid"]=str(format)+"_"+scenario_to_keep[DOMAIN_KEY]+"_"+str(scenario_to_keep["sample_id"])
                 scenario_to_keep["format"]=format # Either single or multi                
                 keep_scenarios.append(scenario_to_keep)
-    if len(keep_scenarios) < len(data_no_scenarios):
-        import pdb
-        pdb.set_trace()
+    assert len(keep_scenarios) < len(data_no_scenarios), f"Total samples kept for this file are {len(keep_scenarios)} which is lesser than base samples without scenarions {len(data_no_scenarios)}"
     return keep_scenarios
 
 def process_data(args=None, format="single"):
