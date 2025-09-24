@@ -79,7 +79,7 @@ if is_rank_0():
         logger.info(f"There are {len(files)} trajectories found in {dataset_dir}. ")
         assert len(files) > 0, f"Failed to find any trajectories files in {dataset_dir}"
 
-    verify_cuda()
+    #verify_cuda()
 
     print("LOGGING IN")
     # Login with the hf_token
@@ -88,7 +88,7 @@ if is_rank_0():
 
 def main():
 
-    verify_cuda()
+    #verify_cuda()
     # Load the user-specified training configuration
     if DEBUG:
         path_to_config = DEFAULT_DEBUG_PATH
