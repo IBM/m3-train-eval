@@ -14,8 +14,8 @@ from extras.custom import is_rank_0, set_run_environment, make_json_serializable
 
 DEBUG=False
 DEFAULT_DEBUG_PATH='./config_files/debug_train.json'
-DEFAULT_PATH='./config_files/train_lora_granite_dpo_singlegpu.json'
-DEFAULT_PATH= './config_files/train_lora_granite.json'
+DEFAULT_PATH = './config_files/train_lora_granite_dpo_singlegpu.json'
+DEFAULT_PATH = './config_files/train_lora_granite.json'
 
 def get_system_cuda_version():
     try:
