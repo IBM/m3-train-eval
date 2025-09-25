@@ -1,6 +1,6 @@
 {
   "template": "student_granite3",
-  "cutoff_len": 32768,
+  "cutoff_len": 16384,
   "dataset_dir": "/proj/m3benchmark/ben/",
   "dataset": ["trajectories_meta_data_augmented"],
   "mask_history": true,

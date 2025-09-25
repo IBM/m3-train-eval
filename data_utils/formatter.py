@@ -132,11 +132,14 @@ class ToolFormatter(Formatter):
     def apply(self, **kwargs) -> SLOTS:
         content = kwargs.pop("content")
         tool_policy = kwargs.pop("tool_policy", None)  # My custom added, a data class of policies that reformats tool instructions
-        try:
-            tools = json.loads(content)
-            return [self.tool_utils.tool_formatter(tools, tool_policy) if len(tools) != 0 else ""]
-        except json.JSONDecodeError:
-            raise RuntimeError(f"Invalid JSON format in tool description: {str([content])}.")  # flat string
+        if isinstance(content, str):
+            try:
+                tools = json.loads(content)
+            except json.JSONDecodeError:
+                raise RuntimeError(f"Invalid JSON format in tool description: {str([content])}.")  # flat string
+        else:
+            tools = content
+        return [self.tool_utils.tool_formatter(tools, tool_policy) if len(tools) != 0 else ""]
 
     @override
     def extract(self, content: str) -> Union[str, list["FunctionCall"]]:

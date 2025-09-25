@@ -16,6 +16,7 @@ from data_utils.tool_utils import create_ToolPolicy
 from envs.base_env import ToolPolicy
 from extras.custom import make_json_serializable
 
+from data_utils.utils import load_data_files
 if TYPE_CHECKING:
     from data_utils.template import Template
     from hparams import DataArguments
@@ -201,6 +202,7 @@ class BaseDataset(TorchDataset):
         images, videos, audios = [], [], []
 
         pbar = tqdm(total=len(self), ncols=0, desc=f"Converting examples to features: ")
+        stats = []
         for i in range(len(self)):
 
             sample = self.processed_samples[i]
@@ -282,7 +284,9 @@ class BaseDataset(TorchDataset):
                 input_ids += [self.tokenizer.eos_token_id]
                 label_ids += [self.tokenizer.eos_token_id]
             attn_mask = [1] * len(input_ids)
-
+            if len(input_ids) > 17000:
+                logger.info(f"Skipping data point of with token length: {len(input_ids)}")
+                continue
             inputs.append(input_ids)
             labels.append(label_ids)
             attn_masks.append(attn_mask)
@@ -291,7 +295,19 @@ class BaseDataset(TorchDataset):
             videos.append(sample['_videos'] or [])
             audios.append(sample['_audios'] or [])
             pbar.update()
+            stats.append({
+                'input_length': len(input_ids), 
+                'domain': sample['domain'], 
+                'format': sample['format'], 
+                'type': sample['type'], 
+                'num_turns': sample['num_turns'], 
+                'num_hops': sample['num_hops'],
+                'sample_id': sample['sample_id'],
+                'guid': sample['guid']
 
+            })
+        with open(f"stats.json", "w") as f:
+            json.dump(stats, f)
         return inputs, labels, attn_masks, input_lens, images, videos, audios
 
     def convert_samples_to_supervised_preference_features(self):
@@ -498,93 +514,81 @@ class AgentTrajectorySFTData(BaseDataset):
     def read_data(self):
 
         # Collect trajectories
-        datasets = [self.data_args.dataset] if isinstance(self.data_args.dataset, str) else self.data_args.dataset
+        trajectories = load_data_files(self.data_args.dataset_dir, self.data_args.dataset)
+        total_trajectories = len(trajectories)
         sample_idx = 0
-        total_trajectories = 0
         task_idxs, data = [], []
-        for dataset in datasets:
 
-            logger.info(f"Reading dataset '{dataset}' from {self.data_args.dataset_dir}")
-            dataset_dir = os.path.join(self.data_args.dataset_dir, dataset)
-            files = os.listdir(dataset_dir)
-            files = [f for f in files if f.startswith("trajectory")]
-            files = sorted(files, key=lambda x: int(x.split(".")[0].split("_")[-1]))
-
-            trajectories = []
-            for f in files:
-                with open(os.path.join(dataset_dir, f), "r") as f:
-                    trajectories.append(json.load(f))
-            total_trajectories += len(trajectories)
-
-            # Collect interactions from trajectories
-            for traj in trajectories:
-
-                system, tools = traj['system'], traj['tools']
-                tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
-                
-                # Downsample the tools to fit in memory
-                interactions = traj['interactions']
-                required = []
-                for i in interactions:
-                    if i['metadata']['action'] == "API":
-                        # if RAG, this will already be include because keep_retrievers=True
-                        required.append(i['metadata']['action_arguments']['name'])
-                tools = update_retrieval_tools(tools)
-                tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
-
-                # Determine the Tool Policy
-                # if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
-                #     tool_policy = ToolPolicy(
-                #         tool_availability_policy=traj['tool_availability_policy'],
-                #         tool_use_policy=traj["tool_use_policy"],
-                #         tool_usage_policy=traj['tool_usage_policy'],
-                #         final_answer_policy=traj['final_answer_policy']
-                #     )
-                # else:
-                #     tool_policy = ToolPolicy(
-                #         tool_availability_policy="both_api_rag",
-                #         tool_use_policy="",
-                #         tool_usage_policy="",
-                #         final_answer_policy=""
-                #     )
-
-                time_steps = list(traj['interactions'].keys())
-                time_steps = sorted(time_steps, key=lambda x: int(x))
-
-                if self.data_args.mask_history:
-                    # For every partial (/full) traj., train on the last action given the state when history is masked
-                    for t in time_steps:
-
-                        if self.accept_interactions_from is None or traj['interactions'][t]['actor'] == self.accept_interactions_from:
-                            # Accept all interactions or Accept interactions from a given actor
-                            data.append(
-                                {
-                                    "idx": sample_idx,
-                                    "input": traj['interactions'][t]["input"],
-                                    "output": traj['interactions'][t]["output"],
-                                    "system": system,
-                                    "tools": tools,
-                                    "tool_policy": tool_policy,
-                                }
-                            )
-                            task_idxs.append(sample_idx)
-                            sample_idx += 1
+        # Collect interactions from trajectories
+        for traj in trajectories:
+            system, tools = traj['system'], traj['tools']
+            tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
+            tool_policy.tool_usage_policy = traj['tool_usage_policy']
+            tool_policy.final_answer_policy = traj['final_answer_policy']
+            
+            # Downsample the tools to fit in memory
+            interactions = traj['interactions']
+            required = []
+            for i in interactions:
+                if isinstance(interactions, dict):
+                    entry = interactions[i]
                 else:
-                    # Train on the full trajectory (packed). Note. The intermediate actions in the input along with the
-                    # output will be picked as target labels during multi-turn encoding
-                    t = time_steps[-1]
-                    data.append(
-                        {
-                            "idx": sample_idx,
-                            "input": traj['interactions'][t]["input"],  # s_1, a_1, s_2, a_2, ..., s_{H-1}
-                            "output": traj['interactions'][t]["output"],  # a_{H-1}
-                            "system": system,
-                            "tools": tools,
-                            "tool_policy": tool_policy,
-                        }
-                    )
-                    task_idxs.append(sample_idx)
-                    sample_idx += 1
+                    entry = i
+                if entry['metadata']['action'] == "API":
+                    # if RAG, this will already be include because keep_retrievers=True
+                    required.append(entry['metadata']['action_arguments']['name'])
+            tools = update_retrieval_tools(tools)
+            tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
+
+            time_steps = list(traj['interactions'].keys())
+            time_steps = sorted(time_steps, key=lambda x: int(x))
+
+            if self.data_args.mask_history:
+                # For every partial (/full) traj., train on the last action given the state when history is masked
+                for t in time_steps:
+
+                    if self.accept_interactions_from is None or traj['interactions'][t]['actor'] == self.accept_interactions_from:
+                        # Accept all interactions or Accept interactions from a given actor
+                        data.append(
+                            {
+                                "idx": sample_idx,
+                                "input": traj['interactions'][t]["input"],
+                                "output": traj['interactions'][t]["output"],
+                                "system": system,
+                                "tools": tools,
+                                "tool_policy": tool_policy,
+                                'domain': traj['domain'], 
+                                'sample_id': traj['sample_id'], 
+                                'format': traj['format'], 
+                                'type': traj['type'], 
+                                'num_turns': traj['num_turns'], 
+                                'num_hops': traj['num_hops']
+                            }
+                        )
+                        task_idxs.append(sample_idx)
+                        sample_idx += 1
+            else:
+                # Train on the full trajectory (packed). Note. The intermediate actions in the input along with the
+                # output will be picked as target labels during multi-turn encoding
+                t = time_steps[-1]
+                data.append(
+                    {
+                        "idx": sample_idx,
+                        "input": traj['interactions'][t]["input"],  # s_1, a_1, s_2, a_2, ..., s_{H-1}
+                        "output": traj['interactions'][t]["output"],  # a_{H-1}
+                        "system": system,
+                        "tools": tools,
+                        "tool_policy": tool_policy,
+                        'domain': traj['domain'], 
+                        'sample_id': traj['sample_id'], 
+                        'format': traj['format'], 
+                        'type': traj['type'], 
+                        'num_turns': traj['num_turns'], 
+                        'num_hops': traj['num_hops']
+                    }
+                )
+                task_idxs.append(sample_idx)
+                sample_idx += 1
 
         try:
             assert len(data) > 0
@@ -671,7 +675,7 @@ class AgentTrajectorySFTData(BaseDataset):
                     response = [output]
             else:
                 response = []
-
+            
             processed_sample = {
                 "idx": idx,
                 "_system": sample['system'] if 'system' in sample.keys() and sample['system'] else "",
@@ -684,6 +688,13 @@ class AgentTrajectorySFTData(BaseDataset):
                 "_images": sample['images'] if 'images' in sample.keys() and sample['images'] else None,
                 "_videos": sample['videos'] if 'videos' in sample.keys() and sample['videos'] else None,
                 "_audios": sample['audios'] if 'audios' in sample.keys() and sample['audios'] else None,
+                'domain': sample['domain'], 
+                'sample_id': sample['sample_id'], 
+                'guid': sample.get('guid', 'null'),
+                'format': sample['format'], 
+                'type': sample['type'], 
+                'num_turns': sample['num_turns'], 
+                'num_hops': sample['num_hops']
             }
 
             processed_samples.append(processed_sample)
@@ -715,87 +726,62 @@ class AgentTrajectoryPreferenceData(BaseDataset):
     def read_step_preferences(self):
         """Preferences collected from a single agent's run"""
         # Collect trajectories
-        datasets = [self.data_args.dataset] if isinstance(self.data_args.dataset, str) else self.data_args.dataset
+        trajectories = load_data_files(self.data_args.dataset_dir, self.data_args.dataset)
+        total_trajectories = len(trajectories)
         sample_idx = 0
-        total_trajectories = 0
         task_idxs, data = [], []
-        for dataset in datasets:
-            logger.info(f"Reading dataset '{dataset}' from {self.data_args.dataset_dir}")
-            dataset_dir = os.path.join(self.data_args.dataset_dir, dataset)
-            files = os.listdir(dataset_dir)
-            files = [f for f in files if f.startswith("trajectory")]
-            files = sorted(files, key=lambda x: int(x.split(".")[0].split("_")[-1]))
 
-            trajectories = []
-            for f in files:
-                with open(os.path.join(dataset_dir, f), "r") as f:
-                    trajectories.append(json.load(f))
-            total_trajectories += len(trajectories)
+        # Collect interactions from trajectories
+        for traj in trajectories:
 
-            # Collect interactions from trajectories
-            for traj in trajectories:
+            system, tools = traj['system'], traj['tools']
+            tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
+            tool_policy.tool_usage_policy = traj['tool_usage_policy']
+            tool_policy.final_answer_policy = traj['final_answer_policy']
 
-                system, tools = traj['system'], traj['tools']
-                tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
-                # Determine the Tool Policy
-                # if 'tool_availability_policy' in traj and 'tool_usage_policy' in traj and 'final_answer_policy' in traj:
-                #     tool_policy = ToolPolicy(
-                #         tool_availability_policy=traj['tool_availability_policy'],
-                #         tool_use_policy=traj["tool_use_policy"],
-                #         tool_usage_policy=traj['tool_usage_policy'],
-                #         final_answer_policy=traj['final_answer_policy']
-                #     )
-                # else:
-                #     tool_policy = ToolPolicy(
-                #         tool_availability_policy="both_api_rag",
-                #         tool_use_policy="",
-                #         tool_usage_policy="",
-                #         final_answer_policy=""
-                #     )
+            time_steps = list(traj['interactions'].keys())
+            time_steps = sorted(time_steps, key=lambda x: int(x))
+            # For every partial (/full) traj., train on the last action given the state when history is masked
+            for t in time_steps:
 
-                time_steps = list(traj['interactions'].keys())
-                time_steps = sorted(time_steps, key=lambda x: int(x))
-                # For every partial (/full) traj., train on the last action given the state when history is masked
-                for t in time_steps:
+                # Collect preferred (expert) and dispreferred (actor) actions.
+                # Filter out samples where the expert intervened at the final step but the final answer was not correct
+                if (len(traj['interactions'][t]['alternate_trace']) > 0
+                        and traj['interactions'][t]["reward"] != "{REWARD_FINAL_ANSWER_NO_MATCH}"):
 
-                    # Collect preferred (expert) and dispreferred (actor) actions.
-                    # Filter out samples where the expert intervened at the final step but the final answer was not correct
-                    if (len(traj['interactions'][t]['alternate_trace']) > 0
-                            and traj['interactions'][t]["reward"] != "{REWARD_FINAL_ANSWER_NO_MATCH}"):
+                    curr_actor = traj['interactions'][t]['actor']
+                    alt_actor = traj['interactions'][t]['alternate_trace'][0]['actor']
+                    if curr_actor == 'agent' and alt_actor == 'expert':
+                        data.append(
+                            {
+                                "idx": sample_idx,
+                                "chosen_input": traj['interactions'][t]["input"],
+                                "rejected_input": traj['interactions'][t]["input"],
+                                "chosen_output": traj['interactions'][t]['alternate_trace'][0]["output"],
+                                "rejected_output":traj['interactions'][t]["output"],
+                                "system": system,
+                                "tools": tools,
+                                "tool_policy": tool_policy,
+                            }
+                        )
+                        task_idxs.append(sample_idx)
+                        sample_idx += 1
 
-                        curr_actor = traj['interactions'][t]['actor']
-                        alt_actor = traj['interactions'][t]['alternate_trace'][0]['actor']
-                        if curr_actor == 'agent' and alt_actor == 'expert':
-                            data.append(
-                                {
-                                    "idx": sample_idx,
-                                    "chosen_input": traj['interactions'][t]["input"],
-                                    "rejected_input": traj['interactions'][t]["input"],
-                                    "chosen_output": traj['interactions'][t]['alternate_trace'][0]["output"],
-                                    "rejected_output":traj['interactions'][t]["output"],
-                                    "system": system,
-                                    "tools": tools,
-                                    "tool_policy": tool_policy,
-                                }
-                            )
-                            task_idxs.append(sample_idx)
-                            sample_idx += 1
-
-                        elif curr_actor == 'expert' and alt_actor == 'agent':
-                            data.append(
-                                {
-                                    "idx": sample_idx,
-                                    "chosen_input": traj['interactions'][t]["input"],
-                                    "rejected_input": traj['interactions'][t]["input"],
-                                    "chosen_output": traj['interactions'][t]["output"],
-                                    "rejected_output": traj['interactions'][t]['alternate_trace'][0]["output"],
-                                    "system": system,
-                                    "tools": tools,
-                                    "tool_policy": tool_policy,
-                                }
-                            )
-                            task_idxs.append(sample_idx)
-                            sample_idx += 1
+                    elif curr_actor == 'expert' and alt_actor == 'agent':
+                        data.append(
+                            {
+                                "idx": sample_idx,
+                                "chosen_input": traj['interactions'][t]["input"],
+                                "rejected_input": traj['interactions'][t]["input"],
+                                "chosen_output": traj['interactions'][t]["output"],
+                                "rejected_output": traj['interactions'][t]['alternate_trace'][0]["output"],
+                                "system": system,
+                                "tools": tools,
+                                "tool_policy": tool_policy,
+                            }
+                        )
+                        task_idxs.append(sample_idx)
+                        sample_idx += 1
 
         return total_trajectories, task_idxs, data
 

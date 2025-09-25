@@ -10,11 +10,12 @@ from transformers.utils.generic import strtobool
 
 from hparams import get_train_args
 from extras.custom import is_rank_0, set_run_environment, make_json_serializable, gpu_supports_fa2, create_dir
+from data_utils.utils import load_data_files
 
 
 DEBUG=False
 DEFAULT_DEBUG_PATH='./config_files/debug_train.json'
-DEFAULT_PATH='./config_files/train_lora_granite.json'
+DEFAULT_PATH='./config_files/train_lora_g4.json'
 
 def get_system_cuda_version():
     try:
@@ -67,16 +68,10 @@ if is_rank_0():
         override_args = json.load(f)
     
     logger.info(f"USING CONFIG FILE: {path_to_config}")
-    datasets = [override_args["dataset"]] if isinstance(override_args["dataset"], str) else override_args["dataset"]
-    sample_idx = 0
-    total_trajectories = 0
-    task_idxs, data = [], []
-    for dataset in datasets:
-        dataset_dir = os.path.join(override_args["dataset_dir"], dataset)
-        files = os.listdir(dataset_dir)
-        files = [f for f in files if f.startswith("trajectory")]
-        logger.info(f"There are {len(files)} trajectories found in {dataset_dir}. ")
-        assert len(files) > 0, f"Failed to find any trajectories files in {dataset_dir}"
+
+    # Check that data exists and can be loaded. 
+    data_files = load_data_files(override_args["dataset_dir"], override_args["dataset"])
+    assert len(data_files) > 0, f"No data found at {override_args['dataset_dir']}"
 
     verify_cuda()
 
