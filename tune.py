@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 import subprocess
-
+import torch
 from loguru import logger
 from transformers.utils import is_flash_attn_2_available
 from transformers.utils.generic import strtobool
@@ -11,6 +11,7 @@ from transformers.utils.generic import strtobool
 from hparams import get_train_args
 from extras.custom import is_rank_0, set_run_environment, make_json_serializable, gpu_supports_fa2, create_dir
 
+print("cuda version:", torch.version.cuda)
 
 DEBUG=False
 DEFAULT_DEBUG_PATH='./config_files/debug_train.json'
@@ -28,7 +29,7 @@ def get_system_cuda_version():
         return None
 
 def verify_cuda():
-    import torch
+
 
     def check_all_gpus():
         if not torch.cuda.is_available():
@@ -79,7 +80,7 @@ if is_rank_0():
         logger.info(f"There are {len(files)} trajectories found in {dataset_dir}. ")
         assert len(files) > 0, f"Failed to find any trajectories files in {dataset_dir}"
 
-    #verify_cuda()
+    verify_cuda()
 
     print("LOGGING IN")
     # Login with the hf_token
@@ -88,7 +89,7 @@ if is_rank_0():
 
 def main():
 
-    #verify_cuda()
+    verify_cuda()
     # Load the user-specified training configuration
     if DEBUG:
         path_to_config = DEFAULT_DEBUG_PATH
