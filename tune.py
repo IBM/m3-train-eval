@@ -57,7 +57,7 @@ def verify_cuda():
 
 
 if is_rank_0():
-    set_run_environment(dotenv_path="./.env")
+    #set_run_environment(dotenv_path="./.env")
 
     # Check that data exists before we start up. 
     if DEBUG:
