@@ -170,9 +170,10 @@ class Template:
                 elements += self.format_function.apply(content=message["content"])
             else:
                 raise NotImplementedError("Unexpected role: {}".format(message["role"]))
-            logger.info(f"HERE IS THE ELEMENT: {elements}")
+
             encoded_messages.append(self._convert_elements_to_ids(tokenizer, elements))
             plaintext_messages.append(elements)
+
         if kwargs.get("return_text"):
             return plaintext_messages
         return encoded_messages
