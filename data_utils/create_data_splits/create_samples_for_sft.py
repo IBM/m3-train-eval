@@ -45,6 +45,17 @@ DIRECTORY_SINGLE_TURN={
     }
 }
 
+DIRECTORY_BASE={
+    "multi":{
+        "no_scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_chunked",
+        "scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_chunked_scenarios",
+    },
+    "single":{
+        "no_scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_chunked",
+        "scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_chunked_scenarios",
+    }
+}
+
 DOMAIN_KEY="domain"
 
 def load_files(foldername):
@@ -81,9 +92,35 @@ def group_by_original_sample_id(data: list[dict], inconsistent_sample: list):
             grouped_data[original_sample_id].append(d)
     return grouped_data
 
-def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsistency_ids=None, format=None):
+def get_base_data(domain):
+    BASE_DATA=defaultdict(dict)
+    for format in ["multi","single"]:
+        for type in ["scenarios","no_scenarios"]:
+            foldername=DIRECTORY_BASE[format][type]
+            filename=f"{foldername}/{domain}_multiturn_bird_chunked.json"
+            with open(filename,'r') as f:
+                BASE_DATA[format][type]=json.load(f)            
+    return BASE_DATA
+
+def get_base_item(base_data,domain: str,sample_id: str,format: str,type: str):
+    """
+    Get base dataset using
+    domain : str Domain name
+    sample_id : str sample ID
+    format: str multi turn or single turn
+    type: str with scenarios or without scenarios
+    """
+    data=base_data[format][type]
+    
+    for item in data:
+        if str(item["sample_id"])==str(sample_id):
+            return item
+    return None
+
+def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsistency_ids=None, format=None, domain=None):
     data_with_scenarios_dict=convert_to_dict(data_with_scenarios)
     grouped_with_scenario=group_by_original_sample_id(data_with_scenarios,inconsistency_ids) # Removes scenario data which is inconsistent list
+    base_data=get_base_data(domain)
 
     keep_scenarios = [] 
     for idx, item in enumerate(tqdm(data_no_scenarios,desc="[MIXING]")):
@@ -94,6 +131,13 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsis
                 scenario_to_keep=data_with_scenarios_dict[id]
                 scenario_to_keep["guid"] = str(format)+"_"+scenario_to_keep[DOMAIN_KEY]+"_"+scenario_to_keep["sample_id"]
                 scenario_to_keep["format"]=format # Either single or multi
+                # Get base item to get question metadata
+                base_item=get_base_item(base_data,domain=scenario_to_keep["domain"],sample_id=scenario_to_keep["sample_id"],format=format,type="scenarios")
+                assert base_item, f"Base item not found for sample id {scenario_to_keep['sample_id']} and domain {scenario_to_keep['domain']} with scenarios."
+                if base_item:
+                    scenario_to_keep["type"]=base_item["type"]
+                    scenario_to_keep["num_turns"]=base_item["num_turns"]
+                    scenario_to_keep["num_hops"]=base_item["num_hops"]
                 keep_scenarios.append(scenario_to_keep)
         else:
             # If there are any samples where the scenario did not change the ground truth
@@ -103,13 +147,27 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsis
             if (keep_original==1) or (len(item_with_scenario) == 0):
                 item["guid"] = str(format)+"_"+str(item[DOMAIN_KEY])+"_"+str(item["sample_id"])
                 item["format"]=format # Either single or multi
+                # Get base item to get question metadata
+                base_item=get_base_item(base_data,domain=item["domain"],sample_id=item["sample_id"],format=format,type="no_scenarios")
+                assert base_item, f"Base item not found for sample id {item['sample_id']} and domain {item['domain']} without scenarios."
+                if base_item:
+                    item["type"]=base_item["type"]
+                    item["num_turns"]=base_item["num_turns"]
+                    item["num_hops"]=base_item["num_hops"]
                 keep_scenarios.append(item)
             else:
                 scenario_to_keep=random.choice(item_with_scenario)
                 scenario_to_keep["guid"]=str(format)+"_"+scenario_to_keep[DOMAIN_KEY]+"_"+str(scenario_to_keep["sample_id"])
-                scenario_to_keep["format"]=format # Either single or multi                
+                scenario_to_keep["format"]=format # Either single or multi
+                # Get base item to get question metadata               
+                base_item=get_base_item(base_data,domain=scenario_to_keep["domain"],sample_id=scenario_to_keep["sample_id"],format=format,type="scenarios")
+                assert base_item, f"Base item not found for sample id {scenario_to_keep['sample_id']} and domain {scenario_to_keep['domain']} with scenarios." 
+                if base_item:
+                    scenario_to_keep["type"]=base_item["type"]
+                    scenario_to_keep["num_turns"]=base_item["num_turns"]
+                    scenario_to_keep["num_hops"]=base_item["num_hops"]
                 keep_scenarios.append(scenario_to_keep)
-    assert len(keep_scenarios) < len(data_no_scenarios), f"Total samples kept for this file are {len(keep_scenarios)} which is lesser than base samples without scenarions {len(data_no_scenarios)}"
+    assert len(keep_scenarios) >= len(data_no_scenarios), f"Total samples kept for this file are {len(keep_scenarios)} which is lesser than base samples without scenarions {len(data_no_scenarios)}"
     return keep_scenarios
 
 def process_data(args=None, format="single"):
@@ -140,13 +198,13 @@ def process_data(args=None, format="single"):
         ignore_dict=json.load(f)        
     
     mixed_data=[]
-    for domain in tqdm(domain_names):
+    for domain in tqdm(domain_names, desc="[DOMAIN]"):
         if domain in OOD_DOMAINS:
             continue
         data_no_scenarios, data_with_scenario = data_no_scenarios_dict[domain], data_with_scenario_dict[domain]
         change_stat_domain=change_dict[domain]
         ignore_domain=ignore_dict[domain]
-        mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,ignore_domain))
+        mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,ignore_domain,format,domain))
     with open(filename, 'w') as f:
         json.dump(mixed_data, f)
     print(f"{filename}, {foldername_no_scenario}, {foldername_with_scenario}, {len(mixed_data)}")
@@ -168,10 +226,10 @@ def run(args):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--type', '-t', required=True, choices=["ground_truth", "exploratory"], help="Create SFT data from ground truth trajectories or exploratory trajectories.")
+    parser.add_argument('--type', '-t', required=True, choices=["ground_truth", "exploratory"], help="Create SFT data from ground truth trajectories or exploratory trajectories.") # exploratory
     parser.add_argument("--change_stats_dir", "-cs", default="/proj/m3benchmark/m3data/0923/auxiliary_data", help="The directory which change stats file.")
     parser.add_argument("--inconsistency_dir", "-s", default="/proj/m3benchmark/m3data/0923/auxiliary_data", help="The directory which contains inconsistent ground truth samples ids.")
-    parser.add_argument("--output_dir",'-od', default="/proj/m3benchmark/m3data/0923/train_data/sft_exploratory", help="Directory to save files.")
+    parser.add_argument("--output_dir",'-od', required=True, help="Directory to save files.") # "/proj/m3benchmark/m3data/0923/train_data/sft_exploratory"
     parser.add_argument('--output_filename', '-of', help="Filename to save trajectories.")
     args = parser.parse_args()
     run(args=args)
