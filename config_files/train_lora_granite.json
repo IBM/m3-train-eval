@@ -24,7 +24,7 @@
   "lora_alpha": 32,
   "lora_dropout": 0.1,
 
-  "deepspeed": "./config_files/training/zero_stage2_config.json",
+  "deepspeed": "./config_files/training/zero_stage3_offload_config.json",
   "ddp_find_unused_parameters": null,
   "do_eval": false,
   "do_train": true,
