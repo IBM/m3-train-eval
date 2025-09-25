@@ -149,12 +149,12 @@ def load_model(
             if model_args.train_from_scratch:
                 model = load_class.from_config(config, trust_remote_code=model_args.trust_remote_code)
             else:
-                model = load_class.from_pretrained(**init_kwargs)
-    #             model = AutoModelForCausalLM.from_pretrained(
-    #    "ibm-granite/granite-3.3-8b-instruct",
-    #
-    #     torch_dtype=torch.float32,
-    # )
+                #model = load_class.from_pretrained(**init_kwargs)
+                model = AutoModelForCausalLM.from_pretrained(
+       "ibm-granite/granite-3.3-8b-instruct",
+
+        torch_dtype=torch.float32,
+    )
                 if getattr(model.config, "model_type", None) == "qwen2_5_omni":
                     model = model.thinker  # use part of Omni model
             logger.info(f"Model loaded from {model_args.model_name_or_path}.")
