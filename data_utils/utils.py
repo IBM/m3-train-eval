@@ -205,7 +205,7 @@ def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required
     if isinstance(pool, str):
         pool = json.loads(pool)
 
-    # pool = {p['function']['name']: p for p in pool} # Uncomment this if we need to run cusyom_loader.py
+    # pool = {p['function']['name']: p for p in pool} # Uncomment this if we need to run custom_loader.py
     pool = {p['name']: p for p in pool}
     downsampled_tools = []
     if required_tools:
@@ -238,7 +238,7 @@ def update_retrieval_tools(tool_pool: Union[str, list]) -> list[dict]:
     if isinstance(pool, str):
         pool = json.loads(pool)
 
-    # pool = {p['function']['name']: p for p in pool} # Uncomment this if we need to run cusyom_loader.py
+    # pool = {p['function']['name']: p for p in pool} # Uncomment this if we need to run custom_loader.py
     pool = {p['name']: p for p in pool}
     retrievers_present = [k for k in pool.keys() if (k.startswith("retriever_"))]
     retrievers = [k for k in pool.keys() if (k.startswith("retriever_")) and (k not in RETRIEVERS_TO_IGNORE)]
