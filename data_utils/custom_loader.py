@@ -526,19 +526,19 @@ class AgentTrajectorySFTData(BaseDataset):
             tool_policy.tool_usage_policy = traj['tool_usage_policy']
             tool_policy.final_answer_policy = traj['final_answer_policy']
             
-            # Downsample the tools to fit in memory
-            interactions = traj['interactions']
-            required = []
-            for i in interactions:
-                if isinstance(interactions, dict):
-                    entry = interactions[i]
-                else:
-                    entry = i
-                if entry['metadata']['action'] == "API":
-                    # if RAG, this will already be include because keep_retrievers=True
-                    required.append(entry['metadata']['action_arguments']['name'])
+            # # Downsample the tools to fit in memory
+            # interactions = traj['interactions']
+            # required = []
+            # for i in interactions:
+            #     if isinstance(interactions, dict):
+            #         entry = interactions[i]
+            #     else:
+            #         entry = i
+            #     if entry['metadata']['action'] == "API":
+            #         # if RAG, this will already be include because keep_retrievers=True
+            #         required.append(entry['metadata']['action_arguments']['name'])
             tools = update_retrieval_tools(tools)
-            tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
+            # tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
 
             time_steps = list(traj['interactions'].keys())
             time_steps = sorted(time_steps, key=lambda x: int(x))
@@ -559,6 +559,7 @@ class AgentTrajectorySFTData(BaseDataset):
                                 "tool_policy": tool_policy,
                                 'domain': traj['domain'], 
                                 'sample_id': traj['sample_id'], 
+                                'guid': traj['guid'], 
                                 'format': traj['format'], 
                                 'type': traj['type'], 
                                 'num_turns': traj['num_turns'], 
@@ -581,6 +582,7 @@ class AgentTrajectorySFTData(BaseDataset):
                         "tool_policy": tool_policy,
                         'domain': traj['domain'], 
                         'sample_id': traj['sample_id'], 
+                        'guid': traj['guid'], 
                         'format': traj['format'], 
                         'type': traj['type'], 
                         'num_turns': traj['num_turns'], 

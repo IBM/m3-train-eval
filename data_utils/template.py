@@ -1968,7 +1968,7 @@ register_template(
     format_assistant=StringFormatter(slots=["{{content}}<|end_of_text|>\n"]),
     format_system=StringFormatter(slots=["<|start_of_role|>system<|end_of_role|>{{content}}<|end_of_text|>\n"]),
     format_function=FunctionFormatter(slots=["{{content}}<|end_of_text|>\n"], tool_format="student_granite"),
-    format_observation=StringFormatter(slots=["<|start_of_role|>user<|end_of_role|>{{content}}<|end_of_text|>\n<|start_of_role|>assistant<|end_of_role|>"]),  # Granite 3.2/3.3 does not have special tokens to indicate tool calling response/results
+    format_observation=StringFormatter(slots=["<|start_of_role|>user<|end_of_role|><tool_response>{{content}}</tool_response><|end_of_text|>\n<|start_of_role|>assistant<|end_of_role|>"]),  # Granite 3.2/3.3 does not have special tokens to indicate tool calling response/results
     format_tools=ToolFormatter(tool_format="student_granite"),
     # stop_words=["<|end_of_text|>"],  # We are not setting this. If set, stop words will be added to tokenizer's vocab. If they already exists in the vocab, no resizing is done. Adding this has no effect.
 )
