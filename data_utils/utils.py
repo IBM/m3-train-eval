@@ -14,6 +14,7 @@
 
 from copy import deepcopy
 import json
+import os
 from enum import Enum, unique
 import random
 from typing import TYPE_CHECKING, Any, Optional, TypedDict, Union
@@ -204,7 +205,7 @@ def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required
     if isinstance(pool, str):
         pool = json.loads(pool)
 
-    pool = {p['name']: p for p in pool}
+    pool = {p['function']['name']: p for p in pool}
     downsampled_tools = []
     if required_tools:
         for req in required_tools:
@@ -236,10 +237,37 @@ def update_retrieval_tools(tool_pool: Union[str, list]) -> list[dict]:
     if isinstance(pool, str):
         pool = json.loads(pool)
 
-    pool = {p['name']: p for p in pool}
+    pool = {p['function']['name']: p for p in pool}
     retrievers_present = [k for k in pool.keys() if (k.startswith("retriever_"))]
     retrievers = [k for k in pool.keys() if (k.startswith("retriever_")) and (k not in RETRIEVERS_TO_IGNORE)]
     if len(retrievers_present) != 0: # Single turn dataset don't have retrievers at all by design.
         assert len(retrievers) != 0, "No retrivers left after removing RED domain and BIRD Train retrivers."
     updated_tool = [v for k, v in pool.items() if k not in RETRIEVERS_TO_IGNORE]
     return updated_tool
+
+def load_data_files(dataset_dir: str, dataset: str) -> list[dict]:
+    # Collect trajectories
+    datasets = [dataset] if isinstance(dataset, str) else dataset
+    trajectories = []
+    for dataset in datasets:
+
+        logger.info(f"Reading dataset '{dataset}' from {dataset_dir}")
+        if dataset.endswith(".json"):
+            with open(os.path.join(dataset_dir, dataset), "r") as f:
+                new_trajectories = json.load(f)
+            logger.info(f"Located single training file containing {len(new_trajectories)} trajectories. ")
+            trajectories.extend(new_trajectories)
+
+        else:
+            single_dataset_dir = os.path.join(dataset_dir, dataset)
+            files = os.listdir(single_dataset_dir)
+            files = [f for f in files if f.startswith("trajectory")]
+            files = sorted(files)
+            logger.info(f"Located {len(files)} individual trajectory files in {single_dataset_dir}")
+            for f in files:
+                with open(os.path.join(single_dataset_dir, f), "r") as f:
+                    trajectories.append(json.load(f))
+
+    assert len(trajectories) > 0, f"Failed to find any trajectories files in {dataset_dir}"
+    logger.info(f"Returning a total of {len(trajectories)} trajectories from {len(datasets)} datasets in {dataset_dir}")
+    return trajectories

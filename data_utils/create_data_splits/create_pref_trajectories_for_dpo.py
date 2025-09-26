@@ -6,16 +6,14 @@ import json
 import os
 import random
 
-import pdb
-
 save_pref_data_at = './data/pairwise_pref'
 CHANGE_FILES = [
-    # "./data/change_stat_train_multiturn.json",
+    "./data/change_stat_train_multiturn.json",
     "./data/change_stat_train_single_turn.json"
 ]
 IGNORE_FILES = [
-    # "./data/inconsistency_by_domain.json", 
-    # "./data/inconsistency_by_domain.json", 
+    "./data/inconsistency_by_domain.json", 
+    "./data/inconsistency_by_domain.json", 
     "./data/inconsistency_by_domain_single_turn.json", 
     "./data/inconsistency_by_domain_single_turn.json", 
 ]
@@ -25,35 +23,28 @@ OOD_DOMAINS = ["video_games", "chicago_crime", "simpson_episodes",
                "public_review_platform", "movie","movie_3", "movielens", "movies_4"]
 
 EXPLORATORY_TRAJECTORY_DIRS = [
-    # '/proj/m3benchmark/m3data/0905/balanced_rest_v4_exploratory_trajectory',
-    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_chunked_scenarios_exp',
+    '/proj/m3benchmark/m3data/0905/balanced_rest_v4_exploratory_trajectory',
+    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_chunked_scenarios_exp',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_exploratory_trajectory',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_chunked_scenarios_st_exp',
-    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_gt_exp',
-    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_scenarios_chunked_exp'
     ]
 
 GROUND_TRUTH_TRAJECTORY_DIRS = [
-    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_expert',
-    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_scenarios_expert',
+    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_expert',
+    '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_scenarios_expert',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_expert',
     '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_scenarios_expert',
-    # '/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_gt',
-    # 'proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2/test_chunked_scenarios'
     ]
 
 DATASET_SPLIT_LABELS = [
-    # 'train_multi_turn_no_scenarios',
-    # 'train_multi_turn_with_scenarios',
+    'train_multi_turn_no_scenarios',
+    'train_multi_turn_with_scenarios',
     'train_single_turn_no_scenarios',
     'train_single_turn_with_scenarios',
-    # 'test_multi_turn_no_scenarios',
-    # 'test_multi_turn_with_scenarios'
     ]
 MIXED_SCENARIO_LABELS = [
-    # "train_multi_turn", 
+    "train_multi_turn", 
     "train_single_turn", 
-    # "test_multi_turn"
     ]
 
 if not os.path.exists(save_pref_data_at):
