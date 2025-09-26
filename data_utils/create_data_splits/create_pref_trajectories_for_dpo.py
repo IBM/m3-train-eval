@@ -269,7 +269,7 @@ def format_ground_truth_pairs(mix_scenarios: bool):
     
         chosen_agent_data = collect_agent_data(chosen_agent_dir, ignore_list, with_alt=False)
         rejected_agent_data = collect_agent_data(rejected_agent_dir, ignore_list, with_alt=False)
-        pdb.set_trace()
+
         # Match common sample_ids
         common_sample_ids = set(chosen_agent_data.keys()) & set(rejected_agent_data.keys())
         grouped = []
@@ -307,12 +307,10 @@ def format_ground_truth_pairs(mix_scenarios: bool):
                 "rejected_trajectory": rejected_agent_data[trajectory_id]['turn_wise_interactions'],
             })
         print(f"FAILED TO MATCH FIELDS FOR {match_failures} SAMPLES, TOOLS FOR {tool_failures} SAMPLES, AND SYSTEM PROMPTS FOR {system_failures} SAMPLES")
-        pdb.set_trace()
         return grouped
 
     # Read the trajectories of pair of agents and create preference data
     for agent_dir, gt_dir, dataset, ignore in zip(EXPLORATORY_TRAJECTORY_DIRS, GROUND_TRUTH_TRAJECTORY_DIRS, DATASET_SPLIT_LABELS, IGNORE_FILES):
-        pdb.set_trace()
         grouped_data = group_pref_data_by_sample_id(
             gt_dir, 
             agent_dir,

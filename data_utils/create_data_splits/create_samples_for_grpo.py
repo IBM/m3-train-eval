@@ -21,7 +21,7 @@ CHANGE_STATS=[
     "", # Test Multi-turn
 ]
 save_grpo_data_at=""
-probability_of_using_original=0.5
+scenario_mixing_probability=0.5
 OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0905/grpo"
 
 def load_metadata(file_path):
@@ -62,7 +62,7 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
             # If there are any samples where the scenario did not change the ground truth
             # 1. flip a coin to decide if we keep the sample with scenario or the original, then
             # 2. if we keep the scenario and there's more than one, pick one at random
-            keep_original = 1 if random.random() < probability_of_using_original else 0
+            keep_original = 1 if random.random() < scenario_mixing_probability else 0
             if keep_original==1:
                 item["guid"] = str(item["dataset_name"])+"_"+str(item["sample_id"])
                 keep_scenarios.append(item)
