@@ -232,14 +232,12 @@ def create_and_inject_thoughts(
             # # Spawn on-the-go additional instr. to compress tool response into the final answer. This will go into the
             # # agentic system prompt to be used for all turns (only during generation not during conditioning on context-response pairs)
             # Spawn a random integer between min to max
-            print(range_tool_resp_cut_off[0])
-            print(range_tool_resp_cut_off[1])
             resp_cutoff_thresh = random.randint(range_tool_resp_cut_off[0], range_tool_resp_cut_off[1])
             from envs.constants import COMPRESS_TOOL_RESPONSE_INSTRUCTION
             answer_generator_additional_instr = COMPRESS_TOOL_RESPONSE_INSTRUCTION.format(
                 curr_resp_cutoff=resp_cutoff_thresh)
-            sample['resp_cutoff_thresh']: int = resp_cutoff_thresh
-            sample['resp_cutoff_inst']: str = answer_generator_additional_instr
+            sample['resp_cutoff_thresh'] = int(resp_cutoff_thresh)
+            sample['resp_cutoff_inst'] = str(answer_generator_additional_instr)
 
             previous_dialogue = []
             turns = []  # For storing turn-level query-answer pairs
@@ -761,8 +759,8 @@ if __name__ == "__main__":
     # # 2. Create the final training data
     #if not args.no_thoughts:
     _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
-    _created_training_data_stats = create_and_inject_thoughts(_save_parsed_data_at, _save_final_data_at,
-                                                            args.domain, _model_name_or_path, args.no_thoughts)
+    _created_training_data_stats = create_and_inject_thoughts(parsed_data_dir=_save_parsed_data_at, _save_data_at=_save_final_data_at,
+                                                            domain=args.domain, model_name_or_path=_model_name_or_path, no_thoughts=args.no_thoughts)
     logger.info(json.dumps(_created_training_data_stats, indent=4))
     with open(os.path.join(_log_dir, 'final_training_data_stats.json'), 'w') as f:
         json.dump(_created_training_data_stats, f, indent=4)
