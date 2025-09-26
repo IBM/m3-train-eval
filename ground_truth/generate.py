@@ -232,6 +232,8 @@ def create_and_inject_thoughts(
             # # Spawn on-the-go additional instr. to compress tool response into the final answer. This will go into the
             # # agentic system prompt to be used for all turns (only during generation not during conditioning on context-response pairs)
             # Spawn a random integer between min to max
+            print(range_tool_resp_cut_off[0])
+            print(range_tool_resp_cut_off[1])
             resp_cutoff_thresh = random.randint(range_tool_resp_cut_off[0], range_tool_resp_cut_off[1])
             from envs.constants import COMPRESS_TOOL_RESPONSE_INSTRUCTION
             answer_generator_additional_instr = COMPRESS_TOOL_RESPONSE_INSTRUCTION.format(
