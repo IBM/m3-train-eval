@@ -537,7 +537,7 @@ class AgentTrajectorySFTData(BaseDataset):
             #     if entry['metadata']['action'] == "API":
             #         # if RAG, this will already be include because keep_retrievers=True
             #         required.append(entry['metadata']['action_arguments']['name'])
-            tools = update_retrieval_tools(tools)
+            # tools = update_retrieval_tools(tools)
             # tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
 
             time_steps = list(traj['interactions'].keys())
