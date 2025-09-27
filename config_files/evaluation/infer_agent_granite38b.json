@@ -15,7 +15,7 @@
   "expert_max_new_tokens": 4096,
 
   "agent_model_name_or_path": "ibm-granite/granite-3.3-8b-instruct",
-  "max_new_tokens": 2048,
+  "max_new_tokens": 4096,
   "agent_template": "student_granite3",
   "is_hf_agent": true,
   "path_to_hf_config": "./config_files/infer_base.json",
