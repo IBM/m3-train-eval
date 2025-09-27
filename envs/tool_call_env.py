@@ -605,6 +605,11 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         self.domain = curr_instance_data["domain"]
         self.sample_id = curr_instance_data["sample_id"]
+        # Optional parameters used for reporting
+        self.guid=curr_instance_data.get("guid",None)
+        self.num_turns=curr_instance_data.get("num_turns",None)
+        self.num_hops=curr_instance_data.get("num_hops",None)
+        self.type=curr_instance_data.get("type",None)
 
         # For Multi-turn data
         if "turns" in curr_instance_data:
