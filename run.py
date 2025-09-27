@@ -50,7 +50,10 @@ def get_alternate_action_trace(state, env, policy, initiating_actor: str) -> Lis
 
 def run_agent(args):
     # ########################################## Load the config file ########################################## #
-    path_to_config = os.path.join('config_files', 'infer_agent.json')
+    if not args.infer_config:
+        path_to_config = os.path.join('config_files', 'infer_agent.json')
+    else:
+        path_to_config = args.infer_config
     with open(path_to_config) as f:
         config = json.load(f)
     logger.info("Loaded the agent run config from {}".format(path_to_config))
@@ -215,8 +218,12 @@ def run_agent(args):
 
         expert_agent.initialize(env)
         agent_trajectory = {
+            'guid': env.guid,
             'system': env.system,
             'domain': env.domain,
+            'num_turns':env.num_turns,
+            'num_hops':env.num_hops,
+            'type':env.type,
             'sample_id': env.sample_id,
             'tools': env.tools,
             'interactions': {},
@@ -471,5 +478,6 @@ if __name__ == "__main__":
     parser.add_argument('--input_filename', '-i', default=None, help="Input filename.")
     parser.add_argument('--scenario_with_assist_mode', action='store_true')
     parser.add_argument('-s', action='store_true',help="Run for scenario mode.")
+    parser.add_argument('--infer_config','-ic',help="Config file for model training and evaluation. Default value config_files/infer_agent.json")
     args = parser.parse_args()
     run_agent(args)
