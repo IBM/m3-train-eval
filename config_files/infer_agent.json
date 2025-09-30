@@ -14,7 +14,7 @@
   "expert_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
   "expert_max_new_tokens": 4096,
 
-  "agent_model_name_or_path": "ibm-granite/granite-3.2-2b-instruct",
+  "agent_model_name_or_path": "ibm-granite/granite-3.3-8b-instruct",
   "max_new_tokens": 4096,
   "agent_template": "student_granite3",
   "is_hf_agent": true,
