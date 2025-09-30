@@ -22,7 +22,10 @@ from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
 from data_utils.utils import downsample_tools, update_retrieval_tools
-
+from transformers import AutoModelForCausalLM, AutoTokenizer
+device = "auto"
+model_path = "ibm-granite/granite-3.0-8b-base"
+tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 
 if TYPE_CHECKING:
@@ -573,6 +576,8 @@ class M3ToolCallEnv(ToolCallEnv):
 
         # Init. the document database here
         self.doc_db, self.document_collections = None, None
+        self.discard_long_response = True
+        self.discard_token_n = 4096
 
         super().__init__(
             horizon,
@@ -612,6 +617,12 @@ class M3ToolCallEnv(ToolCallEnv):
             self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
             self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
             self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in curr_instance_data["turns"]]
+            if self.discard_long_response:
+                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in self.raw_answers]
+                max_raw_answer_len = max(raw_answer_token_lens)
+                if max_raw_answer_len > self.discard_token_n:
+                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")
+
         # For [Older] Single-turn data
         else:
             self.user_queries = [curr_instance_data['merged_query']]
