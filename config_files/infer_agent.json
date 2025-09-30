@@ -1,10 +1,6 @@
 {
   "path_to_env_vars": "./.env",
-<<<<<<< HEAD
-  "path_to_env_data": "./data/olympics_multiturn_bird_chunked_final.json",
-=======
   "path_to_env_data": "/proj/m3benchmark/m3data/0923/evaluation_data/ood_multi_turn_mixed.json",
->>>>>>> 69929db (Create test data)
   "horizon": 10,
 
   "resume_instance": null,
