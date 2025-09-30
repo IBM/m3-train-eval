@@ -724,8 +724,8 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             dataset_dir = os.path.join(self.data_args.dataset_dir, dataset)
             files = os.listdir(dataset_dir)
             files = [f for f in files if f.startswith("trajectory")]
-            files = sorted(files, key=lambda x: int(x.split(".")[0].split("_")[-1]))
-
+            #files = sorted(files, key=lambda x: int(x.split(".")[0].split("_")[-1]))
+            files = sorted(files, key=lambda x: int(x.split("_sc")[0].split("_")[-1]))
             trajectories = []
             for f in files:
                 with open(os.path.join(dataset_dir, f), "r") as f:
