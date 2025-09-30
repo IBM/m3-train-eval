@@ -475,7 +475,7 @@ def run_agent(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to")
-    parser.add_argument('--input_filename', '-i', default=None, help="Input filename.")
+    parser.add_argument('--input_filename', '-i', default="data/soccer_2016_multiturn_bird_chunked_final.json", help="Input filename.")
     parser.add_argument('--scenario_with_assist_mode', action='store_true')
     parser.add_argument('-s', action='store_true',help="Run for scenario mode.")
     parser.add_argument('--infer_config','-ic',help="Config file for model training and evaluation. Default value config_files/infer_agent.json")
