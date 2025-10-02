@@ -629,6 +629,7 @@ class M3ToolCallEnv(ToolCallEnv):
                     raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")
 
         # For [Older] Single-turn data
+        # TODO : Long answer length to be fixed in this one        
         else:
             self.user_queries = [curr_instance_data['merged_query']]
             self.golden_answers = [curr_instance_data['answer']]
@@ -644,6 +645,7 @@ class M3ToolCallEnv(ToolCallEnv):
             if isinstance(trajectory[0], list):
 
                 # Get the sub-questions (in order) that the agent/expert should try to answer
+                response_lst=[]
                 ordered_sub_ques_composition = []
                 for curr_turn_traj in trajectory:
                     curr_turn_ordered_sub_ques_composition = []
@@ -651,6 +653,10 @@ class M3ToolCallEnv(ToolCallEnv):
                     hops = [(curr_turn_traj[i], curr_turn_traj[i + 1]) for i in
                             range(0, len(curr_turn_traj), 2)]  # (s, a)
                     for hop_idx, (item_0, item_1) in enumerate(hops):
+                        if "response" in item_1.keys():
+                            response_lst.append(item_1["response"])
+                        if "response" in item_0.keys():
+                            response_lst.append(item_0["response"])
                         if "answer" in item_1.keys():  # If action is a Final action
                             continue
                         else:
@@ -666,8 +672,14 @@ class M3ToolCallEnv(ToolCallEnv):
                             else:
                                 raise ValueError(f"Unknown agent of type {item_1['agent']}")
                     ordered_sub_ques_composition.append(json.dumps(curr_turn_ordered_sub_ques_composition))
+            if self.discard_long_response:
+                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in response_lst]
+                max_raw_answer_len = max(raw_answer_token_lens)
+                if max_raw_answer_len > self.discard_token_n:
+                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")                    
 
             # For [Older] Single-turn data
+            # TODO : Long answer length to be fixed in this one
             else:
                 # Get the sub-questions (in order) that the agent/expert should try to answer
                 ordered_sub_ques_composition = []
