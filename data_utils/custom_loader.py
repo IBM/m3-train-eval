@@ -107,8 +107,8 @@ class BaseDataset(TorchDataset):
         inputs, labels, attn_masks, input_lens = [], [], [], []
         images, videos, audios = [], [], []
 
-        pbar = tqdm(total=len(self), ncols=0, desc=f"Converting examples to features: ")
-        for i in range(len(self)):
+        pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
+        for i in range(len(self.processed_samples)):
 
             sample = self.processed_samples[i]
             if sample is None:
@@ -201,9 +201,9 @@ class BaseDataset(TorchDataset):
         inputs, labels, attn_masks, input_lens = [], [], [], []
         images, videos, audios = [], [], []
 
-        pbar = tqdm(total=len(self), ncols=0, desc=f"Converting examples to features: ")
+        pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
         stats = []
-        for i in range(len(self)):
+        for i in range(len(self.processed_samples)):
 
             sample = self.processed_samples[i]
             if sample is None:
@@ -285,7 +285,8 @@ class BaseDataset(TorchDataset):
                 label_ids += [self.tokenizer.eos_token_id]
             attn_mask = [1] * len(input_ids)
             if len(input_ids) > 17000:
-                logger.info(f"Skipping data point of with token length: {len(input_ids)}")
+                # label_ids = [IGNORE_INDEX] * len(label_ids)
+                logger.info(f"Ignoring data point of with token length: {len(input_ids)}")
                 continue
             inputs.append(input_ids)
             labels.append(label_ids)
@@ -315,8 +316,8 @@ class BaseDataset(TorchDataset):
         inputs, labels, attn_masks, input_lens = [], [], [], []  # This will now be a list of dicts
         images, videos, audios = [], [], []
 
-        pbar = tqdm(total=len(self), ncols=0, desc=f"Converting examples to preference features: ")
-        for i in range(len(self)):
+        pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to preference features: ")
+        for i in range(len(self.processed_samples)):
 
             sample = self.processed_samples[i]
             if sample is None:
@@ -409,6 +410,10 @@ class BaseDataset(TorchDataset):
                 pref_attn_masks[key] = attn_mask
                 pref_input_lens[key] = len(input_ids)
 
+            if any([traj_lth > 17000 for traj_lth in pref_input_lens.values()]):
+                # label_ids = [IGNORE_INDEX] * len(label_ids)
+                logger.info(f"Ignoring data point of with token length: {len(input_ids)}")
+                continue
             inputs.append(pref_inputs)
             labels.append(pref_labels)
             attn_masks.append(pref_attn_masks)
@@ -435,7 +440,8 @@ class BaseDataset(TorchDataset):
         return self.processed_samples[i]
 
     def __len__(self):
-        return len(self.processed_samples)
+        return len(self.inputs)
+
 
     def __getitem__(self, i):
         if not self.for_pref_modelling:

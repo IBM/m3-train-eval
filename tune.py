@@ -1,4 +1,7 @@
+
+# Print statements to track logs, imports are very slow. 
 print("STARTING IMPORTS")
+import argparse
 import json
 import os
 from datetime import datetime
@@ -10,12 +13,7 @@ from transformers.utils.generic import strtobool
 
 from hparams import get_train_args
 from extras.custom import is_rank_0, set_run_environment, make_json_serializable, gpu_supports_fa2, create_dir
-from data_utils.utils import load_data_files
 
-
-DEBUG=False
-DEFAULT_DEBUG_PATH='./config_files/debug_train.json'
-DEFAULT_PATH='./config_files/train_lora_g4.json'
 
 def get_system_cuda_version():
     try:
@@ -58,38 +56,33 @@ def verify_cuda():
 
 if is_rank_0():
     set_run_environment(dotenv_path="./.env")
-
-    # Check that data exists before we start up. 
-    if DEBUG:
-        path_to_config = DEFAULT_DEBUG_PATH
-    else:
-        path_to_config = DEFAULT_PATH
-    with open(os.path.join(path_to_config), 'r') as f:
-        override_args = json.load(f)
-    
-    logger.info(f"USING CONFIG FILE: {path_to_config}")
-
-    # Check that data exists and can be loaded. 
-    data_files = load_data_files(override_args["dataset_dir"], override_args["dataset"])
-    assert len(data_files) > 0, f"No data found at {override_args['dataset_dir']}"
-
-    verify_cuda()
-
     print("LOGGING IN")
     # Login with the hf_token
     from huggingface_hub import login
     login(token=os.environ.get("HF_TOKEN", ""))
 
-def main():
+def main(path_to_config: str):
 
     verify_cuda()
+
     # Load the user-specified training configuration
-    if DEBUG:
-        path_to_config = DEFAULT_DEBUG_PATH
-    else:
-        path_to_config = DEFAULT_PATH
     with open(os.path.join(path_to_config), 'r') as f:
         override_args = json.load(f)
+
+    # Check that data exists before we start up. 
+    with open(os.path.join(path_to_config), 'r') as f:
+        override_args = json.load(f)
+    
+    logger.info(f"USING CONFIG FILE: {path_to_config}")
+    for dataset in override_args['dataset']:
+        if dataset.endswith(".json"):
+            full_data_path = os.path.join(override_args["dataset_dir"], dataset)
+            assert os.path.isfile(full_data_path), f"No data found at {full_data_path}"
+        else:
+            single_dataset_dir = os.path.join(override_args["dataset_dir"], dataset)
+            files = os.listdir(single_dataset_dir)
+            files = [f for f in files if f.startswith("trajectory")]
+            assert len(files) > 0, f"No data found at {override_args['dataset_dir']}"
 
     # Create the output dir
     model_dir = override_args['model_name_or_path'].split('/')[-1]
@@ -169,4 +162,11 @@ def main():
 
 if __name__ == '__main__':
     # To run with accelerate, $ accelerate launch --config_file config_ds_zero_stage2_no_fp16.yaml tune_lora_baseline.py
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tune_config", "-tc", type=str, required=True)
+    args = parser.parse_args()
+
+    config = args.tune_config
+    assert os.path.isfile(config)
+
+    main(config)
