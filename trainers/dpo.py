@@ -19,6 +19,7 @@ from model.loader import load_model, create_ref_model
 from trainers.base import BaseTrainer
 from trainers.utils import nested_detach, get_batch_logps
 from trl.models.utils import prepare_fsdp, prepare_deepspeed
+from torch.cuda.amp import autocast, GradScaler
 
 if TYPE_CHECKING:
     from transformers import PreTrainedModel
@@ -366,13 +367,23 @@ class Trainer(BaseTrainer):
         if self.finetuning_args.use_ref_model:
             batch = nested_detach(batch, clone=True)  # avoid error
 
-        all_logits: torch.Tensor = model(
-            input_ids=batch["input_ids"],
-            attention_mask=batch["attention_mask"],
-            labels=batch["labels"],
-            return_dict=True,
-            use_cache=False
-        ).logits.to(torch.float32)
+        torch.cuda.empty_cache()
+
+        # all_logits: torch.Tensor = model(
+        #     input_ids=batch["input_ids"],
+        #     attention_mask=batch["attention_mask"],
+        #     labels=batch["labels"],
+        #     return_dict=True,
+        #     use_cache=False
+        # ).logits.to(torch.float32)
+        with autocast():
+            all_logits: torch.Tensor = model(
+                input_ids=batch["input_ids"],
+                attention_mask=batch["attention_mask"],
+                labels=batch["labels"],
+                return_dict=True,
+                use_cache=False
+            ).logits
 
         all_logps, valid_length = get_batch_logps(
             logits=all_logits, labels=batch["labels"], ld_alpha=(self.ld_alpha if not is_ref_model else None)
