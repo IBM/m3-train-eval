@@ -41,7 +41,7 @@ for mn in "${MODEL_NAME[@]}"; do
     for it in "${INPUT_TYPE[@]}"; do
         mkdir -p runs/${RUN_DATE}/${mn}/${it}
         gen_cmd_args="-i /proj/m3benchmark/m3data/0923/evaluation_data/${it}.json -o /proj/m3benchmark/m3data/0923/m3_test_evaluation/${mn}/${it}/ -ic /dccstor/arnaik_data/routing/m3-train-eval/config_files/evaluation/infer_agent_${mn}.json"
-        g_cmd="${CCC_CMD_NO_GPU} -o runs/${RUN_DATE}/${mn}/${it}/%J_${id}.log ${GENRATION_CMD} ${gen_cmd_args}"
+        g_cmd="${CCC_CMD_GPU} -o runs/${RUN_DATE}/${mn}/${it}/%J_${id}.log ${GENRATION_CMD} ${gen_cmd_args}"
         logHeader "Running: ${g_cmd}"
         eval "$g_cmd"
     done

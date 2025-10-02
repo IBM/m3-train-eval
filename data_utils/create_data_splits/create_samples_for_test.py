@@ -34,12 +34,11 @@ def create_context_response_pair(item):
     if item["num_turns"] == 1:
         return [item]
     else:
-        cnt=0
         question_types=re.findall(r"\([^()]*\)", item["type"]) # Splits "(API-API)(RAG)(API)(API-RAG-API)" into ['(API-API)', '(RAG)', '(API)', '(API-RAG-API)']
         for traj_idx in range(0,len(item["trajectory"])):
             # Construct the item
             new_item={
-                "sample_id": item["sample_id"]+"_"+str(cnt),
+                "sample_id": item["sample_id"]+"_"+str(traj_idx),
                 "doc_collections":item["doc_collections"],
                 "domain":item["domain"],
                 "tools":item["tools"],
@@ -47,11 +46,11 @@ def create_context_response_pair(item):
                 "resp_cutoff_thresh":item["resp_cutoff_thresh"],
                 "resp_cutoff_inst":item["resp_cutoff_inst"],
             }
-            new_item["turns"]=item["turns"][0:traj_idx]
-            new_item["trajectory"]=item["trajectory"][0:traj_idx]
-            new_item["type"]="".join(question_types[0:traj_idx])
+            new_item["turns"]=item["turns"][0:(traj_idx+1)]
+            new_item["trajectory"]=item["trajectory"][0:(traj_idx+1)]
+            new_item["type"]="".join(question_types[0:(traj_idx+1)])
             new_item["num_turns"]=len(new_item["turns"])
-            new_item["num_hops"]=item["num_hops"][0:traj_idx]
+            new_item["num_hops"]=item["num_hops"][0:(traj_idx+1)]
             final_samples.append(new_item)
         return final_samples
 
@@ -131,6 +130,15 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
                     keep_scenarios.append(updated_pair_item)
     return keep_scenarios
 
+def check_dataset(data):
+    # All sample IDs are unique as well as num_hops and num_turns represent the recorded stats
+    sample_id_lst=[]
+    for item in data:
+        sample_id_lst.append(item["sample_id"]+"_"+item["domain"])
+        assert item["num_turns"] == len(item["trajectory"])
+    assert len(sample_id_lst)==len(set(sample_id_lst))
+    return True
+
 def main():
     for (foldername_no_scenario, foldername_with_scenario), label, change_stat_filename in zip(AGENT_DIRS,LABELS,CHANGE_STATS):
         if change_stat_filename != "":
@@ -150,6 +158,7 @@ def main():
                 change_stat_domain=create_stat(data_with_scenario)
             mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain))
         print(f"{label}, {foldername_no_scenario}, {foldername_with_scenario}, {len(mixed_data)}")
+        assert check_dataset(mixed_data)
         with open(f"{OUTPUT_FOLDERNAME}/{label}.json", 'w') as f:
             json.dump(mixed_data, f)
 
