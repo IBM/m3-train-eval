@@ -30,8 +30,6 @@ INPUT_DIR="/proj/m3benchmark/m3data/0923/evaluation_data"
 OUTPUT_DIR="/proj/m3benchmark/m3data/0923/m3_test_evaluation//${RUN_TYPE}"
 CONFIG_DIR="/dccstor/arnaik_data/routing/m3-train-eval/config_files/evaluation"
 
-mkdir -p ${OUTPUT_DIR}
-
 CCC_CMD_NO_GPU='bsub -n 1 -U infusion -R "rusage[mem=20GB, cpu=4]"'
 CCC_CMD_GPU='bsub -n 1 -U infusion -gpu "num=1:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "rusage[mem=64GB, cpu=4]"'
 GENRATION_CMD="PYTHONPATH=./ python run.py"
@@ -39,6 +37,7 @@ GENRATION_CMD="PYTHONPATH=./ python run.py"
 for mn in "${MODEL_NAME[@]}"; do
     for it in "${INPUT_TYPE[@]}"; do
         mkdir -p runs/${RUN_DATE}/${mn}/${it}
+        mkdir -p ${OUTPUT_DIR}/${mn}/${it}/
         gen_cmd_args="-i ${INPUT_DIR}/${it}.json -o ${OUTPUT_DIR}/${mn}/${it}/ -ic ${CONFIG_DIR/infer_agent_${mn}.json"
         g_cmd="${CCC_CMD_GPU} -o runs/${RUN_DATE}/${mn}/${it}/%J_${id}.log ${GENRATION_CMD} ${gen_cmd_args}"
         logHeader "Running: ${g_cmd}"
