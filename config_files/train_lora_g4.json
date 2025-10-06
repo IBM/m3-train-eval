@@ -1,8 +1,8 @@
 {
   "template": "student_granite4",
   "cutoff_len": 16384,
-  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_exploratory/",
-  "dataset": ["mixed_sft_data.json"],
+  "dataset_dir": "/proj/m3benchmark/m3data/0923/sft_warm_up/",
+  "dataset": ["sft_warm_up_data.json"],
   "mask_history": true,
 
   "model_name_or_path": "/proj/m3benchmark/granite4_ckpts/granite-4.0-tiny-prerelease-greylock/r250825a",

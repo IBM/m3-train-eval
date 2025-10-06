@@ -1,8 +1,8 @@
 {
   "template": "student_qwen3",
   "cutoff_len": 32768,
-  "dataset_dir": "/proj/m3benchmark/ben/",
-  "dataset": ["trajectories_meta_data_augmented"],
+  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth/",
+  "dataset": ["mixed_sft_data.json"],
   "mask_history": true,
 
   "model_name_or_path": "Qwen/Qwen3-8B",
@@ -24,7 +24,7 @@
   "lora_alpha": 32,
   "lora_dropout": 0.1,
 
-  "deepspeed": "./config_files/training/zero_stage2_config.json",
+  "deepspeed": "./config_files/training/zero_stage3_offload_config.json",
   "ddp_find_unused_parameters": null,
   "do_eval": false,
   "do_train": true,
