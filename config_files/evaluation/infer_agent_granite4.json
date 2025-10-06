@@ -17,7 +17,7 @@
   "agent_model_name_or_path": "/proj/m3benchmark/granite4_ckpts/granite-4.0-tiny-prerelease-greylock/r250825a",
   "max_new_tokens": 4096,
   "agent_template": "student_granite4",
-  "is_hf_agent": false,
+  "is_hf_agent": true,
   "path_to_hf_config": "./config_files/infer_base.json",
 
   "expert_assist_mode": null,
