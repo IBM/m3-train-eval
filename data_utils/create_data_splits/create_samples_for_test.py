@@ -18,13 +18,13 @@ LABELS = [
     ]
 CHANGE_STATS=[
     "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_ood_multi_turn.json", # OOD Multi-turn
-    "", # OOD Single Turn
-    # "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_ood_single_turn.json", # OOD Single Turn
+    "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_ood_single_turn.json", # OOD Single Turn
     "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_test_multi_turn.json", # Test Multi-turn
 ]
 save_grpo_data_at=""
 scenario_mixing_probability=0.5
-OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data"
+OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v2"
+NUM_SAMPLES=["400","800","1200","ALL"]
 
 def create_context_response_pair(item):
     """
@@ -95,7 +95,10 @@ def group_by_original_sample_id(data: list[dict]):
     grouped_data = defaultdict(list)
     for d in data:
         original_sample_id = str(d['sample_id']).split("_sc_")[0]
-        grouped_data[original_sample_id].append(d)
+        if ("ONLY_API" not in d['sample_id']) and ("ONLY_RAG" not in d['sample_id']):
+            continue
+        else:
+            grouped_data[original_sample_id].append(d)
     return grouped_data
 
 def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
@@ -117,7 +120,8 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
             # 1. flip a coin to decide if we keep the sample with scenario or the original, then
             # 2. if we keep the scenario and there's more than one, pick one at random
             keep_original = 1 if random.random() < scenario_mixing_probability else 0
-            if keep_original==1:
+            # if (keep_original==1) or (len(item_with_sceanrio)==0): # If we don't have any relevant scenarios to keep
+            if (keep_original==1):            
                 updated_pairs=create_context_response_pair(item)
                 for updated_pair_item in updated_pairs:
                     updated_pair_item["guid"] = str(updated_pair_item["domain"])+"_"+str(updated_pair_item["sample_id"])
@@ -139,6 +143,24 @@ def check_dataset(data):
     assert len(sample_id_lst)==len(set(sample_id_lst))
     return True
 
+def write_data_splits(data,label,num_samples_per_split=400):
+    data_split=None
+    num_splits=len(data)//num_samples_per_split
+    # All but last split created
+    for i in range(1,num_splits+1):
+        data_split=data[400*max(0,i-1):i*400]
+        output_filename=f"{OUTPUT_FOLDERNAME}/{label}_{NUM_SAMPLES[i-1]}.json"
+        with open(output_filename, 'w') as f:
+            json.dump(data_split, f)
+        print(f"File {output_filename} was written with {len(data_split)} samples.")
+    
+    # Last split
+    data_split=data[i*400:]
+    output_filename=f"{OUTPUT_FOLDERNAME}/{label}_{NUM_SAMPLES[-1]}.json"
+    with open(output_filename, 'w') as f:
+        json.dump(data_split, f)
+    print(f"File {output_filename} was written with {len(data_split)} samples.")
+
 def main():
     for (foldername_no_scenario, foldername_with_scenario), label, change_stat_filename in zip(AGENT_DIRS,LABELS,CHANGE_STATS):
         if change_stat_filename != "":
@@ -146,6 +168,10 @@ def main():
                 change_dict=json.load(f)
         else:
             change_dict=None
+
+   #if "ONLY_API" not in env.sample_id and "ONLY_RAG" not in env.sample_id:
+        #    logger.info("f{env.sample_id} is not supported correctly right now. Skipping!")
+        #    continue
         
         domain_names=[i.split("_multiturn_")[0] for i in os.listdir(foldername_no_scenario) if "_final.json" in i]
         mixed_data=[]
@@ -159,8 +185,7 @@ def main():
             mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain))
         print(f"{label}, {foldername_no_scenario}, {foldername_with_scenario}, {len(mixed_data)}")
         assert check_dataset(mixed_data)
-        with open(f"{OUTPUT_FOLDERNAME}/{label}.json", 'w') as f:
-            json.dump(mixed_data, f)
+        write_data_splits(mixed_data,label=label)
 
 if __name__=="__main__":
     main()
