@@ -15,7 +15,7 @@
   "expert_max_new_tokens": 4096,
 
   "agent_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
-  "max_new_tokens": 4096,
+  "max_new_tokens": 2048,
   "agent_template": "teacher_rits",
   "is_hf_agent": false,
   "path_to_hf_config": "./config_files/infer_base.json",
