@@ -251,10 +251,20 @@ def run_agent(args):
             if expert_assist.mode is None:
                 # Only take Agentic Actions
                 logger.info("Tasking Agent to take the action")
-                parsed_response = agent.take_action(
-                                    state=state,
-                                    include_thoughts=include_thoughts)
-                actor = 'agent'
+                # parsed_response = agent.take_action(
+                #                     state=state,
+                #                     include_thoughts=include_thoughts)
+                # actor = 'agent'
+                try:
+                    parsed_response = agent.take_action(
+                                        state=state,
+                                        include_thoughts=include_thoughts)
+                    actor = 'agent'
+                except Exception as e:
+                    logger.error(f"Couldn't process example for env instance {i} within inference to take action task due to error {e}. Skipping!")
+                    traceback.print_exc()
+                    next_example_inference=True # At inference we still want to write a failed log
+                    break
 
             elif expert_assist.mode == 'ground_truth' or expert_assist.mode == 'ground_truth_non_live':
                 # Only take Expert actions
@@ -441,26 +451,38 @@ def run_agent(args):
             continue
 
         # ###################################### Compute metrics/Save Metadata ###################################### #
-        metrics["truncated"] += env_metadata['truncated']
-        metrics["terminated"] += env_metadata['terminated']
-        metrics["success"] += env_metadata['success']
-
-        # Let's store other metadata as well
-        agent_metadata = {
-            "sample_id": env.sample_id,
-            "domain": env.domain,
-            "truncated": env_metadata['truncated'],
-            "terminated": env_metadata['terminated'],
-            "success": env_metadata['success'],
-            "total_time_steps": t,
-            "expert_assistance": {
-                "mode": expert_assist.mode,
-                "init_limit": expert_assist.init_limit,
-                "recent_limit": expert_assist.recent_limit,
-                "random_epsilon": expert_assist.random_epsilon,
-                "tracker": expert_assistance_tracker
+        if not next_example_inference:
+            metrics["truncated"] += env_metadata['truncated']
+            metrics["terminated"] += env_metadata['terminated']
+            metrics["success"] += env_metadata['success']
+            # Let's store other metadata as well
+            agent_metadata = {
+                "sample_id": env.sample_id,
+                "domain": env.domain,
+                "truncated": env_metadata['truncated'],
+                "terminated": env_metadata['terminated'],
+                "success": env_metadata['success'],
+                "total_time_steps": t,
+                "expert_assistance": {
+                    "mode": expert_assist.mode,
+                    "init_limit": expert_assist.init_limit,
+                    "recent_limit": expert_assist.recent_limit,
+                    "random_epsilon": expert_assist.random_epsilon,
+                    "tracker": expert_assistance_tracker
+                }
             }
-        }
+        else:
+            metrics["terminated"] += 1
+            # Let's store other metadata as well
+            agent_metadata = {
+                "sample_id": env.sample_id,
+                "domain": env.domain,
+                "truncated": False,
+                "terminated": True,
+                "success": False,
+                "total_time_steps": t,
+                "expert_assistance": {}
+            }
 
         # Save the Agent trajectory
         with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
