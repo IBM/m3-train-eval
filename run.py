@@ -243,7 +243,8 @@ def run_agent(args):
         expert_assistance_tracker = []
         t = 0
         expert_help_needed = False
-        next_example=False        
+        next_example=False
+        next_example_inference=False       
         while not done:
             logger.info(f"Current time step: {t}")
             alternate_trace = []  # List to save data for alternate actions if taken at the same state
