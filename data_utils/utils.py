@@ -31,13 +31,27 @@ from loguru import logger
 
 
 SLOTS = list[Union[str, set[str], dict[str, str]]]
-RETRIEVERS_TO_IGNORE = ["retriever_clapnq_california_schools", "retriever_clapnq_card_games", "retriever_clapnq_codebase_community", "retriever_clapnq_european_football_2" # BIRD Train
-                        , "retriever_clapnq_formula_1", "retriever_clapnq_superhero", "retriever_clapnq_toxicology", "retriever_clapnq_debit_card_specializing" # BIRD Train
-                        , "retriever_clapnq_financial", "retriever_clapnq_student_club", "retriever_clapnq_thrombosis_prediction" # BIRD Train
+RETRIEVERS_TO_IGNORE = ["retriever_clapnq_california_schools", "retriever_clapnq_card_games", "retriever_clapnq_codebase_community", "retriever_clapnq_european_football_2" # BIRD Dev
+                        , "retriever_clapnq_formula_1", "retriever_clapnq_superhero", "retriever_clapnq_toxicology", "retriever_clapnq_debit_card_specializing" # BIRD Dev
+                        , "retriever_clapnq_financial", "retriever_clapnq_student_club", "retriever_clapnq_thrombosis_prediction" # BIRD Dev
                         , "retriever_clapnq_car_retails", "retriever_clapnq_synthea", "retriever_clapnq_shipping", "retriever_clapnq_cs_semester", "retriever_clapnq_food_inspection_2" # RED Domains
                         , "retriever_clapnq_sales", "retriever_clapnq_software_company", "retriever_clapnq_social_media", "retriever_clapnq_human_resources", "retriever_clapnq_regional_sales" # RED Domains
                         , "retriever_clapnq_works_cycles", "retriever_clapnq_retails", "retriever_clapnq_retail_world", "retriever_clapnq_retail_complains", "retriever_clapnq_shooting", "retriever_clapnq_superstore" # RED Domains
                         ]
+
+RETRIEVERS_TO_KEEP=['retriever_clapnq_european_football_1', 'retriever_clapnq_sales_in_weather', 'retriever_clapnq_craftbeer', 'retriever_clapnq_soccer_2016', 'retriever_clapnq_restaurant'
+                    , 'retriever_clapnq_movie', 'retriever_clapnq_olympics', 'retriever_clapnq_language_corpus', 'retriever_clapnq_app_store', 'retriever_clapnq_sales', 'retriever_clapnq_video_games'
+                    , 'retriever_clapnq_image_and_language', 'retriever_clapnq_software_company', 'retriever_clapnq_authors', 'retriever_clapnq_movies_4', 'retriever_clapnq_social_media'
+                    , 'retriever_clapnq_human_resources', 'retriever_clapnq_regional_sales', 'retriever_clapnq_computer_student', 'retriever_clapnq_works_cycles', 'retriever_clapnq_food_inspection_2'
+                    , 'retriever_clapnq_citeseer', 'retriever_clapnq_bike_share_1', 'retriever_clapnq_law_episode', 'retriever_clapnq_cs_semester', 'retriever_clapnq_legislator', 'retriever_clapnq_world'
+                    , 'retriever_clapnq_cookbook', 'retriever_clapnq_university', 'retriever_clapnq_books', 'retriever_clapnq_shipping', 'retriever_clapnq_food_inspection'
+                    , 'retriever_clapnq_movie_platform', 'retriever_clapnq_shakespeare', 'retriever_clapnq_book_publishing_company', 'retriever_clapnq_car_retails', 'retriever_clapnq_mental_health_survey'
+                    , 'retriever_clapnq_hockey', 'retriever_clapnq_music_platform_2', 'retriever_clapnq_address', 'retriever_clapnq_menu', 'retriever_clapnq_professional_basketball', 'retriever_clapnq_cars'
+                    , 'retriever_clapnq_synthea', 'retriever_clapnq_genes', 'retriever_clapnq_retails', 'retriever_clapnq_talkingdata', 'retriever_clapnq_beer_factory', 'retriever_clapnq_chicago_crime'
+                    , 'retriever_clapnq_mondial_geo', 'retriever_clapnq_student_loan', 'retriever_clapnq_codebase_comments', 'retriever_clapnq_retail_world', 'retriever_clapnq_music_tracker', 'retriever_clapnq_disney'
+                    , 'retriever_clapnq_college_completion', 'retriever_clapnq_ice_hockey_draft', 'retriever_clapnq_world_development_indicators', 'retriever_clapnq_airline', 'retriever_clapnq_retail_complains'
+                    , 'retriever_clapnq_trains', 'retriever_clapnq_public_review_platform', 'retriever_clapnq_donor', 'retriever_clapnq_coinmarketcap', 'retriever_clapnq_simpson_episodes', 'retriever_clapnq_movie_3'
+                    , 'retriever_clapnq_shooting', 'retriever_clapnq_superstore', 'retriever_clapnq_movielens']
 
 @unique
 class Role(str, Enum):
@@ -241,7 +255,7 @@ def update_retrieval_tools(tool_pool: Union[str, list]) -> list[dict]:
     # pool = {p['function']['name']: p for p in pool} # Uncomment this if we need to run custom_loader.py
     pool = {p['name']: p for p in pool}
     retrievers_present = [k for k in pool.keys() if (k.startswith("retriever_"))]
-    retrievers = [k for k in pool.keys() if (k.startswith("retriever_")) and (k not in RETRIEVERS_TO_IGNORE)]
+    retrievers = [k for k in pool.keys() if (k.startswith("retriever_")) and (k in RETRIEVERS_TO_KEEP)]
     if len(retrievers_present) != 0: # Single turn dataset don't have retrievers at all by design.
         assert len(retrievers) != 0, "No retrivers left after removing RED domain and BIRD Train retrivers."
     updated_tool = [v for k, v in pool.items() if k not in RETRIEVERS_TO_IGNORE]
