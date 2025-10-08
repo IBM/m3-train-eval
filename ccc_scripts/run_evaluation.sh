@@ -23,14 +23,14 @@ export PYTHONPATH=.
 RUN_DATE=$(date "+%m%d")
 
 # Setup the following locations and paramters for the run
-RUN_TYPE="dummy" # Update to the required folder
+RUN_TYPE="baseline/v2" # Update to the required folder
 RUN_MODE="run"
 # MODEL_NAME=( "mixtral22b" "mistral7b" "granite38b" "granite4" )
 MODEL_NAME=( "mistral7b" "granite38b" )
 INPUT_TYPE=( "ood_multi_turn_mixed" "ood_single_turn_mixed" "test_multi_turn_mixed" )
-NUM_SAMPLES=( "400" "800" "1200" "ALL")
+NUM_SAMPLES=( "400" "800" "1200" "1600" "2000" "2400" "2800" "ALL")
 
-INPUT_DIR="/proj/m3benchmark/m3data/0923/evaluation_data/v2"
+INPUT_DIR="/proj/m3benchmark/m3data/0923/evaluation_data/v3"
 OUTPUT_DIR="/proj/m3benchmark/m3data/0923/m3_test_evaluation/${RUN_TYPE}"
 CONFIG_DIR="/dccstor/arnaik_data/routing/m3-train-eval/config_files/evaluation"
 
