@@ -1,5 +1,8 @@
 import os
 import json
+import argparse
+
+CHNAGE_STATS_DIR="/proj/m3benchmark/m3data/0923/auxiliary_data"
 
 def compute_success_fraction(directory_path: str, change_file: str):
     # List all files matching the pattern
@@ -56,6 +59,12 @@ def compute_success_fraction(directory_path: str, change_file: str):
 
 # Example usage
 if __name__ == "__main__":
-    change_file = "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_test_chunked_scenarios.json"
-    input_file = "/proj/m3benchmark/siyu/m3-train-eval/ccc_eval/g4-gt_dummy_all/metadata"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--split_type","-s",default="ood_multi_turn", choices=["ood_multi_turn","test_multi_turn", "ood_single_turn"])
+    parser.add_argument('--input_metadata_dir', '-i', default="/proj/m3benchmark/m3data/0923/m3_test_evaluation/baseline/v2/", help="Input Directory Name.")
+    parser.add_argument('--model','-m',default="granite38b",help="Model name to evaluate")
+    args = parser.parse_args()
+    change_file = os.path.join(CHNAGE_STATS_DIR,f"change_stat_{args.split_type}.json")
+    input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{args.split_type}_mixed/metadata")
+    print(args.split_type,args.model)
     compute_success_fraction(input_file, change_file)
