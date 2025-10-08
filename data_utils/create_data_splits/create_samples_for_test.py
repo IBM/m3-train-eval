@@ -23,8 +23,8 @@ CHANGE_STATS=[
 ]
 save_grpo_data_at=""
 scenario_mixing_probability=0.5
-OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v2"
-NUM_SAMPLES=["400","800","1200","ALL"]
+OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v3"
+NUM_SAMPLES=["400","800","1200", "1600", "2000", "2400", "2800", "ALL"]
 
 def create_context_response_pair(item):
     """
@@ -95,7 +95,7 @@ def group_by_original_sample_id(data: list[dict]):
     grouped_data = defaultdict(list)
     for d in data:
         original_sample_id = str(d['sample_id']).split("_sc_")[0]
-        if ("ONLY_API" not in d['sample_id']) and ("ONLY_RAG" not in d['sample_id']):
+        if ("ONLY_API" not in d['sample_id']) and ("ONLY_RAG" not in d['sample_id']) and ("EXCLUDE_GT" not in d['sample_id']):
             continue
         else:
             grouped_data[original_sample_id].append(d)
