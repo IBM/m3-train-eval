@@ -624,6 +624,40 @@ class StudentGraniteToolUtils(ToolUtils):
         return [FunctionCall(tool["name"], json.dumps(tool["arguments"], ensure_ascii=False))]
 
 
+class StudentGranite4ToolUtils(StudentGraniteToolUtils):
+    r"""Granite 4 tool using template [for my use case]."""
+
+    @override
+    @staticmethod
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy) -> str:
+        from prompts.agent.student_granite import TOOL_AVAILABILITY_TEXT, TOOL_USAGE_TEXT, TOOL_CALL_USAGE
+
+        # [1] Create the tool availability text
+        tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
+
+        tool_availability_text = "You are provided with function signatures within <tools></tools> XML tags:\n<tools>\n"
+        for t in tools:
+            tool_availability_text += json.dumps(t, ensure_ascii=False) + '\n'
+        tool_availability_text += "</tools>\n"
+
+        # [2] Create the tool usage text
+        tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
+
+        # [3] Create the final answer guidance
+        final_answer_instructions: str = tool_policy.final_answer_policy
+
+        slots = {
+            "tool_call_usage": TOOL_CALL_USAGE,
+            "tool_use_constraints": tool_use_constraints,
+            "final_answer_instructions": final_answer_instructions
+        }
+        tool_usage_text = TOOL_USAGE_TEXT
+        for name, value in slots.items():
+            tool_usage_text = tool_usage_text.replace("{" + name + "}", value, 1)
+
+        final_tool_text = tool_availability_text + "\n\n" + tool_usage_text
+        return final_tool_text
+
 TOOLS = {
     "default": DefaultToolUtils(),
     "glm4": GLM4ToolUtils(),
@@ -634,6 +668,7 @@ TOOLS = {
     "student_mistral": StudentMistralToolUtils(),  # My custom
     "student_qwen": StudentQwenToolUtils(),  # My custom
     "student_granite": StudentGraniteToolUtils(),  # My custom
+    "student_granite4": StudentGranite4ToolUtils(), # Mu custom
 }
 
 
