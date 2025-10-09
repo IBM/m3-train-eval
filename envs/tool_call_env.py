@@ -900,21 +900,23 @@ class M3ToolCallEnv(ToolCallEnv):
         else:
             initialization_specs = None
             dataset_name = None
-        self.pre_setup_tools(tools, dataset_name, initialization_specs)
 
-        # 3. Configure the document retrieval tool for the env
-        self.setup_document_retrieval_tool()
-
-        # 4. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
+        # 3. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
         tools=update_retrieval_tools(tools)
 
-        # 5. Get list of required tools
+        # 4. Get list of required tools
         required=[]
         for item in curr_instance_data["trajectory"]:
             for traj in item:
                 if "output" in traj:
                     required.append(traj['output']['name']) # TODO : Required list needs to be updated for scenarios
         tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)        
+
+        # 5. Setup tools for API
+        self.pre_setup_tools(tools, dataset_name, initialization_specs)
+
+        # 5. Configure the document retrieval tool for the env
+        self.setup_document_retrieval_tool()
 
         # 4. Add the special tool for document retrieval [Old way]
         # from envs.constants import RETRIEVE_FUNCTION_NAME
