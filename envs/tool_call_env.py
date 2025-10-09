@@ -902,7 +902,7 @@ class M3ToolCallEnv(ToolCallEnv):
             dataset_name = None
 
         # 3. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
-        tools=update_retrieval_tools(tools)
+        tools, self.document_collections=update_retrieval_tools(tools, curr_instance_data['doc_collections'])
 
         # 4. Get list of required tools
         required=[]
