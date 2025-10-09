@@ -2,7 +2,7 @@ import os
 import json
 import argparse
 
-<<<<<<< HEAD
+
 CHANGE_STATS_DIR="/proj/m3benchmark/m3data/0923/auxiliary_data"
 
 def add_avgs(d: dict) -> dict:
@@ -14,9 +14,6 @@ def add_avgs(d: dict) -> dict:
     d["avg_steps"] = 0 if d["total"] == 0 else d["total_steps"] / d["total"]
     return d
 
-=======
-CHNAGE_STATS_DIR="/proj/m3benchmark/m3data/0923/auxiliary_data"
->>>>>>> 9bfb9aa (Add commandline parameters to summarize win_rates)
 
 def compute_success_fraction(directory_path: str, change_file: str):
     # List all files matching the pattern
@@ -78,11 +75,25 @@ def compute_success_fraction(directory_path: str, change_file: str):
 # Example usage
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--split_type","-s",default="ood_multi_turn", choices=["ood_multi_turn","test_multi_turn", "ood_single_turn"])
-    parser.add_argument('--input_metadata_dir', '-i', default="/proj/m3benchmark/m3data/0923/m3_test_evaluation/baseline/v2/", help="Input Directory Name.")
+    parser.add_argument("--split_type","-s", nargs='+', type=str, help='List of types')
+    parser.add_argument('--input_metadata_dir', '-i', default="/proj/m3benchmark/m3data/0923/m3_test_evaluation/baseline/v3/", help="Input Directory Name.")
     parser.add_argument('--model','-m',default="granite38b",help="Model name to evaluate")
+    parser.add_argument('--output_file', '-of')
     args = parser.parse_args()
-    change_file = os.path.join(CHNAGE_STATS_DIR,f"change_stat_{args.split_type}.json")
-    input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{args.split_type}_mixed/metadata")
     print(args.split_type,args.model)
-    compute_success_fraction(input_file, change_file)
+
+    global_summary = {
+        "all_eval_sets": {"total": 0, "successes": 0, "total_steps": 0}
+    }
+    for s in args.split_type:
+        change_file = os.path.join(CHANGE_STATS_DIR,f"change_stat_{s}.json")
+        input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{s}_mixed/metadata")
+        summary = compute_success_fraction(input_file, change_file)
+        global_summary[s] = summary
+        global_summary["all_eval_sets"]['total'] += summary['overall']['total']
+        global_summary["all_eval_sets"]['successes'] += summary['overall']['successes']
+        global_summary["all_eval_sets"]['total_steps'] += summary['overall']['total_steps']
+    global_summary["all_eval_sets"] = add_avgs(global_summary["all_eval_sets"])
+
+    with open(args.output_file, "w") as f:
+        json.dump(global_summary, f)

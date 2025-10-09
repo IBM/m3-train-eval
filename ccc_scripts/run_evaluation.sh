@@ -23,16 +23,18 @@ export PYTHONPATH=.
 RUN_DATE=$(date "+%m%d")
 
 # Setup the following locations and paramters for the run
-RUN_TYPE="baseline/v2" # Update to the required folder
+RUN_TYPE="sft" # Update to the required folder
 RUN_MODE="run"
 # MODEL_NAME=( "mixtral22b" "mistral7b" "granite38b" "granite4" )
-MODEL_NAME=( "mistral7b" "granite38b" )
+# MODEL_NAME=( "mistral" "granite3" )
 INPUT_TYPE=( "ood_multi_turn_mixed" "ood_single_turn_mixed" "test_multi_turn_mixed" )
 NUM_SAMPLES=( "400" "800" "1200" "1600" "2000" "2400" "2800" "ALL")
 
+MODEL_NAME=( "granite4" )
+
 INPUT_DIR="/proj/m3benchmark/m3data/0923/evaluation_data/v3"
 OUTPUT_DIR="/proj/m3benchmark/m3data/0923/m3_test_evaluation/${RUN_TYPE}"
-CONFIG_DIR="/dccstor/arnaik_data/routing/m3-train-eval/config_files/evaluation"
+CONFIG_DIR="/u/belder/m3-train-eval/config_files/sft_eval/"
 
 CCC_CMD_NO_GPU='bsub -n 1 -U infusion -R "rusage[mem=20GB, cpu=4]"'
 CCC_CMD_GPU='bsub -n 1 -U infusion -gpu "num=1:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "rusage[mem=64GB, cpu=4]"'
@@ -45,6 +47,8 @@ for mn in "${MODEL_NAME[@]}"; do
         for ns in "${NUM_SAMPLES[@]}"; do
             INPUT_FILE_NAME=${INPUT_DIR}/${it}_${ns}.json
             if [ -e "$INPUT_FILE_NAME" ]; then
+                export HF_HOME='/dccstor/belder1/cache/'
+                export HF_CACHE='/dccstor/belder1/cache/'
                 gen_cmd_args="-i ${INPUT_FILE_NAME} -o ${OUTPUT_DIR}/${mn}/${it}/ -ic ${CONFIG_DIR}/infer_agent_${mn}.json"
                 g_cmd="${CCC_CMD_GPU} -J ${RUN_MODE}_${mn}_${it}_${ns} -o runs/${RUN_DATE}/${mn}/${it}/%J_${ns}.log ${GENRATION_CMD} ${gen_cmd_args}"
                 logHeader "Running: ${g_cmd}"
