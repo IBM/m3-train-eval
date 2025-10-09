@@ -23,10 +23,9 @@ export PYTHONPATH=.
 RUN_DATE=$(date "+%m%d")
 
 # Setup the following locations and paramters for the run
-RUN_TYPE="sft" # Update to the required folder
-RUN_MODE="run"
-# MODEL_NAME=( "mixtral22b" "mistral7b" "granite38b" "granite4" )
-# MODEL_NAME=( "mistral" "granite3" )
+RUN_TYPE="dummy" # Update to the required folder
+RUN_MODE="run_v3"
+MODEL_NAME=( "mixtral22b" "mistral7b" "granite38b" "granite4" )
 INPUT_TYPE=( "ood_multi_turn_mixed" "ood_single_turn_mixed" "test_multi_turn_mixed" )
 NUM_SAMPLES=( "400" "800" "1200" "1600" "2000" "2400" "2800" "ALL")
 
