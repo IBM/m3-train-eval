@@ -46,8 +46,6 @@ for mn in "${MODEL_NAME[@]}"; do
         for ns in "${NUM_SAMPLES[@]}"; do
             INPUT_FILE_NAME=${INPUT_DIR}/${it}_${ns}.json
             if [ -e "$INPUT_FILE_NAME" ]; then
-                export HF_HOME='/dccstor/belder1/cache/'
-                export HF_CACHE='/dccstor/belder1/cache/'
                 gen_cmd_args="-i ${INPUT_FILE_NAME} -o ${OUTPUT_DIR}/${mn}/${it}/ -ic ${CONFIG_DIR}/infer_agent_${mn}.json"
                 g_cmd="${CCC_CMD_GPU} -J ${RUN_MODE}_${mn}_${it}_${ns} -o runs/${RUN_DATE}/${mn}/${it}/%J_${ns}.log ${GENRATION_CMD} ${gen_cmd_args}"
                 logHeader "Running: ${g_cmd}"
