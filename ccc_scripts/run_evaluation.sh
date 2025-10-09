@@ -29,8 +29,6 @@ MODEL_NAME=( "mixtral22b" "mistral7b" "granite38b" "granite4" )
 INPUT_TYPE=( "ood_multi_turn_mixed" "ood_single_turn_mixed" "test_multi_turn_mixed" )
 NUM_SAMPLES=( "400" "800" "1200" "1600" "2000" "2400" "2800" "ALL")
 
-MODEL_NAME=( "granite4" )
-
 INPUT_DIR="/proj/m3benchmark/m3data/0923/evaluation_data/v3"
 OUTPUT_DIR="/proj/m3benchmark/m3data/0923/m3_test_evaluation/${RUN_TYPE}"
 CONFIG_DIR="/u/belder/m3-train-eval/config_files/sft_eval/"
