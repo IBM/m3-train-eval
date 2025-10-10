@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import List, Dict, Any, Union
 
-from torch.cuda import is_available as is_cuda_available
+import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizerBase
 from loguru import logger
 from tqdm import tqdm
@@ -24,10 +24,11 @@ def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedMode
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
-
+    device=torch.device("cpu")
 
     # [Optionally] Put the model on cuda
-    if is_cuda_available():
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
         # Check if model is already on a CUDA device
         if not next(model.parameters()).is_cuda:
             logger.info("CUDA is available. Moving model to CUDA...")
@@ -37,7 +38,7 @@ def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedMode
     else:
         logger.info("CUDA not available. Model stays on CPU.")
 
-    return tokenizer, model
+    return tokenizer, model, device
 
 
 def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any]:
@@ -145,9 +146,7 @@ def run_agent(args):
 
     logger.info(json.dumps(config, indent=4))
     save_traj_at = os.path.join(config['log_dir'], 'trajectories')
-    save_metadata_at = os.path.join(config['log_dir'], 'metadata')
     os.makedirs(save_traj_at, exist_ok=True)
-    os.makedirs(save_metadata_at, exist_ok=True)
 
     # ########################################## Configure the Agent ########################################## #
 
@@ -171,7 +170,7 @@ def run_agent(args):
             "temperature": config['temperature'],
             "stop_sequences": ["User Query"]
         }
-    scorer_tokenizer, scorer_llm = load_model(scorer_llm_params["model_name_or_path"])
+    scorer_tokenizer, scorer_llm, _ = load_model(scorer_llm_params["model_name_or_path"])
     env = M3EvalEnv(
         path_to_env_data=config['path_to_env_data'],
         es_config=config['db_config'],
@@ -183,7 +182,7 @@ def run_agent(args):
         scorer_llm_tokenizer=scorer_tokenizer, 
         scorer_llm_parameters=scorer_llm_params,
     )
-    tokenizer, model = load_model(config["model_name_or_path"])
+    tokenizer, model, device = load_model(config["model_name_or_path"])
 
     # ########################################## Run the Agent ########################################## #
     metrics = defaultdict(int)
@@ -234,13 +233,14 @@ def run_agent(args):
                 # TODO: create the system prompt here
                 formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True)
                 inputs = tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                inputs = {k: v.to(device) for k, v in inputs.items()}
                 generated_ids = model.generate(
                     input_ids=inputs["input_ids"],
                     attention_mask=inputs["attention_mask"], 
                     max_new_tokens=llm_parameters['max_new_tokens'],
                     do_sample=False)
                 generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=False)
-                
+                import pdb; pdb.set_trace()
                 parsed_response = parse_llm_response(generated_text, agent_template)
 
                 actor = 'agent'
