@@ -6,17 +6,38 @@ from collections import defaultdict
 from datetime import datetime
 from typing import List, Dict, Any, Union
 
+from torch.cuda import is_available as is_cuda_available
+from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizerBase
 from loguru import logger
 from tqdm import tqdm
 import argparse
 
-from envs.loader import get_agent_env
 from extras.custom import set_run_environment
-from agents.llm import invoke_llm, get_lm, get_lm_hf
 from data_utils.utils import Role
 from openai import OpenAI
 from envs.constants import RETRIEVER_FUNCTION_PREFIX
 from data_utils.template import Template, TEMPLATES
+from envs.tool_call_env import M3EvalEnv
+from envs.base_env import SubDomain
+
+def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+
+
+    # [Optionally] Put the model on cuda
+    if is_cuda_available():
+        # Check if model is already on a CUDA device
+        if not next(model.parameters()).is_cuda:
+            logger.info("CUDA is available. Moving model to CUDA...")
+            model = model.cuda()
+        else:
+            logger.info("Model is already on CUDA.")
+    else:
+        logger.info("CUDA not available. Model stays on CPU.")
+
+    return tokenizer, model
 
 
 def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any]:
@@ -136,39 +157,33 @@ def run_agent(args):
         "temperature": config["temperature"],
         "stop_sequences": [],
     }
-    if not config["is_hf_agent"]:
-        llm = get_lm(model_id=llm_parameters["model_name_or_path"], parameters=llm_parameters)
-    else:
-        with open(config["path_to_hf_config"], 'r') as f:
-            hf_config = json.load(f)
-
-        # We will load this into the hf config (so that we declare these vars in one place only)
-        hf_config["model_name_or_path"] = config["model_name_or_path"]
-        hf_config['template'] = config['agent_template']
-        hf_config["max_new_tokens"] = config["max_new_tokens"]
-        hf_config["temperature"] = config["temperature"]
-
-        llm = get_lm_hf(hf_config=hf_config)
 
 
 
     # ######################################## Configure the Environment ######################################## #
     agent_template = TEMPLATES[config['agent_template']]
-    import pdb; pdb.set_trace()
-    env = get_agent_env(
-        mode="evaluate",
-        path_to_env_data=config['path_to_env_data'],
-        db_config=config['db_config'],
-        api_config=config['api_config'],
-        horizon=config["horizon"],
-        scorer_llm_params={
+    sub_domain = SubDomain(
+        mode='rest',
+    )
+    scorer_llm_params={
             "model_name_or_path": config['scorer_model_name_or_path'],
             "max_new_tokens": config['scorer_max_new_tokens'],
             "temperature": config['temperature'],
             "stop_sequences": ["User Query"]
-        },
-        env_subdomain_mode='rest',
+        }
+    scorer_tokenizer, scorer_llm = load_model(scorer_llm_params["model_name_or_path"])
+    env = M3EvalEnv(
+        path_to_env_data=config['path_to_env_data'],
+        es_config=config['db_config'],
+        api_config=config['api_config'],  # Local end point: "end_point": "http://127.0.0.1:8000",
+        horizon=config["horizon"],
+        sub_domain=sub_domain,
+        agent_template=agent_template,
+        scorer_llm=scorer_llm,
+        scorer_llm_tokenizer=scorer_tokenizer, 
+        scorer_llm_parameters=scorer_llm_params,
     )
+    tokenizer, model = load_model(config["model_name_or_path"])
 
     # ########################################## Run the Agent ########################################## #
     metrics = defaultdict(int)
@@ -216,7 +231,17 @@ def run_agent(args):
             # Only take Agentic Actions
             logger.info("Tasking Agent to take the action")
             try:
-                parsed_response = parse_llm_response(llm, llm_parameters, state, agent_template)
+                # TODO: create the system prompt here
+                formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True)
+                inputs = tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                generated_ids = model.generate(
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs["attention_mask"], 
+                    max_new_tokens=llm_parameters['max_new_tokens'],
+                    do_sample=False)
+                generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=False)
+                
+                parsed_response = parse_llm_response(generated_text, agent_template)
 
                 actor = 'agent'
             except Exception as e:
@@ -306,8 +331,8 @@ def run_agent(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to")
-    parser.add_argument('--input_filename', '-i', default="data/soccer_2016_multiturn_bird_chunked_final.json", help="Input filename.")
+    parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to", default=".")
+    parser.add_argument('--input_filename', '-i', default="./eval_debug_samples.json", help="Input filename.")
     parser.add_argument('--infer_config','-ic', default="config_files/evaluate_tool_calling.json", 
                         help="Config file for model training and evaluation. Default value config_files/evaluate_tool_calling.json")
     args = parser.parse_args()

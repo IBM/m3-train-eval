@@ -151,7 +151,6 @@ def run_agent(args):
         random_epsilon=config["expert_assist_random_epsilon"],
     )
     env = get_agent_env(
-        mode="generate", 
         path_to_env_data=config['path_to_env_data'],
         db_config=config['db_config'],
         api_config=config['api_config'],

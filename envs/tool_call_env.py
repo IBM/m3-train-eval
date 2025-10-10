@@ -551,8 +551,8 @@ class M3ToolCallEnv(ToolCallEnv):
             api_config: dict,
             horizon: int,
             sub_domain: "SubDomain",
-            expert_assist: "ExpertAssist",
-            agent_template: "Template",
+            expert_assist: "ExpertAssist" = None,
+            agent_template: "Template" = None,
             overseer_llm=None,
             overseer_llm_parameters=None,
             scorer_llm=None,
@@ -1096,42 +1096,28 @@ class M3EvalEnv(M3ToolCallEnv):
             api_config: dict,
             horizon: int,
             sub_domain: "SubDomain",
+            agent_template: "Template", 
             scorer_llm=None,
+            scorer_llm_tokenizer=None,
             scorer_llm_parameters=None,
             partial_credit: bool = False,
-            summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
+            summarise_turns_for_multi_turn: bool = True  # Saves num of tokens but may lead to context loss
     ):
-        self.path_to_env_data = path_to_env_data
-        self.es_config = es_config
-        self.api_config_dict = api_config
-
-        # Init. the API tools here
-        self.tool_names, self.tool_info = [], {}
-        self.callable_api_pool, self.initial_data_csv = None, None
-        self.sql_db_name = 'bird'
-
-        # TODO: For sel-slot data updated these paths
-        self.base_sql_dir = None
-        self.path_to_sql_data = None
-        self.path_for_sql_cache = None
-
-        # Init. the document database here
-        self.doc_db, self.document_collections = None, None
-        self.discard_long_response = True
-        self.discard_token_n = 4096
+        self.scorer_llm_tokenizer = scorer_llm_tokenizer
+        self.scorer_llm_model = scorer_llm
 
         super().__init__(
+            path_to_env_data,
+            es_config,
+            api_config,
             horizon,
             sub_domain,
-            None,
-            None,
-            None,
-            None,
-            scorer_llm,
-            scorer_llm_parameters,
-            partial_credit,
-            summarise_turns_for_multi_turn
-        )
+            agent_template=agent_template,
+            scorer_llm=None,
+            scorer_llm_parameters=None,
+            partial_credit = partial_credit,
+            summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
+    )
 
     def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
         # To get the data for the current instance of the environment
@@ -1213,6 +1199,84 @@ class M3EvalEnv(M3ToolCallEnv):
             final_answer_instructions += "\n                  > " + instr_resp_cutoff
 
         return final_answer_instructions
+    
+    def get_reward(self, action, observation):
+        if 'error' in observation.lower():  # Don't penalise for server error
+
+            # Check for agent template specific errors
+            for e in ERRORS_AGENT_SPECIFIC_PARSING:
+                if e in observation:
+                    reward = "{REWARD_PARSING_ERROR}"
+                    return reward, False
+
+            # Check for bad tool calls
+            for e in ERRORS_BAD_TOOL_CALLS:
+                if e in observation:
+                    reward = "{REWARD_BAD_TOOL_CALL}"
+                    return reward, False
+
+            for e in ERRORS_NO_PENALTY:
+                if e in observation:
+                    reward = "{REWARD_NO_PENALTY}"
+                    return reward, False
+
+            reward = "{REWARD_ERROR_NO_CATEGORY}"
+            return reward, False
+
+        else:
+            if action["type"] == "FINAL":
+                # TODO: Update the logic:
+                #  Check for the current turn, if final_answer_is_truncated is True, then prediction should be matched
+                #  with the self.curr_raw_answer instead of self.curr_golden_answer. However, we train the model to
+                #  predict the truncated response.
+                #  IMP: Therefore in such cases, make the scorer_judge aware of the 'final_answer_policy' and
+                #  instruct that objects retained in `predicted_final_answer` with which a tool response is
+                #  truncated must be present in the self.curr_raw_answer
+                try:
+                    assert self.scorer_llm is not None
+                except AssertionError:
+                    raise NotImplementedError(f"Scorer LLM is not initialized. Initialise it to score responses.")
+
+                predicted_final_answer = action["value"]
+                scorer_prompt = get_scorer_prompt(
+                    user_query=self.curr_query,
+                    golden_answer=self.curr_golden_answer,
+                    predicted_final_answer=predicted_final_answer,
+                    partial_scoring=self.partial_credit,
+                    use_sample=False,
+                )
+                response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
+                try:
+                    parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+                except ValueError as e:
+                    error_msg = str(e)
+                    logger.info("Trying one more time to score the response after initial parsing failed.")
+                    # Give one more try
+                    parser_resolver_prompt = get_parser_resolver_prompt(
+                        prompt=scorer_prompt,
+                        response=response,
+                        error=error_msg,
+                    )
+                    response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
+                    parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+
+                logger.info(f"[External Agent Call] Agent = Final_Scorer")
+                logger.info(
+                    f"Asking (partial credit={self.partial_credit})ScorerJudge LLM to score:\nQuery: {self.curr_query}\nGolden Answer: {self.curr_golden_answer}\nAgent Final Answer: ({predicted_final_answer})")
+                logger.info(f"ScorerJudge LLM said: {json.dumps(parsed_response, indent=2)}")
+
+                if parsed_response["success"]:
+                    reward = "{REWARD_FINAL_ANSWER_MATCH}"
+                else:
+                    reward = "{REWARD_FINAL_ANSWER_NO_MATCH}"
+                return reward, parsed_response["success"]
+
+            elif action["type"] == "RETRIEVE":
+                reward = "{REWARD_SUCCESS_RETRIEVAL_CALL}"
+                return reward, False
+            else:
+                reward = "{REWARD_SUCCESS_TOOL_CALL}"
+                return reward, False
 
 
     @property
