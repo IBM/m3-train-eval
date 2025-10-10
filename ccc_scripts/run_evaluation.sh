@@ -19,6 +19,8 @@ set -e
 set -x
 
 export PYTHONPATH=.
+export HF_HOME="~/path_to_hf_home"
+export HF_CACHE="~/path_to_hf_home"
 
 RUN_DATE=$(date "+%m%d")
 

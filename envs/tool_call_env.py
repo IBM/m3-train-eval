@@ -1086,3 +1086,135 @@ class M3ToolCallEnv(ToolCallEnv):
     @property
     def curr_sample_idx(self) -> int:
         return self.data[self.curr_instance_idx]['sample_id']
+
+
+class M3EvalEnv(M3ToolCallEnv):
+    def __init__(
+            self,
+            path_to_env_data: str,
+            es_config: dict,
+            api_config: dict,
+            horizon: int,
+            sub_domain: "SubDomain",
+            scorer_llm=None,
+            scorer_llm_parameters=None,
+            partial_credit: bool = False,
+            summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
+    ):
+        self.path_to_env_data = path_to_env_data
+        self.es_config = es_config
+        self.api_config_dict = api_config
+
+        # Init. the API tools here
+        self.tool_names, self.tool_info = [], {}
+        self.callable_api_pool, self.initial_data_csv = None, None
+        self.sql_db_name = 'bird'
+
+        # TODO: For sel-slot data updated these paths
+        self.base_sql_dir = None
+        self.path_to_sql_data = None
+        self.path_for_sql_cache = None
+
+        # Init. the document database here
+        self.doc_db, self.document_collections = None, None
+        self.discard_long_response = True
+        self.discard_token_n = 4096
+
+        super().__init__(
+            horizon,
+            sub_domain,
+            None,
+            None,
+            None,
+            None,
+            scorer_llm,
+            scorer_llm_parameters,
+            partial_credit,
+            summarise_turns_for_multi_turn
+        )
+
+    def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
+        # To get the data for the current instance of the environment
+        if inst_idx is not None:
+            assert isinstance(inst_idx, int)
+            self.curr_instance_idx = inst_idx
+        else:
+            self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
+
+        # Set the init params
+        self.history, self.curr_turn_history = [], []
+        self.curr_turn = 0
+
+        # Setup user queries
+        logger.info("Setting up User Queries")
+        self.setup_user_queries()
+        
+        # Setup tools
+        logger.info("Setting up Tools")
+        self.setup_tools()
+
+        logger.info("Setting up Scenarios")
+        # Determine the Tool Policy.
+        self.setup_scenarios()
+
+        # Determine the tool text
+        tool_text = self.agent_template.format_tools.apply(content=self.tools, tool_policy=self.tool_policy)[0]
+
+        # Form the system prompt
+        self.system: str = SYSTEM_PROMPT
+        system_prompt = self.system + tool_text  # This becomes the overall system (imitates the template.encode)
+
+        # Form the query prompt
+        curr_query = self.user_queries[self.curr_turn]
+        query_prompt = QUERY_PROMPT.format(query=curr_query)
+
+        # #################################### Create the init state #################################### #
+        state = [{"role": Role.SYSTEM.value, "content": system_prompt},
+                 {"role": Role.USER.value, "content": query_prompt}]
+        self.curr_state = state
+        self.curr_summarised_state = copy.deepcopy(state)
+        self.curr_step = 0
+        return state, 0.0, False, {
+            "terminated": False,
+            "truncated": False,
+            "success": False,
+        }
+
+    def setup_scenarios(self):
+        curr_instance_data = self.data[self.curr_instance_idx]
+        if ("scenarios" not in curr_instance_data.keys()) and ("_sc_" not in curr_instance_data["sample_id"]): # Make this more specific for only the data points without scenarios
+            curr_instance_data["scenarios"]= {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
+            self.scenarios = curr_instance_data["scenarios"]
+        domain=curr_instance_data["domain"]
+        scenarios=curr_instance_data["scenarios"]
+        self.scenarios = curr_instance_data["scenarios"]
+        self.tool_policy=create_ToolPolicy(scenarios=scenarios,current_domain=domain)
+        # Determine the final answer instructions and replace the slot
+        final_answer_instructions = self.get_final_answer_instructions()
+        self.tool_policy.final_answer_policy = final_answer_instructions
+
+    def get_final_answer_instructions(self) -> str:
+        # Determine the guidance for generating final answer
+        final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
+
+        # [1] For the case when scenarios render the question unanswerable
+        from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
+        chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
+        chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
+        instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
+        final_answer_instructions += "\n                  > " + instr_insufficient_information
+
+        # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
+        curr_instance_data = self.data[self.curr_instance_idx]
+        if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
+            # This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
+            # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
+            instr_resp_cutoff = curr_instance_data['resp_cutoff_inst']
+            final_answer_instructions += "\n                  > " + instr_resp_cutoff
+
+        return final_answer_instructions
+
+
+    @property
+    def curr_sample_idx(self) -> int:
+        return self.data[self.curr_instance_idx]['sample_id']
