@@ -210,7 +210,7 @@ def read_cloud_json(cloud_path: str) -> list[Any]:
 # Downsample tool/API pool to fit in context
 # =============================
 
-def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required_tools: list[str] = None, keep_retrievers: bool = True) -> list[dict]:
+def downsample_tools(tool_pool: Union[str, list], max_tools: int = 20,  required_tools: list[str] = None, keep_retrievers: bool = True) -> list[dict]:
 
     pool = deepcopy(tool_pool) # Don't modify the original pool
     if isinstance(pool, str):
@@ -257,7 +257,7 @@ def update_retrieval_tools(tool_pool: Union[str, list], doc_collection_name: lis
     if len(retrievers_present) != 0: # Single turn dataset don't have retrievers at all by design.
         assert len(retrievers) != 0, "No retrivers left after removing RED domain and BIRD Train retrivers."
         assert len(retrievers) == len(updated_doc_collection_name), f"Number of retrievers {len(retrievers)} is not equal to doc_collection_names {len(updated_doc_collection_name)} after removal.\n Retriever - {retrievers}\n\n Doc collection - {doc_collection_name}"
-    updated_tool = [v for k, v in pool.items() if k in RETRIEVERS_TO_KEEP]
+    updated_tool = [v for k, v in pool.items() if (not k.startswith("retriever_")) or (k in RETRIEVERS_TO_KEEP)]
     return updated_tool, updated_doc_collection_name
 
 def load_data_files(dataset_dir: str, dataset: str) -> list[dict]:

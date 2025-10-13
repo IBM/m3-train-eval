@@ -458,6 +458,8 @@ class StudentMistralToolUtils(ToolUtils):
 
 class StudentQwenToolUtils(ToolUtils):
     r"""Qwen 2.5 tool using template [for my use case]."""
+    tool_call_start_tag = "<tool_call>"
+    tool_call_end_tag = "</tool_call>"
 
     @override
     @staticmethod
@@ -497,7 +499,7 @@ class StudentQwenToolUtils(ToolUtils):
             json.dumps({"name": name, "arguments": json.loads(arguments)}, ensure_ascii=False)
             for name, arguments in functions
         ]
-        return "\n".join([f"<tool_call>\n{text}\n</tool_call>" for text in function_texts])
+        return "\n".join([f"{StudentQwenToolUtils.tool_call_start_tag}\n{text}\n{StudentQwenToolUtils.tool_call_end_tag}" for text in function_texts])
 
     @override
     @staticmethod
@@ -506,7 +508,7 @@ class StudentQwenToolUtils(ToolUtils):
         # regex = re.compile(r"<tool_call>(.+?)</tool_call>(?=\s*<tool_call>|\s*$)", re.DOTALL)
         # tool_match: list[str] = re.findall(regex, content)
 
-        tool_match = re.findall(r"<tool_call>(.*?)</tool_call>", content, re.DOTALL)
+        tool_match = re.findall(fr"{StudentQwenToolUtils.tool_call_start_tag}(.*?){StudentQwenToolUtils.tool_call_end_tag}", content, re.DOTALL)
         if len(tool_match) > 1:
             error = "ParallelToolCallingError: Parallel Tool calls found. Only one tool call is supported at a time."
             return error
@@ -626,6 +628,8 @@ class StudentGraniteToolUtils(ToolUtils):
 
 class StudentGranite4ToolUtils(StudentGraniteToolUtils):
     r"""Granite 4 tool using template [for my use case]."""
+    tool_call_start_tag = "<tool_call>"
+    tool_call_end_tag = "</tool_call>"
 
     @override
     @staticmethod

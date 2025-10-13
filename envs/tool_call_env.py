@@ -6,11 +6,12 @@ from typing import Dict, Any, List, Tuple, Optional, TYPE_CHECKING
 from pathlib import Path
 
 from loguru import logger
+from torch import device
 
 from agents.llm import invoke_llm
 from data_utils.utils import Role
 from envs.apis.rest.call import run_tool, extract_out_dict_from_res
-from envs.base_env import BaseEnv, ToolPolicy
+from envs.base_env import BaseEnv
 from envs.expert_assist import ExpertAssist
 from envs.retrievers.m3_retrievers import make_retriever
 from envs.utils import reformat_tools
@@ -22,7 +23,7 @@ from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
 from data_utils.utils import downsample_tools, update_retrieval_tools
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoTokenizer
 device = "auto"
 model_path = "ibm-granite/granite-3.0-8b-base"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -1101,10 +1102,13 @@ class M3EvalEnv(M3ToolCallEnv):
             scorer_llm_tokenizer=None,
             scorer_llm_parameters=None,
             partial_credit: bool = False,
-            summarise_turns_for_multi_turn: bool = True  # Saves num of tokens but may lead to context loss
+            summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
+            scorer_device: device = None
     ):
         self.scorer_llm_tokenizer = scorer_llm_tokenizer
         self.scorer_llm_model = scorer_llm
+        self.scorer_device = scorer_device
+
 
         super().__init__(
             path_to_env_data,
@@ -1114,7 +1118,7 @@ class M3EvalEnv(M3ToolCallEnv):
             sub_domain,
             agent_template=agent_template,
             scorer_llm=None,
-            scorer_llm_parameters=None,
+            scorer_llm_parameters=scorer_llm_parameters,
             partial_credit = partial_credit,
             summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
     )
@@ -1165,6 +1169,97 @@ class M3EvalEnv(M3ToolCallEnv):
             "truncated": False,
             "success": False,
         }
+    
+    def transition(self, observation, action, env_role):
+
+        # ############################################ Update State ############################################ #
+        # Get the current state
+        next_state = self.curr_state
+        next_summarised_state = self.curr_summarised_state
+
+        if action["type"] == "FINAL":  # Agent has reached the end of given turn
+
+            if not self.is_a_live_agent and self.curr_golden_answer is not None:
+                if self.final_answer_is_truncated:
+                    # To condition future reasoning on un-truncated context-response pairs.
+                    # Otherwise, entities being referred to in future reasoning could seem hallucinated
+                    final_answer = self.curr_raw_answer
+                else:
+                    final_answer = self.curr_golden_answer
+
+            else:
+                final_answer = action["value"]
+
+            # Wrap the final answer
+            final_answer = f"<FINAL>{final_answer}</FINAL>"
+
+            next_summarised_state.extend(
+                [
+                    {
+                        "role": action["role"],
+                        "content": final_answer,  # No need to include thoughts
+                    },
+                    {
+                        "role": env_role,
+                        "content": observation,  # Is a Done signal if on last turn else a new user query
+                    }
+                ]
+            )
+            # NOTE: We update the turn if agent generates the final answer (even though it might be incorrect)
+            self.curr_turn += 1
+            self.curr_summarised_state = next_summarised_state
+
+            if self.summarise_turns_for_multi_turn:
+                # Agent will act on past turns summarised as context response pairs
+                self.curr_state = copy.deepcopy(next_summarised_state)
+
+            else:
+                # If we don't summarise, does not matter whether the agent is live or not, the actual predicted answer
+                # along with its thought in the state. Can't replace the predicted with golden since it won't naturally
+                # follow the agent's reasoning so far.
+                next_state.extend(
+                    [
+                        {
+                            "role": action["role"],
+                            "content": action["template_free_response"],
+                        },
+                        {
+                            "role": env_role,
+                            "content": observation,
+                        }
+                    ]
+                )
+                # Update the current state
+                self.curr_state = next_state
+
+        else:
+            next_state.extend(
+                [
+                    {
+                        "role": Role.ASSISTANT.value,
+                        "content": action["template_free_response"],
+                    },
+                    {
+                        "role": Role.USER.value,
+                        "content": observation,
+                    }
+                ]
+            )
+            # Update the current state
+            self.curr_state = next_state
+
+        # ############################################ Update History ############################################ #
+        self.curr_turn_history.append(
+            {
+                "action": action["type"],  # str, type of action
+                "action_arguments": action["value"],  # dict or str
+                "observation": observation,  # str
+            }
+        )
+        if action["type"] == "FINAL":
+            self.history.append(copy.deepcopy(self.curr_turn_history))
+            self.curr_turn_history = []
+        self.curr_step += 1
 
     def setup_scenarios(self):
         curr_instance_data = self.data[self.curr_instance_idx]
@@ -1233,7 +1328,7 @@ class M3EvalEnv(M3ToolCallEnv):
                 #  instruct that objects retained in `predicted_final_answer` with which a tool response is
                 #  truncated must be present in the self.curr_raw_answer
                 try:
-                    assert self.scorer_llm is not None
+                    assert self.scorer_llm_model is not None
                 except AssertionError:
                     raise NotImplementedError(f"Scorer LLM is not initialized. Initialise it to score responses.")
 
@@ -1245,7 +1340,18 @@ class M3EvalEnv(M3ToolCallEnv):
                     partial_scoring=self.partial_credit,
                     use_sample=False,
                 )
-                response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
+                formatted_text = self.scorer_llm_tokenizer.apply_chat_template(scorer_prompt, tokenize=False, add_generation_prompt=True)
+                inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
+                input_len = len(inputs["input_ids"][0])
+                generated_ids = self.scorer_llm_model.generate(
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs["attention_mask"], 
+                    max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
+                    do_sample=False)
+                # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
+                response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                # response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
                 try:
                     parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
                 except ValueError as e:
@@ -1257,7 +1363,18 @@ class M3EvalEnv(M3ToolCallEnv):
                         response=response,
                         error=error_msg,
                     )
-                    response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
+                    formatted_text = self.scorer_llm_tokenizer.apply_chat_template(parser_resolver_prompt, tokenize=False, add_generation_prompt=True)
+                    inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                    inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
+                    input_len = len(inputs["input_ids"][0])
+                    generated_ids = self.scorer_llm_model.generate(
+                        input_ids=inputs["input_ids"],
+                        attention_mask=inputs["attention_mask"], 
+                        max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
+                        do_sample=False)
+                    # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
+                    response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                    # response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
                     parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
 
                 logger.info(f"[External Agent Call] Agent = Final_Scorer")

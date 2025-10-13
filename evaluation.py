@@ -4,6 +4,7 @@ import os
 import traceback
 from collections import defaultdict
 from datetime import datetime
+import re
 from typing import List, Dict, Any, Union
 
 import torch
@@ -14,11 +15,14 @@ import argparse
 
 from extras.custom import set_run_environment
 from data_utils.utils import Role
-from openai import OpenAI
 from envs.constants import RETRIEVER_FUNCTION_PREFIX
+from prompts.agent.system import SYSTEM_PROMPT
 from data_utils.template import Template, TEMPLATES
 from envs.tool_call_env import M3EvalEnv
 from envs.base_env import SubDomain
+
+
+DEBUG_MODE=True
 
 def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
 
@@ -40,6 +44,20 @@ def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedMode
 
     return tokenizer, model, device
 
+def extract_thought(text: str, tag: str = "think") -> tuple[str | None, str]:
+    """
+    Extract thoughts
+    Returns:
+        str | None: The substring found between the tags, or None if no match is found.
+    """
+    pattern = fr"<{tag}>(.*?)</{tag}>"
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        extracted = match.group(1)
+        remainder = text[:match.start()] + text[match.end():]
+        return extracted, remainder
+    else:
+        return None, text
 
 def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any]:
     """Parsing of the response from an LLM Agent is unique to each Agent (we use Agent's template).
@@ -57,15 +75,29 @@ def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any
         "error": None,
     }
 
+    thought_words = ['think', 'thought']
+    thought = ""
+    for word in thought_words:
+        found_thought, no_thought_response = extract_thought(response, tag=word)
+        if found_thought:
+            thought = found_thought
+            break
+    parsed_response['thought'] = thought
+    parsed_response["no_thought_response"] = no_thought_response
+
     # Extract tool call
-    actionic_response: Union[str, list["FunctionCall"]] = agent_template.extract_tool(response)
+    actionic_response: Union[str, list["FunctionCall"]] = agent_template.extract_tool(no_thought_response)
 
     if isinstance(actionic_response, str):
-        if 'error' in actionic_response.split(":")[0].lower():  # Error
+        if ('JSONDecodeError' in actionic_response.split(":")[0] or 
+            "MissingKeyError" in actionic_response.split(":")[0] or 
+            "MissingKeysError" in actionic_response.split(":")[0]):  # Error
             parsed_response['error'] = actionic_response
             return parsed_response
         else:
-            raise NotImplementedError(f"Parsing of actionic response is not implemented: {actionic_response}.")
+            # Treat this as the final answer
+            parsed_response['type'] = "FINAL"
+            parsed_response['value'] = no_thought_response
     else:
         function_call = actionic_response[0]
         name, arguments = function_call
@@ -78,41 +110,14 @@ def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any
         parsed_response['value'] = {"name": name, "arguments": json.loads(arguments)}
         parsed_response[
             'role'] = Role.FUNCTION.value  # With a successful tool extraction, we designate the Function role
-
-        # Update the template_free_response to remove the agent template's specific tokens for tool calling
-        template_free_response = f"{agent_template.thought_words[0]}{thought}{agent_template.thought_words[1]}"  # Add the thought
-        template_free_response += json.dumps(parsed_response['value'])  # Add the tool call
-        parsed_response['template_free_response'] = template_free_response
-
+        
+    if not found_thought:
+        # No thought was found. Use the text before the tool call (if there was one), or all of the text (FINAL)
+        if parsed_response['type'] == "FINAL":
+            parsed_response['thought'] = parsed_response['value']
+        else:
+            parsed_response['thought'] = response.split(agent_template.format_function.tool_format.tool_call_start_tag)[0]
     return parsed_response
-
-def get_action(llm, llm_parameters, state, agent_template):
-    # For OpenAI typed llms, we only use two roles - system, user and assistant. For others, add the special tokens
-    if isinstance(llm, OpenAI):
-        reformatted_state = []
-        for message in state:
-            if message['role'] in [Role.SYSTEM.value, Role.USER.value, Role.ASSISTANT.value]:
-                reformatted_state.append(message)
-            else:
-                if message['role'] == Role.OBSERVATION.value:
-                    reformatted_state.append(
-                        {
-                            'role': Role.USER.value,
-                            'content': agent_template.format_observation.apply(content=message["content"])[0]
-                        }
-                    )
-                elif message['role'] == Role.FUNCTION.value:
-                    reformatted_state.append(
-                        {
-                            'role': Role.ASSISTANT.value,
-                            'content': agent_template.format_function.apply(content=message["content"])[0]
-                        }
-                    )
-        state = reformatted_state
-
-    response = invoke_llm(llm, llm_parameters, state)
-    action = parse_llm_response(response)
-    return action
 
 
 
@@ -170,7 +175,7 @@ def run_agent(args):
             "temperature": config['temperature'],
             "stop_sequences": ["User Query"]
         }
-    scorer_tokenizer, scorer_llm, _ = load_model(scorer_llm_params["model_name_or_path"])
+    scorer_tokenizer, scorer_llm, scorer_device = load_model(scorer_llm_params["model_name_or_path"])
     env = M3EvalEnv(
         path_to_env_data=config['path_to_env_data'],
         es_config=config['db_config'],
@@ -181,6 +186,7 @@ def run_agent(args):
         scorer_llm=scorer_llm,
         scorer_llm_tokenizer=scorer_tokenizer, 
         scorer_llm_parameters=scorer_llm_params,
+        scorer_device=scorer_device
     )
     tokenizer, model, device = load_model(config["model_name_or_path"])
 
@@ -231,23 +237,33 @@ def run_agent(args):
             logger.info("Tasking Agent to take the action")
             try:
                 # TODO: create the system prompt here
-                formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True)
+                formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=SYSTEM_PROMPT)
                 inputs = tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
                 inputs = {k: v.to(device) for k, v in inputs.items()}
-                generated_ids = model.generate(
-                    input_ids=inputs["input_ids"],
-                    attention_mask=inputs["attention_mask"], 
-                    max_new_tokens=llm_parameters['max_new_tokens'],
-                    do_sample=False)
-                generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=False)
-                import pdb; pdb.set_trace()
+
+                if DEBUG_MODE:
+                    # Hardcode the answers to debug locally without having to wait for llm calls
+                    if t > 0:
+                        generated_text = "<think>\nOkay, the user is asking which crew member of The Simpsons 20s is the oldest. I need to figure out how to answer this.\n\nFirst, I remember that The Simpsons has a variety of characters, and each has different ages. The user mentioned \"20s,\" which probably refers to the 20s generation. But I need to confirm if there's a specific character in that generation that's the oldest.\n\nLooking at the tools provided, there's a function called get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get. This function retrieves the person with the earliest birthdate. Since the user is asking about the oldest, maybe this function can give the oldest person's name.\n\nIn the previous tool call, the response was 'Paul Newman'. If that's the case, then Paul Newman would be the oldest in the 20s generation. But I should verify if there's any other information needed. The user might not need more details, just the name. So the answer would be Paul Newman.\n</think>\n\nThe oldest crew member of The Simpsons 20s is **Paul Newman**.<|im_end|>"
+                    else:
+                        generated_text = "<think>The user is asking for the oldest crew member of the Simpsons in the 20s. To answer this, I need to find the person with the earliest birthdate from the database. The tool \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\" is designed to retrieve the name of the person with the earliest birthdate. Since no specific arguments are required for this tool, I will call it with an empty argument dictionary. This step is necessary to answer the user's query and is in line with the tool use policy, which specifies that document retrievers should be used to answer questions.</think><tool_call>{\"name\": \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\", \"arguments\": {}}</tool_call>"
+                else:
+                    input_len = len(inputs["input_ids"][0])
+                    generated_ids = model.generate(
+                        input_ids=inputs["input_ids"],
+                        attention_mask=inputs["attention_mask"], 
+                        max_new_tokens=llm_parameters['max_new_tokens'],
+                        do_sample=False)
+                    # generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
+                    generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                
                 parsed_response = parse_llm_response(generated_text, agent_template)
 
-                actor = 'agent'
             except Exception as e:
                 logger.error(f"Couldn't process example for env instance {i} within inference to take action task due to error {e}. Skipping!")
                 traceback.print_exc()
                 next_example_inference=True # At inference we still want to write a failed log
+                next_example=True
                 break
 
             logger.info(f"(t={t}) Action Data: {json.dumps(parsed_response, indent=2)}")
@@ -266,7 +282,6 @@ def run_agent(args):
                     "action": parsed_response["type"],
                     "action_arguments": parsed_response["value"],
                 },
-                "actor": actor,  # Add the actor
                 "output": {
                     "role": parsed_response["role"],
                     "content": parsed_response["template_free_response"],
