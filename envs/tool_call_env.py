@@ -23,6 +23,7 @@ from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
 from data_utils.utils import downsample_tools, update_retrieval_tools
+from agents.llm import get_lm
 from transformers import AutoTokenizer
 device = "auto"
 model_path = "ibm-granite/granite-3.0-8b-base"
@@ -1108,6 +1109,7 @@ class M3EvalEnv(M3ToolCallEnv):
         self.scorer_llm_tokenizer = scorer_llm_tokenizer
         self.scorer_llm_model = scorer_llm
         self.scorer_device = scorer_device
+        scorer_llm_obj = get_lm(scorer_llm_parameters["model_name_or_path"], parameters=scorer_llm_parameters)
 
 
         super().__init__(
@@ -1117,7 +1119,7 @@ class M3EvalEnv(M3ToolCallEnv):
             horizon,
             sub_domain,
             agent_template=agent_template,
-            scorer_llm=None,
+            scorer_llm=scorer_llm_obj,
             scorer_llm_parameters=scorer_llm_parameters,
             partial_credit = partial_credit,
             summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
@@ -1340,18 +1342,18 @@ class M3EvalEnv(M3ToolCallEnv):
                     partial_scoring=self.partial_credit,
                     use_sample=False,
                 )
-                formatted_text = self.scorer_llm_tokenizer.apply_chat_template(scorer_prompt, tokenize=False, add_generation_prompt=True)
-                inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
-                inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
-                input_len = len(inputs["input_ids"][0])
-                generated_ids = self.scorer_llm_model.generate(
-                    input_ids=inputs["input_ids"],
-                    attention_mask=inputs["attention_mask"], 
-                    max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
-                    do_sample=False)
-                # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
-                response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
-                # response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
+                # formatted_text = self.scorer_llm_tokenizer.apply_chat_template(scorer_prompt, tokenize=False, add_generation_prompt=True)
+                # inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                # inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
+                # input_len = len(inputs["input_ids"][0])
+                # generated_ids = self.scorer_llm_model.generate(
+                #     input_ids=inputs["input_ids"],
+                #     attention_mask=inputs["attention_mask"], 
+                #     max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
+                #     do_sample=False)
+                # # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
+                # response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
                 try:
                     parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
                 except ValueError as e:
@@ -1363,18 +1365,18 @@ class M3EvalEnv(M3ToolCallEnv):
                         response=response,
                         error=error_msg,
                     )
-                    formatted_text = self.scorer_llm_tokenizer.apply_chat_template(parser_resolver_prompt, tokenize=False, add_generation_prompt=True)
-                    inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
-                    inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
-                    input_len = len(inputs["input_ids"][0])
-                    generated_ids = self.scorer_llm_model.generate(
-                        input_ids=inputs["input_ids"],
-                        attention_mask=inputs["attention_mask"], 
-                        max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
-                        do_sample=False)
-                    # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
-                    response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
-                    # response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
+                    # formatted_text = self.scorer_llm_tokenizer.apply_chat_template(parser_resolver_prompt, tokenize=False, add_generation_prompt=True)
+                    # inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                    # inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
+                    # input_len = len(inputs["input_ids"][0])
+                    # generated_ids = self.scorer_llm_model.generate(
+                    #     input_ids=inputs["input_ids"],
+                    #     attention_mask=inputs["attention_mask"], 
+                    #     max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
+                    #     do_sample=False)
+                    # # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
+                    # response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                    response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
                     parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
 
                 logger.info(f"[External Agent Call] Agent = Final_Scorer")

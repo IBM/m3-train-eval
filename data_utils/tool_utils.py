@@ -675,8 +675,8 @@ class StudentGranite4ToolUtils(StudentGraniteToolUtils):
     def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
         """Inverse of function_formatter"""
         tool = content.strip()
-        if tool.startswith('<tool_call>'):
-            tool = tool[len('<tool_call>'):]
+        if tool.find('<tool_call>') != -1:
+            tool = tool.split('<tool_call>')[1].replace("</tool_call>", "")
             tool = tool.strip()
 
         # # We don't want to return the parsing error for granite, <tool_call> is a special token which gets removed

@@ -22,7 +22,7 @@ from envs.tool_call_env import M3EvalEnv
 from envs.base_env import SubDomain
 
 
-DEBUG_MODE=True
+DEBUG_MODE=False
 
 def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
 
@@ -175,7 +175,7 @@ def run_agent(args):
             "temperature": config['temperature'],
             "stop_sequences": ["User Query"]
         }
-    scorer_tokenizer, scorer_llm, scorer_device = load_model(scorer_llm_params["model_name_or_path"])
+    # scorer_tokenizer, scorer_llm, scorer_device = load_model(scorer_llm_params["model_name_or_path"])
     env = M3EvalEnv(
         path_to_env_data=config['path_to_env_data'],
         es_config=config['db_config'],
@@ -183,10 +183,10 @@ def run_agent(args):
         horizon=config["horizon"],
         sub_domain=sub_domain,
         agent_template=agent_template,
-        scorer_llm=scorer_llm,
-        scorer_llm_tokenizer=scorer_tokenizer, 
+        scorer_llm=None,
+        scorer_llm_tokenizer=None, 
         scorer_llm_parameters=scorer_llm_params,
-        scorer_device=scorer_device
+        scorer_device=None
     )
     tokenizer, model, device = load_model(config["model_name_or_path"])
 
@@ -246,7 +246,8 @@ def run_agent(args):
                     if t > 0:
                         generated_text = "<think>\nOkay, the user is asking which crew member of The Simpsons 20s is the oldest. I need to figure out how to answer this.\n\nFirst, I remember that The Simpsons has a variety of characters, and each has different ages. The user mentioned \"20s,\" which probably refers to the 20s generation. But I need to confirm if there's a specific character in that generation that's the oldest.\n\nLooking at the tools provided, there's a function called get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get. This function retrieves the person with the earliest birthdate. Since the user is asking about the oldest, maybe this function can give the oldest person's name.\n\nIn the previous tool call, the response was 'Paul Newman'. If that's the case, then Paul Newman would be the oldest in the 20s generation. But I should verify if there's any other information needed. The user might not need more details, just the name. So the answer would be Paul Newman.\n</think>\n\nThe oldest crew member of The Simpsons 20s is **Paul Newman**.<|im_end|>"
                     else:
-                        generated_text = "<think>The user is asking for the oldest crew member of the Simpsons in the 20s. To answer this, I need to find the person with the earliest birthdate from the database. The tool \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\" is designed to retrieve the name of the person with the earliest birthdate. Since no specific arguments are required for this tool, I will call it with an empty argument dictionary. This step is necessary to answer the user's query and is in line with the tool use policy, which specifies that document retrievers should be used to answer questions.</think><tool_call>{\"name\": \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\", \"arguments\": {}}</tool_call>"
+                        # generated_text = "<think>The user is asking for the oldest crew member of the Simpsons in the 20s. To answer this, I need to find the person with the earliest birthdate from the database. The tool \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\" is designed to retrieve the name of the person with the earliest birthdate. Since no specific arguments are required for this tool, I will call it with an empty argument dictionary. This step is necessary to answer the user's query and is in line with the tool use policy, which specifies that document retrievers should be used to answer questions.</think><tool_call>{\"name\": \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\", \"arguments\": {}}</tool_call>"
+                        generated_text = "The user is asking for the oldest crew member of the Simpsons in the 20s. To answer this, I need to find the person with the earliest birthdate from the database. The tool \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\" is designed to retrieve the name of the person with the earliest birthdate. Since no specific arguments are required for this tool, I will call it with an empty argument dictionary. This step is necessary to answer the user's query and is in line with the tool use policy, which specifies that document retrievers should be used to answer questions.<tool_call>{\"name\": \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\", \"arguments\": {}}</tool_call>"
                 else:
                     input_len = len(inputs["input_ids"][0])
                     generated_ids = model.generate(
