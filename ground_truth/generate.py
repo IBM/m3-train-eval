@@ -158,7 +158,7 @@ def create_and_inject_thoughts(
         domain: str,
         model_name_or_path: str,
         range_tool_resp_cut_off: Tuple[int, int] = (5, 10),
-        max_tool_resp_cut_off: int = 1024, no_thoughts=False
+        max_tool_resp_cut_off: int = 1024, add_thoughts=False
 ) -> dict:
     """Must run after parsing raw multi-turn data.
 
@@ -328,7 +328,7 @@ def create_and_inject_thoughts(
                     tool_use_policy=tool_usage_policy
                 )
 
-                if no_thoughts:
+                if add_thoughts:
                     try:
                         response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
                     except Exception as e:
@@ -726,7 +726,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', '-o', required=True, 
                        help='Path to output folder directory to write to')
     parser.add_argument('--domain', '-d', help="Specific domain to run chunking for")
-    parser.add_argument("--no_thoughts", "-nt", help="No thoughts generated. Set to yes / true if required.")
+    parser.add_argument("--add_thoughts", "-at",default=None, help="Thoughts generated if this is set to yes / true. Otherwise set to None.")
     args = parser.parse_args()
 
     project_root = Path.cwd()
@@ -757,10 +757,10 @@ if __name__ == "__main__":
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
 
     # # 2. Create the final training data
-    #if not args.no_thoughts:
+    #if not args.add_thoughts:
     _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
     _created_training_data_stats = create_and_inject_thoughts(parsed_data_dir=_save_parsed_data_at, _save_data_at=_save_final_data_at,
-                                                            domain=args.domain, model_name_or_path=_model_name_or_path, no_thoughts=args.no_thoughts)
+                                                            domain=args.domain, model_name_or_path=_model_name_or_path, add_thoughts=args.add_thoughts)
     logger.info(json.dumps(_created_training_data_stats, indent=4))
     with open(os.path.join(_log_dir, 'final_training_data_stats.json'), 'w') as f:
         json.dump(_created_training_data_stats, f, indent=4)
