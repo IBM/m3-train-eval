@@ -209,10 +209,6 @@ def main():
                 change_dict=json.load(f)
         else:
             change_dict=None
-
-   #if "ONLY_API" not in env.sample_id and "ONLY_RAG" not in env.sample_id:
-        #    logger.info("f{env.sample_id} is not supported correctly right now. Skipping!")
-        #    continue
         
         domain_names=[i.split("_multiturn_")[0] for i in os.listdir(foldername_no_scenario) if "_final.json" in i]
         mixed_data=[]
