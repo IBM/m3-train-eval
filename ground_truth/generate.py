@@ -158,7 +158,7 @@ def create_and_inject_thoughts(
         domain: str,
         model_name_or_path: str,
         range_tool_resp_cut_off: Tuple[int, int] = (5, 10),
-        max_tool_resp_cut_off: int = 1024,
+        max_tool_resp_cut_off: int = 1024, add_thoughts=False
 ) -> dict:
     """Must run after parsing raw multi-turn data.
 
@@ -236,8 +236,8 @@ def create_and_inject_thoughts(
             from envs.constants import COMPRESS_TOOL_RESPONSE_INSTRUCTION
             answer_generator_additional_instr = COMPRESS_TOOL_RESPONSE_INSTRUCTION.format(
                 curr_resp_cutoff=resp_cutoff_thresh)
-            sample['resp_cutoff_thresh']: int = resp_cutoff_thresh
-            sample['resp_cutoff_inst']: str = answer_generator_additional_instr
+            sample['resp_cutoff_thresh'] = int(resp_cutoff_thresh)
+            sample['resp_cutoff_inst'] = str(answer_generator_additional_instr)
 
             previous_dialogue = []
             turns = []  # For storing turn-level query-answer pairs
@@ -327,77 +327,85 @@ def create_and_inject_thoughts(
                     step_prompts=step_prompts,
                     tool_use_policy=tool_usage_policy
                 )
-                try:
-                    response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
-                except Exception as e:
-                    # If RITS generation fails, skip and continue to next trajectory
-                    left_out_domain_data.append(orig_sample)
-                    logger.error(f"Error invoking RITS LLM for Thought generation: {e}")
-                    continue
-                logger.info(f"\nThought generator response [turn #{turn_idx}]:\n{response}")
-                parsed_response = parse_thought_generator_response(response, len(hops))
-                logger.info(f"\nParsed response [turn #{turn_idx}]:\n{parsed_response}")
-                if parsed_response is None or not parsed_response:
-                    is_valid_sample = False
-                    logger.info(
-                        f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
-                    parsing_error_sample = copy.deepcopy(sample)
-                    parsing_error_sample['error_raw_response'] = response
-                    parsing_error_sample['error_parsed_response'] = parsed_response
-                    parsing_error_data.append(parsing_error_sample)
-                    break
-                
-                trajectory_modifications_needed=False
-                #new_trajectory=curr_turn_trajectory
-                # Fill in the thought
-                #import pdb
-                modified_indices=[]
-                for hop_idx, (item_0, item_1) in enumerate(hops):
-                    curr_step_thought: str = parsed_response[hop_idx]
-                    modified_indices.append(hop_idx)
-                    item_0['plan'] = curr_step_thought
-                    #if the output has a special marker for policy remove the output as its not an API that can be called.
-                    if "policy" in item_0["output"]:
-                        del item_0["output"]
-                        del item_1["response"]
-                        if "chunk_info" in item_1:
-                            del item_1['chunk_info']
-                        trajectory_modifications_needed=True
-                        
-                # # ############################ Generate final answer and its thought ############################ #
-                # TODO: Inject the previous_dialogue if the final answer of the current turn depends on it
-                trajectory_str = wrap_hop_data_into_trajectory_str(hops, is_long_response_sample)
-                answer_generator_prompt = get_answer_generator_prompt(
-                    user_query=curr_user_query,
-                    trajectory=trajectory_str,
-                    additional_instruction=answer_generator_additional_instr
-                )
-                try:
-                    response = invoke_llm(llm, llm_parameters, answer_generator_prompt)
-                except Exception as e:
-                    # If RITS generation fails, skip and continue to next trajectory
-                    left_out_domain_data.append(orig_sample)
-                    logger.error(f"Error invoking RITS LLM for Final answer thought generation: {e}")
-                    continue
-                logger.info(f"\nFinal answer generator response[turn #{turn_idx}]:\n{response}")
-                parsed_response = parse_answer_generator_response(response)
-                if parsed_response is None:
-                    is_valid_sample = False
-                    logger.info(f"    Parsing error (final answer) for sample {sample['sample_id']} failed. Ignoring!")
-                    parsing_error_sample = copy.deepcopy(sample)
-                    parsing_error_sample['error_raw_response'] = response
-                    parsing_error_sample['error_parsed_response'] = parsed_response
-                    parsing_error_data.append(parsing_error_sample)
-                    break
+
+                if add_thoughts:
+                    try:
+                        response = invoke_llm(llm, llm_parameters, thought_generator_prompt)
+                    except Exception as e:
+                        # If RITS generation fails, skip and continue to next trajectory
+                        left_out_domain_data.append(orig_sample)
+                        logger.error(f"Error invoking RITS LLM for Thought generation: {e}")
+                        continue
+                    logger.info(f"\nThought generator response [turn #{turn_idx}]:\n{response}")
+                    parsed_response = parse_thought_generator_response(response, len(hops))
+                    logger.info(f"\nParsed response [turn #{turn_idx}]:\n{parsed_response}")
+                    if parsed_response is None or not parsed_response:
+                        is_valid_sample = False
+                        logger.info(
+                            f"    Parsing error (intermediate thoughts) for sample {sample['sample_id']} failed. Ignoring!")
+                        parsing_error_sample = copy.deepcopy(sample)
+                        parsing_error_sample['error_raw_response'] = response
+                        parsing_error_sample['error_parsed_response'] = parsed_response
+                        parsing_error_data.append(parsing_error_sample)
+                        break
+                    
+                    trajectory_modifications_needed=False
+                    #new_trajectory=curr_turn_trajectory
+                    # Fill in the thought
+                    #import pdb
+                    modified_indices=[]
+                    for hop_idx, (item_0, item_1) in enumerate(hops):
+                        curr_step_thought: str = parsed_response[hop_idx]
+                        modified_indices.append(hop_idx)
+                        item_0['plan'] = curr_step_thought
+                        #if the output has a special marker for policy remove the output as its not an API that can be called.
+                        if "policy" in item_0["output"]:
+                            del item_0["output"]
+                            del item_1["response"]
+                            if "chunk_info" in item_1:
+                                del item_1['chunk_info']
+                            trajectory_modifications_needed=True
+                            
+                    # # ############################ Generate final answer and its thought ############################ #
+                    # TODO: Inject the previous_dialogue if the final answer of the current turn depends on it
+                    trajectory_str = wrap_hop_data_into_trajectory_str(hops, is_long_response_sample)
+                    answer_generator_prompt = get_answer_generator_prompt(
+                        user_query=curr_user_query,
+                        trajectory=trajectory_str,
+                        additional_instruction=answer_generator_additional_instr
+                    )
+                    try:
+                        response = invoke_llm(llm, llm_parameters, answer_generator_prompt)
+                    except Exception as e:
+                        # If RITS generation fails, skip and continue to next trajectory
+                        left_out_domain_data.append(orig_sample)
+                        logger.error(f"Error invoking RITS LLM for Final answer thought generation: {e}")
+                        continue
+                    logger.info(f"\nFinal answer generator response[turn #{turn_idx}]:\n{response}")
+                    parsed_response = parse_answer_generator_response(response)
+                    if parsed_response is None:
+                        is_valid_sample = False
+                        logger.info(f"    Parsing error (final answer) for sample {sample['sample_id']} failed. Ignoring!")
+                        parsing_error_sample = copy.deepcopy(sample)
+                        parsing_error_sample['error_raw_response'] = response
+                        parsing_error_sample['error_parsed_response'] = parsed_response
+                        parsing_error_data.append(parsing_error_sample)
+                        break
+                    
 
                 # # Fill in the answer
-                curr_turn_trajectory[-1]['plan'] = parsed_response['thought']
-                curr_turn_trajectory[-1]['answer'] = parsed_response['answer']  # At turn-level trajectory, store the wrapped answer as it is being used for model training
-                curr_turn_trajectory[-1]['raw_answer'] = json.dumps(curr_raw_answer)
+                    curr_turn_trajectory[-1]['plan'] = parsed_response['thought']
+                    curr_turn_trajectory[-1]['answer'] = parsed_response['answer']  # At turn-level trajectory, store the wrapped answer as it is being used for model training
+                    curr_turn_trajectory[-1]['raw_answer'] = json.dumps(curr_raw_answer)
+                else:
+                    curr_turn_trajectory[-1]['plan'] = "NO_THOUGHT"
+                    curr_turn_trajectory[-1]['answer'] = json.dumps(curr_raw_answer)  # At turn-level trajectory, store the wrapped answer as it is being used for model training
+                    curr_turn_trajectory[-1]['raw_answer'] = json.dumps(curr_raw_answer)
+                    
                 turns.append(
                     {
                         'query': curr_user_query,
-                        'answer': parsed_response['answer'],
+                        'answer': json.dumps(curr_raw_answer),
                         'raw_answer': json.dumps(curr_raw_answer),
                         'was_raw_answer_truncated': True if turn_resp_cutoff_thresh is not None else False,
                         # Could be Useful to determine turn-level final answer match rewards
@@ -718,7 +726,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', '-o', required=True, 
                        help='Path to output folder directory to write to')
     parser.add_argument('--domain', '-d', help="Specific domain to run chunking for")
-    parser.add_argument("--no_thoughts", "-nt", help="No thoughts generated. Set to yes / true if required.")
+    parser.add_argument("--add_thoughts", "-at",default=None, help="Thoughts generated if this is set to yes / true. Otherwise set to None.")
     args = parser.parse_args()
 
     project_root = Path.cwd()
@@ -749,10 +757,10 @@ if __name__ == "__main__":
     create_multi_turn_data(_raw_data_dir, _save_parsed_data_at, args.domain, os.path.join(_log_dir, 'plots') )
 
     # # 2. Create the final training data
-    if not args.no_thoughts:
-        _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
-        _created_training_data_stats = create_and_inject_thoughts(_save_parsed_data_at, _save_final_data_at,
-                                                                args.domain, _model_name_or_path)
-        logger.info(json.dumps(_created_training_data_stats, indent=4))
-        with open(os.path.join(_log_dir, 'final_training_data_stats.json'), 'w') as f:
-            json.dump(_created_training_data_stats, f, indent=4)
+    #if not args.add_thoughts:
+    _model_name_or_path = "mistralai/mixtral-8x22B-instruct-v0.1"
+    _created_training_data_stats = create_and_inject_thoughts(parsed_data_dir=_save_parsed_data_at, _save_data_at=_save_final_data_at,
+                                                            domain=args.domain, model_name_or_path=_model_name_or_path, add_thoughts=args.add_thoughts)
+    logger.info(json.dumps(_created_training_data_stats, indent=4))
+    with open(os.path.join(_log_dir, 'final_training_data_stats.json'), 'w') as f:
+        json.dump(_created_training_data_stats, f, indent=4)

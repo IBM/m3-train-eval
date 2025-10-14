@@ -22,7 +22,10 @@ from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
 from data_utils.utils import downsample_tools, update_retrieval_tools
-
+from transformers import AutoModelForCausalLM, AutoTokenizer
+device = "auto"
+model_path = "ibm-granite/granite-3.0-8b-base"
+tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 
 if TYPE_CHECKING:
@@ -573,6 +576,8 @@ class M3ToolCallEnv(ToolCallEnv):
 
         # Init. the document database here
         self.doc_db, self.document_collections = None, None
+        self.discard_long_response = True
+        self.discard_token_n = 4096
 
         super().__init__(
             horizon,
@@ -605,6 +610,11 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         self.domain = curr_instance_data["domain"]
         self.sample_id = curr_instance_data["sample_id"]
+        # Optional parameters used for reporting
+        self.guid=curr_instance_data.get("guid",None)
+        self.num_turns=curr_instance_data.get("num_turns",None)
+        self.num_hops=curr_instance_data.get("num_hops",None)
+        self.type=curr_instance_data.get("type",None)
 
         # For Multi-turn data
         if "turns" in curr_instance_data:
@@ -612,7 +622,14 @@ class M3ToolCallEnv(ToolCallEnv):
             self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
             self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
             self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in curr_instance_data["turns"]]
+            if self.discard_long_response:
+                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in self.raw_answers]
+                max_raw_answer_len = max(raw_answer_token_lens)
+                if max_raw_answer_len > self.discard_token_n:
+                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")
+
         # For [Older] Single-turn data
+        # TODO : Long answer length to be fixed in this one        
         else:
             self.user_queries = [curr_instance_data['merged_query']]
             self.golden_answers = [curr_instance_data['answer']]
@@ -628,6 +645,7 @@ class M3ToolCallEnv(ToolCallEnv):
             if isinstance(trajectory[0], list):
 
                 # Get the sub-questions (in order) that the agent/expert should try to answer
+                response_lst=[]
                 ordered_sub_ques_composition = []
                 for curr_turn_traj in trajectory:
                     curr_turn_ordered_sub_ques_composition = []
@@ -635,6 +653,10 @@ class M3ToolCallEnv(ToolCallEnv):
                     hops = [(curr_turn_traj[i], curr_turn_traj[i + 1]) for i in
                             range(0, len(curr_turn_traj), 2)]  # (s, a)
                     for hop_idx, (item_0, item_1) in enumerate(hops):
+                        if "response" in item_1.keys():
+                            response_lst.append(item_1["response"])
+                        if "response" in item_0.keys():
+                            response_lst.append(item_0["response"])
                         if "answer" in item_1.keys():  # If action is a Final action
                             continue
                         else:
@@ -650,8 +672,14 @@ class M3ToolCallEnv(ToolCallEnv):
                             else:
                                 raise ValueError(f"Unknown agent of type {item_1['agent']}")
                     ordered_sub_ques_composition.append(json.dumps(curr_turn_ordered_sub_ques_composition))
+            if self.discard_long_response:
+                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in response_lst]
+                max_raw_answer_len = max(raw_answer_token_lens)
+                if max_raw_answer_len > self.discard_token_n:
+                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")                    
 
             # For [Older] Single-turn data
+            # TODO : Long answer length to be fixed in this one
             else:
                 # Get the sub-questions (in order) that the agent/expert should try to answer
                 ordered_sub_ques_composition = []
@@ -872,21 +900,23 @@ class M3ToolCallEnv(ToolCallEnv):
         else:
             initialization_specs = None
             dataset_name = None
-        self.pre_setup_tools(tools, dataset_name, initialization_specs)
 
-        # 3. Configure the document retrieval tool for the env
-        self.setup_document_retrieval_tool()
+        # 3. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
+        tools, self.document_collections=update_retrieval_tools(tools, curr_instance_data['doc_collections'])
 
-        # 4. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
-        tools=update_retrieval_tools(tools)
-
-        # 5. Get list of required tools
+        # 4. Get list of required tools
         required=[]
         for item in curr_instance_data["trajectory"]:
             for traj in item:
                 if "output" in traj:
                     required.append(traj['output']['name']) # TODO : Required list needs to be updated for scenarios
         tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)        
+
+        # 5. Setup tools for API
+        self.pre_setup_tools(tools, dataset_name, initialization_specs)
+
+        # 5. Configure the document retrieval tool for the env
+        self.setup_document_retrieval_tool()
 
         # 4. Add the special tool for document retrieval [Old way]
         # from envs.constants import RETRIEVE_FUNCTION_NAME

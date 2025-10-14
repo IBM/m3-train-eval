@@ -50,7 +50,10 @@ def get_alternate_action_trace(state, env, policy, initiating_actor: str) -> Lis
 
 def run_agent(args):
     # ########################################## Load the config file ########################################## #
-    path_to_config = os.path.join('config_files', 'infer_agent.json')
+    if not args.infer_config:
+        path_to_config = os.path.join('config_files', 'infer_agent.json')
+    else:
+        path_to_config = args.infer_config
     with open(path_to_config) as f:
         config = json.load(f)
     logger.info("Loaded the agent run config from {}".format(path_to_config))
@@ -215,8 +218,12 @@ def run_agent(args):
 
         expert_agent.initialize(env)
         agent_trajectory = {
+            'guid': env.guid,
             'system': env.system,
             'domain': env.domain,
+            'num_turns':env.num_turns,
+            'num_hops':env.num_hops,
+            'type':env.type,
             'sample_id': env.sample_id,
             'tools': env.tools,
             'interactions': {},
@@ -236,7 +243,8 @@ def run_agent(args):
         expert_assistance_tracker = []
         t = 0
         expert_help_needed = False
-        next_example=False        
+        next_example=False
+        next_example_inference=False       
         while not done:
             logger.info(f"Current time step: {t}")
             alternate_trace = []  # List to save data for alternate actions if taken at the same state
@@ -244,10 +252,20 @@ def run_agent(args):
             if expert_assist.mode is None:
                 # Only take Agentic Actions
                 logger.info("Tasking Agent to take the action")
-                parsed_response = agent.take_action(
-                                    state=state,
-                                    include_thoughts=include_thoughts)
-                actor = 'agent'
+                # parsed_response = agent.take_action(
+                #                     state=state,
+                #                     include_thoughts=include_thoughts)
+                # actor = 'agent'
+                try:
+                    parsed_response = agent.take_action(
+                                        state=state,
+                                        include_thoughts=include_thoughts)
+                    actor = 'agent'
+                except Exception as e:
+                    logger.error(f"Couldn't process example for env instance {i} within inference to take action task due to error {e}. Skipping!")
+                    traceback.print_exc()
+                    next_example_inference=True # At inference we still want to write a failed log
+                    break
 
             elif expert_assist.mode == 'ground_truth' or expert_assist.mode == 'ground_truth_non_live':
                 # Only take Expert actions
@@ -434,26 +452,38 @@ def run_agent(args):
             continue
 
         # ###################################### Compute metrics/Save Metadata ###################################### #
-        metrics["truncated"] += env_metadata['truncated']
-        metrics["terminated"] += env_metadata['terminated']
-        metrics["success"] += env_metadata['success']
-
-        # Let's store other metadata as well
-        agent_metadata = {
-            "sample_id": env.sample_id,
-            "domain": env.domain,
-            "truncated": env_metadata['truncated'],
-            "terminated": env_metadata['terminated'],
-            "success": env_metadata['success'],
-            "total_time_steps": t,
-            "expert_assistance": {
-                "mode": expert_assist.mode,
-                "init_limit": expert_assist.init_limit,
-                "recent_limit": expert_assist.recent_limit,
-                "random_epsilon": expert_assist.random_epsilon,
-                "tracker": expert_assistance_tracker
+        if not next_example_inference:
+            metrics["truncated"] += env_metadata['truncated']
+            metrics["terminated"] += env_metadata['terminated']
+            metrics["success"] += env_metadata['success']
+            # Let's store other metadata as well
+            agent_metadata = {
+                "sample_id": env.sample_id,
+                "domain": env.domain,
+                "truncated": env_metadata['truncated'],
+                "terminated": env_metadata['terminated'],
+                "success": env_metadata['success'],
+                "total_time_steps": t,
+                "expert_assistance": {
+                    "mode": expert_assist.mode,
+                    "init_limit": expert_assist.init_limit,
+                    "recent_limit": expert_assist.recent_limit,
+                    "random_epsilon": expert_assist.random_epsilon,
+                    "tracker": expert_assistance_tracker
+                }
             }
-        }
+        else:
+            metrics["terminated"] += 1
+            # Let's store other metadata as well
+            agent_metadata = {
+                "sample_id": env.sample_id,
+                "domain": env.domain,
+                "truncated": False,
+                "terminated": True,
+                "success": False,
+                "total_time_steps": t,
+                "expert_assistance": {}
+            }
 
         # Save the Agent trajectory
         with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
@@ -468,8 +498,9 @@ def run_agent(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to")
-    parser.add_argument('--input_filename', '-i', default=None, help="Input filename.")
+    parser.add_argument('--input_filename', '-i', default="data/soccer_2016_multiturn_bird_chunked_final.json", help="Input filename.")
     parser.add_argument('--scenario_with_assist_mode', action='store_true')
     parser.add_argument('-s', action='store_true',help="Run for scenario mode.")
+    parser.add_argument('--infer_config','-ic',help="Config file for model training and evaluation. Default value config_files/infer_agent.json")
     args = parser.parse_args()
     run_agent(args)

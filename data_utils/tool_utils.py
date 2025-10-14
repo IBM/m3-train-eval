@@ -624,6 +624,90 @@ class StudentGraniteToolUtils(ToolUtils):
         return [FunctionCall(tool["name"], json.dumps(tool["arguments"], ensure_ascii=False))]
 
 
+class StudentGranite4ToolUtils(StudentGraniteToolUtils):
+    r"""Granite 4 tool using template [for my use case]."""
+
+    @override
+    @staticmethod
+    def tool_formatter(tools: list[dict[str, Any]], tool_policy: ToolPolicy) -> str:
+        from prompts.agent.student_granite import TOOL_AVAILABILITY_TEXT, TOOL_USAGE_TEXT, TOOL_CALL_USAGE
+
+        # [1] Create the tool availability text
+        tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
+
+        tool_availability_text = "You are provided with function signatures within <tools></tools> XML tags:\n<tools>\n"
+        for t in tools:
+            tool_availability_text += json.dumps(t, ensure_ascii=False) + '\n'
+        tool_availability_text += "</tools>\n"
+
+        # [2] Create the tool usage text
+        tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
+
+        # [3] Create the final answer guidance
+        final_answer_instructions: str = tool_policy.final_answer_policy
+
+        slots = {
+            "tool_call_usage": TOOL_CALL_USAGE,
+            "tool_use_constraints": tool_use_constraints,
+            "final_answer_instructions": final_answer_instructions
+        }
+        tool_usage_text = TOOL_USAGE_TEXT
+        for name, value in slots.items():
+            tool_usage_text = tool_usage_text.replace("{" + name + "}", value, 1)
+
+        final_tool_text = tool_availability_text + "\n\n" + tool_usage_text
+        return final_tool_text
+    
+    @override
+    @staticmethod
+    def function_formatter(functions: list["FunctionCall"]) -> str:
+        """All the tool calls (as a list) will be enclosed within a common XML tag"""
+        return "<tool_call> " + json.dumps(
+            [{"name": name, "arguments": json.loads(arguments)} for name, arguments in functions], ensure_ascii=False
+        )    
+    
+    @override
+    @staticmethod
+    def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
+        """Inverse of function_formatter"""
+        tool = content.strip()
+        if tool.startswith('<tool_call>'):
+            tool = tool[len('<tool_call>'):]
+            tool = tool.strip()
+
+        # # We don't want to return the parsing error for granite, <tool_call> is a special token which gets removed
+        # # when we are decoding using skip_special_tokens=True. We don't want to set it to False since other special
+        # # tokens will interfere with the current parsing logic
+        # else:
+        #     # Improper formatting
+        #     error = "ParsingError: The predicted tool call(s) must be preceded by <tool_call> tag."
+        #     return error
+
+        try:
+            tool = json.loads(tool)
+            tool = tool[0] if isinstance(tool, list) else tool  # Only one tool call supported in our student agent
+            if 'arguments' in tool.keys() and not isinstance(tool['arguments'], dict):
+                tool['arguments'] = json.loads(tool['arguments'])
+        except json.JSONDecodeError:
+            error = f"JSONDecodeError: Provided tool specification {tool} is not a valid JSON. Follow the instructions to provide a valid JSON string."
+            return error
+
+        # We now have extracted a successful tool call.
+        # Following errors are not unique to the agent, but we keep it in agent's tool_extractor
+        # because the fn needs to return a valid FunctionCall.
+        if "name" not in tool or "arguments" not in tool:
+            if "name" not in tool and "arguments" in tool:
+                error = f"MissingKeyError(name): name key is missing from the tool specification."
+                return error
+            elif "name" in tool and "arguments" not in tool:
+                error = f"MissingKeyError(arguments): arguments key is missing from the tool specification."
+                return error
+            elif "name" not in tool and "arguments" not in tool:
+                error = f"MissingKeysError(name,arguments): name and arguments keys are missing from the tool specification."
+                return error
+
+        return [FunctionCall(tool["name"], json.dumps(tool["arguments"], ensure_ascii=False))]    
+
 TOOLS = {
     "default": DefaultToolUtils(),
     "glm4": GLM4ToolUtils(),
@@ -634,6 +718,7 @@ TOOLS = {
     "student_mistral": StudentMistralToolUtils(),  # My custom
     "student_qwen": StudentQwenToolUtils(),  # My custom
     "student_granite": StudentGraniteToolUtils(),  # My custom
+    "student_granite4": StudentGranite4ToolUtils(), # Mu custom
 }
 
 

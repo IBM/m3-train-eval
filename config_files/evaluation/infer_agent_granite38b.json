@@ -1,6 +1,6 @@
 {
   "path_to_env_vars": "./.env",
-  "path_to_env_data": "./data/olympics_multiturn_bird_chunked_final.json",
+  "path_to_env_data": "/proj/m3benchmark/m3data/0923/evaluation_data/ood_multi_turn_mixed.json",
   "horizon": 10,
 
   "resume_instance": null,
@@ -15,7 +15,7 @@
   "expert_max_new_tokens": 4096,
 
   "agent_model_name_or_path": "ibm-granite/granite-3.3-8b-instruct",
-  "max_new_tokens": 4096,
+  "max_new_tokens": 2048,
   "agent_template": "student_granite3",
   "is_hf_agent": true,
   "path_to_hf_config": "./config_files/infer_base.json",

@@ -1,9 +1,14 @@
+import json
 import sys
 from typing import Any, Union, Optional
 
 import jsonref
 import requests
 from loguru import logger
+from transformers import AutoModelForCausalLM, AutoTokenizer
+device = "auto"
+model_path = "ibm-granite/granite-3.0-8b-base"
+tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 # slim down response: None does no slimming
 #  1 slims dicts and lists from the 1st level of nesting
@@ -190,10 +195,25 @@ def get_api_path_from_lookup(api_name, base_url):
     return -1
 
 
+def truncate_api_response(response: dict, cut_token_len=2048):
+    response_str = str(response)
+    r_token_len = tokenizer(response_str, return_tensors="pt").input_ids.size()[1]
+    if r_token_len > cut_token_len:
+        ratio = cut_token_len/r_token_len
+        for key in response:
+            if type(response[key]) == list:
+                response[key] = response[key][:int(len(response[key])*ratio)]
+        return response
+    else:
+        return response
+
+
 def run_tool(
     api_name: str,
     api_args: dict,
     base_url: str,
+    truncat: bool = True,
+    cut_token_len: int = 2048
 ) -> Any:
 
     # # URL of the OpenAPI spec endpoint
@@ -206,7 +226,11 @@ def run_tool(
     try:
         response = requests.get(full_url, params=api_args)
         response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
-        return response.json()  # Return parsed JSON response
+        if truncat:
+            trucated_res = truncate_api_response(response.json(), cut_token_len=cut_token_len)
+            return trucated_res
+        else:
+            return response.json()  # Return parsed JSON response
 
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
@@ -215,3 +239,4 @@ def run_tool(
 if __name__ == "__main__":
     _base_url = "https://invocable-api-dgt-server-6.1gxwxi8kos9y.us-east.codeengine.appdomain.cloud"
     spec = get_spec(_base_url)
+    print()
