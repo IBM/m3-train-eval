@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Union
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizerBase
-from vllm import LLM, SamplingParams
+# from vllm import LLM, SamplingParams
 from loguru import logger
 from tqdm import tqdm
 import argparse
@@ -23,13 +23,19 @@ from envs.tool_call_env import M3EvalEnv
 from envs.base_env import SubDomain
 
 
-DEBUG_MODE=False
-
 def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
 
     logger.info(f"Downloading {model_name} to cache location {os.environ['HF_HOME']}")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+    # model = LLM(
+    #         model=model_name,
+    #         tokenizer=model_name,
+    #         tensor_parallel_size=1,
+    #         dtype=torch.float16,
+    #         gpu_memory_utilization=0.9,
+    #         trust_remote_code=True,
+    #     )
     device=torch.device("cpu")
 
     # [Optionally] Put the model on cuda
@@ -162,6 +168,7 @@ def run_agent(args):
         "temperature": config["temperature"],
         "stop_sequences": [],
     }
+    # sampling_params = SamplingParams(n=1, temperature=config["temperature"], max_tokens=config["max_new_tokens"])
 
 
 
@@ -237,29 +244,19 @@ def run_agent(args):
             # Only take Agentic Actions
             logger.info("Tasking Agent to take the action")
             try:
-                # TODO: create the system prompt here
                 system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + env.tool_policy.tool_use_policy
                 formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=system_prompt)
-                inputs = tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                inputs = tokenizer(formatted_text, padding=False, return_attention_mask=True, return_tensors='pt')
                 inputs = {k: v.to(device) for k, v in inputs.items()}
-
-                if DEBUG_MODE:
-                    # Hardcode the answers to debug locally without having to wait for llm calls
-                    if t > 0:
-                        generated_text = "<think>\nOkay, the user is asking which crew member of The Simpsons 20s is the oldest. I need to figure out how to answer this.\n\nFirst, I remember that The Simpsons has a variety of characters, and each has different ages. The user mentioned \"20s,\" which probably refers to the 20s generation. But I need to confirm if there's a specific character in that generation that's the oldest.\n\nLooking at the tools provided, there's a function called get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get. This function retrieves the person with the earliest birthdate. Since the user is asking about the oldest, maybe this function can give the oldest person's name.\n\nIn the previous tool call, the response was 'Paul Newman'. If that's the case, then Paul Newman would be the oldest in the 20s generation. But I should verify if there's any other information needed. The user might not need more details, just the name. So the answer would be Paul Newman.\n</think>\n\nThe oldest crew member of The Simpsons 20s is **Paul Newman**.<|im_end|>"
-                    else:
-                        # generated_text = "<think>The user is asking for the oldest crew member of the Simpsons in the 20s. To answer this, I need to find the person with the earliest birthdate from the database. The tool \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\" is designed to retrieve the name of the person with the earliest birthdate. Since no specific arguments are required for this tool, I will call it with an empty argument dictionary. This step is necessary to answer the user's query and is in line with the tool use policy, which specifies that document retrievers should be used to answer questions.</think><tool_call>{\"name\": \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\", \"arguments\": {}}</tool_call>"
-                        generated_text = "The user is asking for the oldest crew member of the Simpsons in the 20s. To answer this, I need to find the person with the earliest birthdate from the database. The tool \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\" is designed to retrieve the name of the person with the earliest birthdate. Since no specific arguments are required for this tool, I will call it with an empty argument dictionary. This step is necessary to answer the user's query and is in line with the tool use policy, which specifies that document retrievers should be used to answer questions.<tool_call>{\"name\": \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\", \"arguments\": {}}</tool_call>"
-                else:
-                    input_len = len(inputs["input_ids"][0])
-                    with torch.no_grad():
-                        generated_ids = model.generate(
-                            input_ids=inputs["input_ids"],
-                            attention_mask=inputs["attention_mask"], 
-                            max_new_tokens=llm_parameters['max_new_tokens'],
-                            do_sample=False)
-                    # generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
-                    generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
+                input_len = len(inputs["input_ids"][0])
+                with torch.no_grad():
+                    generated_ids = model.generate(
+                        input_ids=inputs["input_ids"],
+                        attention_mask=inputs["attention_mask"], 
+                        max_new_tokens=llm_parameters['max_new_tokens'],
+                        do_sample=False)
+                # generated_text = model.generate(formatted_text, sampling_params=sampling_params, use_tqdm=False)
+                generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
                 
                 parsed_response = parse_llm_response(generated_text, agent_template)
 

@@ -376,6 +376,7 @@ class TeacherToolUtils(ToolUtils):
 
 class StudentMistralToolUtils(ToolUtils):
     r"""Mistral v0.3 tool using template [for my use case]."""
+    tool_call_start_tag = "[TOOL_CALLS]"
 
     @override
     @staticmethod
@@ -419,8 +420,8 @@ class StudentMistralToolUtils(ToolUtils):
     def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
         """Inverse of function_formatter"""
         tool = content.strip()
-        if tool.startswith('[TOOL_CALLS]'):
-            tool = tool[len('[TOOL_CALLS]'):]
+        if tool.find(StudentMistralToolUtils.tool_call_start_tag) != -1:
+            tool = tool.split(StudentMistralToolUtils.tool_call_start_tag)[1]
             tool = tool.strip()
 
         # # We don't want to return the parsing error for mistral, [TOOL_CALLS] is a special token which gets removed
