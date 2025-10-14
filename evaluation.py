@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Union
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizerBase
+from vllm import LLM, SamplingParams
 from loguru import logger
 from tqdm import tqdm
 import argparse
@@ -26,8 +27,9 @@ DEBUG_MODE=False
 
 def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
 
+    logger.info(f"Downloading {model_name} to cache location {os.environ['HF_HOME']}")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16)
     device=torch.device("cpu")
 
     # [Optionally] Put the model on cuda
@@ -89,9 +91,8 @@ def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any
     actionic_response: Union[str, list["FunctionCall"]] = agent_template.extract_tool(no_thought_response)
 
     if isinstance(actionic_response, str):
-        if ('JSONDecodeError' in actionic_response.split(":")[0] or 
-            "MissingKeyError" in actionic_response.split(":")[0] or 
-            "MissingKeysError" in actionic_response.split(":")[0]):  # Error
+        if agent_template.format_function.tool_utils.tool_call_start_tag in response:
+            # Tried and failed to make a tool call
             parsed_response['error'] = actionic_response
             return parsed_response
         else:
@@ -116,7 +117,7 @@ def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any
         if parsed_response['type'] == "FINAL":
             parsed_response['thought'] = parsed_response['value']
         else:
-            parsed_response['thought'] = response.split(agent_template.format_function.tool_format.tool_call_start_tag)[0]
+            parsed_response['thought'] = response.split(agent_template.format_function.tool_utils.tool_call_start_tag)[0]
     return parsed_response
 
 
@@ -237,7 +238,8 @@ def run_agent(args):
             logger.info("Tasking Agent to take the action")
             try:
                 # TODO: create the system prompt here
-                formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=SYSTEM_PROMPT)
+                system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + env.tool_policy.tool_use_policy
+                formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=system_prompt)
                 inputs = tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
                 inputs = {k: v.to(device) for k, v in inputs.items()}
 
@@ -250,13 +252,14 @@ def run_agent(args):
                         generated_text = "The user is asking for the oldest crew member of the Simpsons in the 20s. To answer this, I need to find the person with the earliest birthdate from the database. The tool \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\" is designed to retrieve the name of the person with the earliest birthdate. Since no specific arguments are required for this tool, I will call it with an empty argument dictionary. This step is necessary to answer the user's query and is in line with the tool use policy, which specifies that document retrievers should be used to answer questions.<tool_call>{\"name\": \"get_earliest_birthdate_person_v1_simpson_episodes_earliest_birthdate_person_get\", \"arguments\": {}}</tool_call>"
                 else:
                     input_len = len(inputs["input_ids"][0])
-                    generated_ids = model.generate(
-                        input_ids=inputs["input_ids"],
-                        attention_mask=inputs["attention_mask"], 
-                        max_new_tokens=llm_parameters['max_new_tokens'],
-                        do_sample=False)
+                    with torch.no_grad():
+                        generated_ids = model.generate(
+                            input_ids=inputs["input_ids"],
+                            attention_mask=inputs["attention_mask"], 
+                            max_new_tokens=llm_parameters['max_new_tokens'],
+                            do_sample=False)
                     # generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
-                    generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                    generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
                 
                 parsed_response = parse_llm_response(generated_text, agent_template)
 

@@ -1192,9 +1192,6 @@ class M3EvalEnv(M3ToolCallEnv):
             else:
                 final_answer = action["value"]
 
-            # Wrap the final answer
-            final_answer = f"<FINAL>{final_answer}</FINAL>"
-
             next_summarised_state.extend(
                 [
                     {
@@ -1330,7 +1327,7 @@ class M3EvalEnv(M3ToolCallEnv):
                 #  instruct that objects retained in `predicted_final_answer` with which a tool response is
                 #  truncated must be present in the self.curr_raw_answer
                 try:
-                    assert self.scorer_llm_model is not None
+                    assert self.scorer_llm is not None
                 except AssertionError:
                     raise NotImplementedError(f"Scorer LLM is not initialized. Initialise it to score responses.")
 

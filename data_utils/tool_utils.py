@@ -546,6 +546,7 @@ class StudentQwenToolUtils(ToolUtils):
 
 class StudentGraniteToolUtils(ToolUtils):
     r"""Granite 3.3 tool using template [for my use case]."""
+    tool_call_start_tag = "<|tool_call|>"
 
     @override
     @staticmethod
@@ -588,8 +589,8 @@ class StudentGraniteToolUtils(ToolUtils):
     def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
         """Inverse of function_formatter"""
         tool = content.strip()
-        if tool.startswith('<|tool_call|>'):
-            tool = tool[len('<|tool_call|>'):]
+        if tool.find(StudentGraniteToolUtils.tool_call_start_tag) != -1:
+            tool = tool.split(StudentGraniteToolUtils.tool_call_start_tag)[1]
             tool = tool.strip()
 
         # # We don't want to return the parsing error for granite, <|tool_call|> is a special token which gets removed
@@ -675,8 +676,8 @@ class StudentGranite4ToolUtils(StudentGraniteToolUtils):
     def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
         """Inverse of function_formatter"""
         tool = content.strip()
-        if tool.find('<tool_call>') != -1:
-            tool = tool.split('<tool_call>')[1].replace("</tool_call>", "")
+        if tool.find(StudentGranite4ToolUtils.tool_call_start_tag) != -1:
+            tool = tool.split(StudentGranite4ToolUtils.tool_call_start_tag)[1].replace(StudentGranite4ToolUtils.tool_call_end_tag, "")
             tool = tool.strip()
 
         # # We don't want to return the parsing error for granite, <tool_call> is a special token which gets removed
