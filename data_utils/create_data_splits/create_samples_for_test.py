@@ -225,7 +225,7 @@ def main():
         print(scenarios)
         print(question_types)
         print(num_turns)
-        # write_data_splits(mixed_data,label=label)
+        write_data_splits(mixed_data,label=label)
 
 if __name__=="__main__":
     main()
