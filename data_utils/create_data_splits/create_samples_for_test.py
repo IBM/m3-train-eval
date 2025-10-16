@@ -21,17 +21,18 @@ CHANGE_STATS=[
     "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_ood_single_turn.json", # OOD Single Turn
     "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_test_multi_turn.json", # Test Multi-turn
 ]
-save_grpo_data_at=""
+
 scenario_mixing_probability=0.5
-OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v4"
+OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v5"
 NUM_SAMPLES=["400","800","1200", "1600", "2000", "2400", "2800","3200","3600","4000","4400","4800","5200","ALL"]
 
-def create_context_response_pair(item):
+def create_context_response_pair(item, create_pairs=True):
     """
     Returns list of trajectory objects.
     """
     final_samples=[]
-    if item["num_turns"] == 1:
+    # To avoid duplication. Context-Response pairs created from base sample and the complete sample kept for scenarios.
+    if (item["num_turns"] == 1) or (not create_pairs):
         item["guid"]=item["guid"]+"_"+str(0)
         item["sample_id"]=item["sample_id"]+"_"+str(0)
         return [item]
@@ -116,14 +117,14 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
         if len(intersection_set) != 0:
 
             # Add base data point of scenario
-            updated_base_pairs=create_context_response_pair(item)
+            updated_base_pairs=create_context_response_pair(item, create_pairs=True)
             keep_scenarios.extend(updated_base_pairs)
 
             # Add scenarios which have changed
             for id in intersection_set:
                 scenario_to_keep=data_with_scenarios_dict[id]
                 scenario_to_keep["guid"] = scenario_to_keep["domain"]+"_"+scenario_to_keep["sample_id"]
-                updated_pairs=create_context_response_pair(scenario_to_keep)
+                updated_pairs=create_context_response_pair(scenario_to_keep,create_pairs=False)
                 keep_scenarios.extend(updated_pairs)
         else:
             # If there are any samples where the scenario did not change the ground truth
@@ -132,16 +133,14 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
             keep_original = 1 if random.random() < scenario_mixing_probability else 0
             # if (keep_original==1) or (len(item_with_sceanrio)==0): # If we don't have any relevant scenarios to keep
             if (keep_original==1):
-                updated_pairs=create_context_response_pair(item)
+                updated_pairs=create_context_response_pair(item,create_pairs=True)
                 for updated_pair_item in updated_pairs:
-                    # updated_pair_item["guid"] = str(updated_pair_item["domain"])+"_"+str(updated_pair_item["sample_id"])
                     keep_scenarios.append(updated_pair_item)
             else:
                 scenario_to_keep=random.choice(item_with_sceanrio)
                 scenario_to_keep["guid"]=scenario_to_keep["domain"]+"_"+str(scenario_to_keep["sample_id"])
-                updated_pairs=create_context_response_pair(item)
+                updated_pairs=create_context_response_pair(scenario_to_keep, create_pairs=True) # As the base sample is not being included for this scenario we create context-response pairs
                 for updated_pair_item in updated_pairs:
-                    # updated_pair_item["guid"]=updated_pair_item["domain"]+"_"+str(updated_pair_item["sample_id"])
                     keep_scenarios.append(updated_pair_item)
     return keep_scenarios
 
@@ -226,7 +225,7 @@ def main():
         print(scenarios)
         print(question_types)
         print(num_turns)
-        write_data_splits(mixed_data,label=label)
+        # write_data_splits(mixed_data,label=label)
 
 if __name__=="__main__":
     main()
