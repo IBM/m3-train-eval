@@ -19,7 +19,7 @@ def compute_success_fraction(directory_path: str, change_file: str):
     # List all files matching the pattern
     matching_files = [
         f for f in os.listdir(directory_path)
-        if f.startswith("metadata_") and f.endswith(".json")
+        if f.startswith("trajectory_") and f.endswith(".json")
     ]
 
     with open(change_file) as f:
@@ -76,8 +76,8 @@ def compute_success_fraction(directory_path: str, change_file: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--split_type","-s", nargs='+', type=str, help='List of types')
-    parser.add_argument('--input_metadata_dir', '-i', default="/proj/m3benchmark/m3data/0923/m3_test_evaluation/baseline/v3/", help="Input Directory Name.")
-    parser.add_argument('--model','-m',default="granite38b",help="Model name to evaluate")
+    parser.add_argument('--input_metadata_dir', '-i', default="/Users/benjaminelder/reward_models/m3-train-eval/overnight/granite4/", help="Input Directory Name.")
+    parser.add_argument('--model','-m',default="granite3",help="Model name to evaluate")
     parser.add_argument('--output_file', '-of')
     args = parser.parse_args()
     print(args.split_type,args.model)
@@ -87,7 +87,8 @@ if __name__ == "__main__":
     }
     for s in args.split_type:
         change_file = os.path.join(CHANGE_STATS_DIR,f"change_stat_{s}.json")
-        input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{s}_mixed/metadata")
+        #input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{s}_mixed/metadata")
+        input_file = args.input_metadata_dir
         summary = compute_success_fraction(input_file, change_file)
         global_summary[s] = summary
         global_summary["all_eval_sets"]['total'] += summary['overall']['total']

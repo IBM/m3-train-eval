@@ -1,11 +1,11 @@
 {
   "template": "student_granite4",
   "cutoff_len": 16384,
-  "dataset_dir": "/proj/m3benchmark/m3data/0923/sft_warm_up/",
-  "dataset": ["sft_warm_up_data.json"],
+  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v2/",
+  "dataset": ["mixed_sft_data.json"],
   "mask_history": true,
 
-  "model_name_or_path": "/proj/m3benchmark/granite4_ckpts/granite-4.0-tiny-prerelease-greylock/r250825a",
+  "model_name_or_path": "ibm-granite/granite-4.0-h-tiny",
   "flash_attn": "fa2",
   "disable_gradient_checkpointing": false,
   "enable_liger_kernel": true,
@@ -14,9 +14,9 @@
   "adapter_name_or_path": null,
   "create_new_adapter": false,
   "finetuning_type": "lora",
-  "lora_rank": 32,
+  "lora_rank": 64,
   "lora_alpha": 32,
-  "lora_dropout": 0.05,
+  "lora_dropout": 0.1,
   "lora_target": ["k_proj","v_proj","q_proj","out_proj","in_proj"],
 
   "deepspeed": "./config_files/training/zero_stage3_offload_config.json",

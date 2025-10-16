@@ -1,7 +1,7 @@
 {
   "template": "student_granite3",
   "cutoff_len": 32768,
-  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth/",
+  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v2/",
   "dataset": ["mixed_sft_data.json"],
   "mask_history": true,
 
@@ -20,7 +20,7 @@
   "pref_loss": "sigmoid",
   "pref_beta": 0.1,
   "finetuning_type": "lora",
-  "lora_rank": 32,
+  "lora_rank": 64,
   "lora_alpha": 32,
   "lora_dropout": 0.1,
 

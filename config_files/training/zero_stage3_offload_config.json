@@ -27,6 +27,6 @@
     "train_micro_batch_size_per_gpu": 1,
     "gradient_clipping": "auto",
     "gradient_checkpointing": true,
-    "steps_per_print": 100,
+    "steps_per_print": 1000,
     "wall_clock_breakdown": true
 }

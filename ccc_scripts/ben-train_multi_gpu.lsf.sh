@@ -1,17 +1,5 @@
-#!/bin/bash
-#BSUB -J train_multi_gpu
-#BSUB -n 1                                 # One launcher task
-#BSUB -R "rusage[mem=256GB, cpu=8]"        # More RAM & CPUs
-#BSUB -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB"     # Request 4 exclusive(default=shared) 80GBxA100 GPUs
-#BSUB -o logging/multi_%J.out
-#BSUB -e logging/multi_%J.err
-
 # Print hostname (useful to know which node you're on)
 echo "Running on host: $(hostname)"
-
-# Show GPU info
-echo "Checking GPU availability:"
-nvidia-smi
 
 # Optional: Show CUDA-visible devices from environment
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
@@ -19,7 +7,7 @@ echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 # Assign arguments to variables
 ENV_NAME="g4"
 ROOT_DIR="/u/belder/m3-train-eval/"
-HF_CACHE_DIR="/dccstor/belder1/cache/"
+HF_CACHE_DIR="/proj/m3benchmark/ben/cache/"
 
 # Activate your environment
 # Load conda (adjust path if necessary)
@@ -36,29 +24,6 @@ echo "Changed directory to $ROOT_DIR"
 export HF_HOME="$HF_CACHE_DIR"
 echo "Exported HF_HOME=$HF_HOME"
 
-# Check if CUDA binaries are available at the default path (otherwise accelerate launch will give error)
-if ! command -v /usr/local/cuda/bin/nvcc &> /dev/null; then
-    echo "CUDA not found at /usr/local/cuda/bin. Manually setting CUDA paths..."
-
-    export CUDA_HOME=/opt/share/cuda-12.6
-    export CUDA_PATH=/opt/share/cuda-12.6/
-    export PATH=${CUDA_HOME}/bin:${PATH}
-    export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
-    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-    export DS_ENABLE_MEMORY_TRACKER=1
-    # export NCCL_DEBUG=INFO
-    # export NCCL_DEBUG_SUBSYS=ALL
-
-    # Optional: Verify
-    if command -v nvcc &> /dev/null; then
-        echo "CUDA manually loaded from ${CUDA_HOME}"
-    else
-        echo "Error: CUDA binaries still not found. Please check installation."
-        exit 1
-    fi
-else
-    echo "CUDA found at /usr/local/cuda/bin"
-fi
 
 export CUDA_HOME=/opt/share/cuda-12.6
 export CUDA_PATH=/opt/share/cuda-12.6/
@@ -66,6 +31,34 @@ export PATH=${CUDA_HOME}/bin:${PATH}
 export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export DS_ENABLE_MEMORY_TRACKER=1
-nvcc --version
+export CUDA_LAUNCH_BLOCKING=1
+# nvcc --version
 # Run training using accelerate
-accelerate launch --config_file config_files/training/multi_gpu_ds_stage3.yml tune.py
+
+
+configs=(
+    # "config_files/sft/train_lora_granite4-wu.json"
+    # "config_files/sft/train_lora_granite3-wu.json" 
+    "config_files/sft/train_lora_granite4.json"
+    "config_files/sft/train_lora_granite3.json" 
+)
+labels=(
+    # "granite4_warmup"
+    # "granite3_warmup"
+    "granite4_gt"
+    "granite3_gt"
+)
+
+# Loop through the arrays
+for i in "${!configs[@]}"; do
+    config_file="${configs[$i]}"
+    ds_config="config_files/training/multi_gpu_ds_stage3.yml"
+    bs_config=' -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "rusage[mem=256GB, cpu=8]" '
+    label="${labels[$i]}"
+
+    echo "Processing job: ${config_file}"
+    echo "Using label: ${label}"
+    # base="-oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1"
+    # bcommand=${base}${bs_config}
+    bsub -oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1 -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "rusage[mem=256GB, cpu=8]" accelerate launch --config_file ${ds_config} tune.py --tune_config ${config_file}
+done

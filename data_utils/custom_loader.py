@@ -54,15 +54,9 @@ class BaseDataset(TorchDataset):
         if train_setting.lower() == "supervised":
 
             if not for_pref_modelling:
-                self.inputs, self.labels, self.attn_masks, self.input_lens, \
-                    self.images, self.videos, self.audios = self.convert_samples_to_supervised_features()
+                self.inputs, self.labels, self.attn_masks, self.input_lens = self.convert_samples_to_supervised_features()
             else:
-                self.inputs, self.labels, self.attn_masks, self.input_lens, \
-                    self.images, self.videos, self.audios = self.convert_samples_to_supervised_preference_features()
-
-        elif train_setting.lower() == "unsupervised":  # Unchanged for Preference Modeling
-            (self.inputs, self.labels, self.attn_masks, self.input_lens,
-             self.images, self.videos, self.audios) = self.convert_samples_to_unsupervised_features()
+                self.inputs, self.labels, self.attn_masks, self.input_lens = self.convert_samples_to_supervised_preference_features()
 
         else:
             raise ValueError(f"Unknown training setting: {train_setting}")
@@ -89,106 +83,9 @@ class BaseDataset(TorchDataset):
                 "_prompt": The prompt to be used for the model (includes history, context and current query in chat format).
                 "_response": The response to be used for the model.
                 "_tools": The tools to be used for the model (if any).
-                "_images": The images to be used for the model (if any).
-                "_videos": The videos to be used for the model (if any).
-                "_audios": The audios to be used for the model (if any).
         """
         raise NotImplementedError("processed_samples() method not implemented!")
 
-    def convert_samples_to_unsupervised_features(self):
-        """[My custom] For multi-turn encoding/truncation similar to supervised features but tailored towards unsupervised
-            Convert the processed samples to features that can be used for unsupervised training/inference.
-             > Overall input is {past_query_{tail trunc}, past_response_{tail trunc}} ; curr_query_{tail trunc}
-             > Older turns are likely to be completely masked out
-             > Also, if no G.T., we would still have label_ids, but they won't have any content in it.
-             > For tasks with mm_inputs, the plugin either adds image tokens using process_messages() before tokenization
-               or adds the image ids using process_token_ids() after tokenization.
-        """
-        inputs, labels, attn_masks, input_lens = [], [], [], []
-        images, videos, audios = [], [], []
-
-        pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
-        for i in range(len(self.processed_samples)):
-
-            sample = self.processed_samples[i]
-            if sample is None:
-                continue
-
-            if len(sample['_response']) == 1:
-                messages = sample['_prompt'] + sample['_response']  # G.T. is available
-            else:
-                messages = sample['_prompt'] + [{"role": Role.ASSISTANT.value, "content": ""}]
-
-            # Multi-modal processing of messages [PLUGIN-SPECIFIC]. Having no mm_plugin will not affect this.
-            messages = self.template.mm_plugin.process_messages(
-                messages,
-                sample['_images'] or [],  # None or [] -> [] is the default
-                sample['_videos'] or [],
-                sample['_audios'] or [],
-                self.processor
-            )
-
-            # Multi-modal processing of the input_ids and label_ids [PLUGIN-SPECIFIC].
-            # > Having no mm_plugin will not affect this.
-            # > If present, it will add prepend ids corresponding to mm input i.e. 'before' the input_ids and label_ids
-            # > Ignore the label_ids since in unsupervised training we don't predict labels of the mm inputs
-            input_ids, _ = self.template.mm_plugin.process_token_ids(
-                [], [],
-                sample['_images'] or [],
-                sample['_videos'] or [],
-                sample['_audios'] or [],
-                self.tokenizer,
-                self.processor
-            )
-            # Encode the messages. Here, we get encoded_pairs for the input_ids and labels turn-wise
-            encoded_pairs = self.template.encode_multiturn(self.tokenizer, messages, sample['_system'], sample['_tools'])
-
-            # We will start with the last turn and move towards the first turn until max_context_length is reached.
-            encoded_pairs = encoded_pairs[::-1]  # high priority for last turns. Earlier turns likely to be masked out.
-            total_length = len(input_ids) + (1 if self.template.efficient_eos else 0)  # init
-
-            # First, pop the last (most-recent) turn
-            source_ids, label_ids = encoded_pairs.pop(0)
-            if self.template.efficient_eos:
-                label_ids += [self.tokenizer.eos_token_id]
-            source_len, target_len = infer_seqlen(len(source_ids), len(label_ids),
-                                                  self.data_args.cutoff_len - total_length)
-            source_ids = source_ids[:source_len]
-            label_ids = label_ids[:target_len]  # Done, don't need to process it further
-
-            # Update the total length
-            total_length += source_len + target_len
-            input_ids += source_ids  # Add the mm tokens to the beginning of the last turn
-
-            for turn_idx, (source_ids, target_ids) in enumerate(encoded_pairs):
-                # Check. Older turns/conversations are likely to be masked out as they are towards the end
-                if total_length > self.data_args.cutoff_len:
-                    break
-                # Get the source and target lengths
-                source_len, target_len = infer_seqlen(
-                    len(source_ids), len(target_ids), self.data_args.cutoff_len - total_length
-                )
-                # Truncate the source and target ids
-                source_ids = source_ids[:source_len]
-                target_ids = target_ids[:target_len]
-                # Update the total length
-                total_length += source_len + target_len
-
-                input_ids = source_ids + target_ids + input_ids  # Prepend the past turn to the current turn
-
-            attn_mask = [1] * len(input_ids)
-
-            # Append to the lists
-            inputs.append(input_ids)
-            labels.append(label_ids)
-            attn_masks.append(attn_mask)
-            input_lens.append(len(input_ids))
-            images.append(sample['_images'] or [])
-            videos.append(sample['_videos'] or [])
-            audios.append(sample['_audios'] or [])
-            pbar.update()
-
-        return inputs, labels, attn_masks, input_lens, images, videos, audios
 
     def convert_samples_to_supervised_features(self):
         """[Original]
@@ -199,10 +96,10 @@ class BaseDataset(TorchDataset):
                or adds the image ids using process_token_ids() after tokenization.
         """
         inputs, labels, attn_masks, input_lens = [], [], [], []
-        images, videos, audios = [], [], []
-
+        
         pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
         stats = []
+        skipped_points = 0
         for i in range(len(self.processed_samples)):
 
             sample = self.processed_samples[i]
@@ -217,84 +114,55 @@ class BaseDataset(TorchDataset):
                 sys.exit(-1)
 
             messages = sample['_prompt'] + sample['_response']
-            # Multi-modal processing of messages [PLUGIN-SPECIFIC]. Having no mm_plugin will not affect this.
-            messages = self.template.mm_plugin.process_messages(
-                messages,
-                sample['_images'] or [],  # None or [] -> [] is the default
-                sample['_videos'] or [],
-                sample['_audios'] or [],
-                self.processor
-            )
-            # Multi-modal processing of the input_ids and label_ids [PLUGIN-SPECIFIC].
-            # > Having no mm_plugin will not affect this.
-            # > If present, it will prepend ids corresponding to mm input i.e. add 'before' the input_ids and label_ids
-            input_ids, label_ids = self.template.mm_plugin.process_token_ids(
-                [], [],
-                sample['_images'] or [],
-                sample['_videos'] or [],
-                sample['_audios'] or [],
-                self.tokenizer,
-                self.processor
-            )
-            # Encode the messages. Here, we get encoded_pairs for the input_ids and labels turn-wise
-            encoded_pairs = self.template.encode_multiturn(
-                self.tokenizer, messages, sample['_system'], sample['_tools'], tool_policy=sample['_tool_policy']
-            )
-            # We will start with the last turn and move towards the first turn until max_context_length is reached.
-            if self.data_args.mask_history:
-                encoded_pairs = encoded_pairs[::-1]  # High priority for last turn for not encoding truncated
+            system_prompt = sample['_system']
+            tools = sample['_tools']
+            tool_policy = sample['_tool_policy']
+            if tool_policy.tool_use_policy is not None:
+                system_prompt += tool_policy.tool_use_policy
+            if tool_policy.final_answer_policy is not None:
+                system_prompt += tool_policy.final_answer_policy
 
-            total_length = len(input_ids) + (1 if self.template.efficient_eos else 0)
-            for turn_idx, (source_ids, target_ids) in enumerate(encoded_pairs):
+            # chat_messages = []
+            # for i, message in enumerate(messages):
+            #     if i == 0:
+            #         formatted_text = self.tokenizer.apply_chat_template([message], tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
+            #     else:
+            #         formatted_text = self.tokenizer.apply_chat_template([message], tokenize=False, add_generation_prompt=False)
+            #     chat_messages.append(formatted_text)
 
-                # Check. Older turns/conversations are likely to be masked out as they are towards the end
-                if total_length > self.data_args.cutoff_len:
-                    break
-                # Get the source and target lengths
-                source_len, target_len = infer_seqlen(
-                    len(source_ids), len(target_ids), self.data_args.cutoff_len - total_length
-                )
-                # Truncate the source and target ids
-                source_ids = source_ids[:source_len]
-                target_ids = target_ids[:target_len]
-                # Update the total length
-                total_length += source_len + target_len
+            # encoded_pairs = [(
+            #     self.tokenizer(chat_messages[i], padding=True, return_attention_mask=True, return_tensors='pt'), 
+            #     self.tokenizer(chat_messages[i+1], padding=True, return_attention_mask=True, return_tensors='pt')
+            #     ) for i in range(0, len(chat_messages), 2)]
+            # # We will start with the last turn and move towards the first turn until max_context_length is reached.
+            # if self.data_args.mask_history:
+            #     encoded_pairs = encoded_pairs[::-1]  # High priority for last turn for not encoding truncated
 
-                # Creat input ids and target labels
-                if self.data_args.train_on_prompt:
-                    source_label = source_ids
-                elif self.template.efficient_eos:
-                    source_label = [self.tokenizer.eos_token_id] + [IGNORE_INDEX] * (source_len - 1)
-                else:
-                    source_label = [IGNORE_INDEX] * source_len
+            # if self.data_args.mask_history:
+            #     if len(messages) > 2:
+            #         text = self.tokenizer.apply_chat_template(messages[-2:], tokenize=False, add_generation_prompt=False)
+            #     else:
+            #         text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
+            # else:
+            #     text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
 
-                if self.data_args.mask_history and turn_idx != 0:  # train on the last turn only
-                    target_label = [IGNORE_INDEX] * target_len
-                else:
-                    target_label = target_ids
+            formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
+            tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
+            if len(tokens) > self.data_args.cutoff_len:
+                continue
 
-                if self.data_args.mask_history:  # reversed sequences. trainable part pushed to the end
-                    input_ids = source_ids + target_ids + input_ids
-                    label_ids = source_label + target_label + label_ids
-                else:
-                    input_ids += source_ids + target_ids
-                    label_ids += source_label + target_label
-
-            if self.template.efficient_eos:
-                input_ids += [self.tokenizer.eos_token_id]
-                label_ids += [self.tokenizer.eos_token_id]
-            attn_mask = [1] * len(input_ids)
+            input_ids = tokens['input_ids'].squeeze(0)
+            label_ids = tokens["input_ids"].squeeze(0).clone()
+            attn_mask = tokens['attention_mask'].squeeze(0)
             if len(input_ids) > 17000:
                 # label_ids = [IGNORE_INDEX] * len(label_ids)
                 logger.info(f"Ignoring data point of with token length: {len(input_ids)}")
+                skipped_points+=1
                 continue
             inputs.append(input_ids)
             labels.append(label_ids)
             attn_masks.append(attn_mask)
             input_lens.append(len(input_ids))
-            images.append(sample['_images'] or [])
-            videos.append(sample['_videos'] or [])
-            audios.append(sample['_audios'] or [])
             pbar.update()
             stats.append({
                 'input_length': len(input_ids), 
@@ -307,14 +175,15 @@ class BaseDataset(TorchDataset):
                 'guid': sample['guid']
 
             })
+        
+        logger.info(f"Skipped {skipped_points} long context points out of a total of {len(input_lens)}. ")
         with open(f"stats.json", "w") as f:
             json.dump(stats, f)
-        return inputs, labels, attn_masks, input_lens, images, videos, audios
+        return inputs, labels, attn_masks, input_lens
 
     def convert_samples_to_supervised_preference_features(self):
 
         inputs, labels, attn_masks, input_lens = [], [], [], []  # This will now be a list of dicts
-        images, videos, audios = [], [], []
 
         pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to preference features: ")
         for i in range(len(self.processed_samples)):
@@ -335,25 +204,8 @@ class BaseDataset(TorchDataset):
                     sys.exit(-1)
 
                 messages = prompt + response
-                # Multi-modal processing of messages [PLUGIN-SPECIFIC]. Having no mm_plugin will not affect this.
-                messages = self.template.mm_plugin.process_messages(
-                    messages,
-                    sample['_images'] or [],  # None or [] -> [] is the default
-                    sample['_videos'] or [],
-                    sample['_audios'] or [],
-                    self.processor
-                )
-                # Multi-modal processing of the input_ids and label_ids [PLUGIN-SPECIFIC].
-                # > Having no mm_plugin will not affect this.
-                # > If present, it will prepend ids corresponding to mm input i.e. add 'before' the input_ids and label_ids
-                input_ids, label_ids = self.template.mm_plugin.process_token_ids(
-                    [], [],
-                    sample['_images'] or [],
-                    sample['_videos'] or [],
-                    sample['_audios'] or [],
-                    self.tokenizer,
-                    self.processor
-                )
+                input_ids, label_ids = []
+
                 # Encode the messages. Here, we get encoded_pairs for the input_ids and labels turn-wise
                 encoded_pairs = self.template.encode_multiturn(self.tokenizer, messages, sample['_system'], sample['_tools'], tool_policy=sample['_tool_policy'])
                 # We will start with the last turn and move towards the first turn until max_context_length is reached.
@@ -418,12 +270,9 @@ class BaseDataset(TorchDataset):
             labels.append(pref_labels)
             attn_masks.append(pref_attn_masks)
             input_lens.append(pref_input_lens)
-            images.append(sample['_images'] or [])
-            videos.append(sample['_videos'] or [])
-            audios.append(sample['_audios'] or [])
             pbar.update()
 
-        return inputs, labels, attn_masks, input_lens, images, videos, audios
+        return inputs, labels, attn_masks, input_lens
 
     def get_sample(self, i: int):
         """Get the sample at index i.
@@ -450,18 +299,12 @@ class BaseDataset(TorchDataset):
                 "input_ids": self.inputs[i],
                 "attention_mask": self.attn_masks[i],
                 "labels": self.labels[i],
-                "input_lens": self.input_lens[i],
-                "images": self.images[i],
-                "videos": self.videos[i],
-                "audios": self.audios[i],
+                "input_lens": self.input_lens[i]
             }
-            assert not all(element == IGNORE_INDEX for element in sample["labels"]), f"Sample {i} has all labels set to {IGNORE_INDEX}"
+            assert not all(element == IGNORE_INDEX for element in sample["labels"].tolist()), f"Sample {i} has all labels set to {IGNORE_INDEX}"
         else:
             sample = {
                 "idx": self.task_idxs[i],
-                "images": self.images[i],
-                "videos": self.videos[i],
-                "audios": self.audios[i],
             }
             for key in PREFERENCE_KEYS:
                 sample[f"{key}_input_ids"] = self.inputs[i][key]
@@ -531,20 +374,6 @@ class AgentTrajectorySFTData(BaseDataset):
             tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
             tool_policy.tool_usage_policy = traj['tool_usage_policy']
             tool_policy.final_answer_policy = traj['final_answer_policy']
-            
-            # # Downsample the tools to fit in memory
-            # interactions = traj['interactions']
-            # required = []
-            # for i in interactions:
-            #     if isinstance(interactions, dict):
-            #         entry = interactions[i]
-            #     else:
-            #         entry = i
-            #     if entry['metadata']['action'] == "API":
-            #         # if RAG, this will already be include because keep_retrievers=True
-            #         required.append(entry['metadata']['action_arguments']['name'])
-            # tools = update_retrieval_tools(tools)
-            # tools = downsample_tools(tools, max_tools=50, required_tools=required, keep_retrievers=True)
 
             time_steps = list(traj['interactions'].keys())
             time_steps = sorted(time_steps, key=lambda x: int(x))
@@ -692,10 +521,6 @@ class AgentTrajectorySFTData(BaseDataset):
                 # For calling external tools
                 "_tools": sample['tools'] if 'tools' in sample.keys() and sample['tools'] else "",
                 "_tool_policy": sample['tool_policy'] if 'tool_policy' in sample.keys() else None,
-                # For multi-modal tasks, values should be the paths
-                "_images": sample['images'] if 'images' in sample.keys() and sample['images'] else None,
-                "_videos": sample['videos'] if 'videos' in sample.keys() and sample['videos'] else None,
-                "_audios": sample['audios'] if 'audios' in sample.keys() and sample['audios'] else None,
                 'domain': sample['domain'], 
                 'sample_id': sample['sample_id'], 
                 'guid': sample.get('guid', 'null'),
@@ -921,11 +746,7 @@ class AgentTrajectoryPreferenceData(BaseDataset):
                 "_system": sample['system'] if 'system' in sample.keys() and sample['system'] else "",
                 # For calling external tools
                 "_tools": sample['tools'] if 'tools' in sample.keys() and sample['tools'] else "",
-                "_tool_policy": sample['tool_policy'] if 'tool_policy' in sample.keys() else None,
-                # For multi-modal tasks, values should be the paths
-                "_images": sample['images'] if 'images' in sample.keys() and sample['images'] else None,
-                "_videos": sample['videos'] if 'videos' in sample.keys() and sample['videos'] else None,
-                "_audios": sample['audios'] if 'audios' in sample.keys() and sample['audios'] else None,
+                "_tool_policy": sample['tool_policy'] if 'tool_policy' in sample.keys() else None
             }
 
             for key in PREFERENCE_KEYS:
