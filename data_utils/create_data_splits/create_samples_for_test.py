@@ -23,21 +23,24 @@ CHANGE_STATS=[
 ]
 
 scenario_mixing_probability=0.5
-OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v5"
-NUM_SAMPLES=["400","800","1200", "1600", "2000", "2400", "2800","3200","3600","4000","4400","4800","5200","ALL"]
+OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v6"
+NUM_SAMPLES=list(range(400,12001,400))
+NUM_SAMPLES=[str(i) for i in NUM_SAMPLES]
+NUM_SAMPLES.append("ALL")
 
-def create_context_response_pair(item, create_pairs=True):
+def create_context_response_pair(item, create_pairs=True,change_type=None,label=None):
     """
     Returns list of trajectory objects.
     """
     final_samples=[]
-    # To avoid duplication. Context-Response pairs created from base sample and the complete sample kept for scenarios.
-    if (item["num_turns"] == 1) or (not create_pairs):
+    if ("single_turn" in label) or (not create_pairs):
         item["guid"]=item["guid"]+"_"+str(0)
         item["sample_id"]=item["sample_id"]+"_"+str(0)
+        item["change_state"]=change_type
         return [item]
     else:
         question_types=re.findall(r"\([^()]*\)", item["type"]) # Splits "(API-API)(RAG)(API)(API-RAG-API)" into ['(API-API)', '(RAG)', '(API)', '(API-RAG-API)']
+        assert len(item["trajectory"]) == len(item["turns"])
         for traj_idx in range(0,len(item["trajectory"])):
             # Construct the item
             new_item={
@@ -55,6 +58,12 @@ def create_context_response_pair(item, create_pairs=True):
             new_item["type"]="".join(question_types[0:(traj_idx+1)])
             new_item["num_turns"]=len(new_item["turns"])
             new_item["num_hops"]=item["num_hops"][0:(traj_idx+1)]
+            if change_type=="base":
+                new_item["change_state"]="base"
+            elif (traj_idx+1)!=len(item["trajectory"]):
+                new_item["change_state"]="nondisruptor"
+            elif (traj_idx+1)==len(item["trajectory"]):
+                new_item["change_state"]=change_type
             final_samples.append(new_item)
         return final_samples
 
@@ -105,7 +114,7 @@ def group_by_original_sample_id(data: list[dict]):
             grouped_data[original_sample_id].append(d)
     return grouped_data
 
-def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
+def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids,label):
     data_with_scenarios_dict=convert_to_dict(data_with_scenarios)
     grouped_with_scenario=group_by_original_sample_id(data_with_scenarios)
 
@@ -113,47 +122,42 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids):
     for _, item in enumerate(data_no_scenarios):
         item_with_sceanrio = grouped_with_scenario[str(item["sample_id"])]
         intersection_set = list(set([str(i["sample_id"]) for i in item_with_sceanrio]) & set(changed_ids))
-        item["guid"] = str(item["domain"])+"_"+str(item["sample_id"]) # Context-Response pair ID will get added below
-        if len(intersection_set) != 0:
+        non_changed_ids = list(set([id["sample_id"] for id in item_with_sceanrio if id["sample_id"] not in intersection_set]))
 
-            # Add base data point of scenario
-            updated_base_pairs=create_context_response_pair(item, create_pairs=True)
-            keep_scenarios.extend(updated_base_pairs)
+        # Add base data point of scenario
+        item["guid"] = str(item["domain"])+"_"+str(item["sample_id"]) # Context-Response pair ID will get added below
+        updated_base_pairs=create_context_response_pair(item, create_pairs=True,change_type="base",label=label)
+        keep_scenarios.extend(updated_base_pairs)
+
+        # Create CRP from scenarios
+        if len(intersection_set) != 0:
 
             # Add scenarios which have changed
             for id in intersection_set:
                 scenario_to_keep=data_with_scenarios_dict[id]
                 scenario_to_keep["guid"] = scenario_to_keep["domain"]+"_"+scenario_to_keep["sample_id"]
-                updated_pairs=create_context_response_pair(scenario_to_keep,create_pairs=False)
+                updated_pairs=create_context_response_pair(scenario_to_keep,create_pairs=True,change_type="disruptor",label=label)
                 keep_scenarios.extend(updated_pairs)
-        else:
-            # If there are any samples where the scenario did not change the ground truth
-            # 1. flip a coin to decide if we keep the sample with scenario or the original, then
-            # 2. if we keep the scenario and there's more than one, pick one at random
-            keep_original = 1 if random.random() < scenario_mixing_probability else 0
-            # if (keep_original==1) or (len(item_with_sceanrio)==0): # If we don't have any relevant scenarios to keep
-            if (keep_original==1):
-                updated_pairs=create_context_response_pair(item,create_pairs=True)
-                for updated_pair_item in updated_pairs:
-                    keep_scenarios.append(updated_pair_item)
-            else:
-                scenario_to_keep=random.choice(item_with_sceanrio)
-                scenario_to_keep["guid"]=scenario_to_keep["domain"]+"_"+str(scenario_to_keep["sample_id"])
-                updated_pairs=create_context_response_pair(scenario_to_keep, create_pairs=True) # As the base sample is not being included for this scenario we create context-response pairs
-                for updated_pair_item in updated_pairs:
-                    keep_scenarios.append(updated_pair_item)
+
+        # Create CRP from non-changed scenarios
+        for id in non_changed_ids:
+            scenario_to_keep=data_with_scenarios_dict[id]
+            scenario_to_keep["guid"]=scenario_to_keep["domain"]+"_"+str(scenario_to_keep["sample_id"])
+            updated_pairs=create_context_response_pair(scenario_to_keep, create_pairs=True,change_type="nondisruptor",label=label)
+            keep_scenarios.extend(updated_pairs)
     return keep_scenarios
 
-def check_dataset(data):
+def check_mixed_dataset(data,data_no_scenarios,data_with_scenarios):
     # All sample IDs are unique as well as num_hops and num_turns represent the recorded stats
     sample_id_lst=[]
     for item in data:
         sample_id_lst.append(item["domain"]+"_"+item["sample_id"])        
-        if item["guid"] != (item["domain"]+"_"+item["sample_id"]):
-            import pdb
-            pdb.set_trace()
+        assert item["guid"] == (item["domain"]+"_"+item["sample_id"])
         assert item["num_turns"] == len(item["trajectory"])
     assert len(sample_id_lst)==len(set(sample_id_lst))
+
+    # # Total number of samples in data is sum of turns from no_scenarios and with_scenarios
+    assert (sum([i["num_turns"] for i in data_no_scenarios])+sum([i["num_turns"] for i in data_with_scenarios])) != len(data)
     return True
 
 def get_data_stats(data):
@@ -161,6 +165,7 @@ def get_data_stats(data):
     scenarios=defaultdict(int)
     question_types=defaultdict(int)
     num_turns=defaultdict(int)
+    change_state=defaultdict(int)
     for item in data:
         match = re.match(pattern, item["guid"])
         hops_matches = re.findall(r'\(([^)]+)\)', item["type"])
@@ -174,16 +179,22 @@ def get_data_stats(data):
         
         # Turns Distribution
         num_turns[item["num_turns"]]+=1
+        change_state[item["change_state"]]+=1
 
         # Question Distribution
         for hop_type in hops_matches:
             question_types[hop_type]+=1
     assert sum(num_turns.values())==len(data)
     assert sum(scenarios.values())==len(data)
-    return scenarios, question_types, num_turns
+    return scenarios, question_types, num_turns, change_state
 
 
-def write_data_splits(data,label,num_samples_per_split=400):
+def write_data_splits(data,label,num_samples_per_split=400,complete=True):
+    if complete:
+        output_filename=f"{OUTPUT_FOLDERNAME}/complete/{label}.json"
+        with open(output_filename, 'w') as f:
+            json.dump(data, f)
+        print(f"File {output_filename} was written with {len(data)} samples.")
     data_split=None
     num_splits=len(data)//num_samples_per_split
     # All but last split created
@@ -218,14 +229,17 @@ def main():
                 change_stat_domain=change_dict[domain]
             else:
                 change_stat_domain=create_stat(data_with_scenario)
-            mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain))
+            mixed_label_data=get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,label)
+            mixed_data.extend(mixed_label_data)
+            assert check_mixed_dataset(mixed_label_data,data_no_scenarios,data_with_scenario)
         print(f"{label}, {foldername_no_scenario}, {foldername_with_scenario}, {len(mixed_data)}")
-        assert check_dataset(mixed_data)
-        scenarios, question_types, num_turns = get_data_stats(mixed_data)
+
+        scenarios, question_types, num_turns, change_state = get_data_stats(mixed_data)
         print(scenarios)
         print(question_types)
         print(num_turns)
-        write_data_splits(mixed_data,label=label)
+        print(change_state)
+        write_data_splits(mixed_data,label=label,complete=True)
 
 if __name__=="__main__":
     main()
