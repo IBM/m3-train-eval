@@ -243,7 +243,6 @@ def run_agent(args):
             # Only take Agentic Actions
             logger.info("Tasking Agent to take the action")
             try:
-                import pdb; pdb.set_trace()
                 system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + " " + env.tool_policy.tool_usage_policy
                 formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=system_prompt)
                 
