@@ -1,0 +1,19 @@
+{
+  "path_to_env_vars": "./.env",
+  "path_to_env_data": "./eval_debug_samples.json",
+  "horizon": 10,
+  "temperature": 0.0,
+  "agent_template": "student_granite4",
+
+  "resume_instance": null,
+  "path_to_prev_run_dir": null,
+
+  "scorer_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
+  "scorer_max_new_tokens": 4096,
+
+  "model_name_or_path": "ibm-granite/granite-4.0-micro",
+  "max_new_tokens": 4096,
+  "is_hf_agent": true,
+  "path_to_hf_config": "./config_files/infer_base.json", 
+  "enable_thinking": false
+}

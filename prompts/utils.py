@@ -39,6 +39,7 @@ Now correct your output accordingly."""
             "content": redo_prompt.format(error=error),
         }
     )
+    return updated_prompt
 
 
 def get_witness_prompt(

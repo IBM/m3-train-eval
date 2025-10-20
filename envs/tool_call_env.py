@@ -6,11 +6,12 @@ from typing import Dict, Any, List, Tuple, Optional, TYPE_CHECKING
 from pathlib import Path
 
 from loguru import logger
+from torch import device
 
 from agents.llm import invoke_llm
 from data_utils.utils import Role
 from envs.apis.rest.call import run_tool, extract_out_dict_from_res
-from envs.base_env import BaseEnv, ToolPolicy
+from envs.base_env import BaseEnv
 from envs.expert_assist import ExpertAssist
 from envs.retrievers.m3_retrievers import make_retriever
 from envs.utils import reformat_tools
@@ -22,7 +23,8 @@ from prompts.utils import get_scorer_prompt, parse_scorer_response, get_overseer
     get_parser_resolver_prompt
 from data_utils.tool_utils import create_ToolPolicy
 from data_utils.utils import downsample_tools, update_retrieval_tools
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from agents.llm import get_lm
+from transformers import AutoTokenizer
 device = "auto"
 model_path = "ibm-granite/granite-3.0-8b-base"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -551,8 +553,8 @@ class M3ToolCallEnv(ToolCallEnv):
             api_config: dict,
             horizon: int,
             sub_domain: "SubDomain",
-            expert_assist: "ExpertAssist",
-            agent_template: "Template",
+            expert_assist: "ExpertAssist" = None,
+            agent_template: "Template" = None,
             overseer_llm=None,
             overseer_llm_parameters=None,
             scorer_llm=None,
@@ -610,6 +612,7 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         self.domain = curr_instance_data["domain"]
         self.sample_id = curr_instance_data["sample_id"]
+        self.change_state = curr_instance_data["change_state"]
         # Optional parameters used for reporting
         self.guid=curr_instance_data.get("guid",None)
         self.num_turns=curr_instance_data.get("num_turns",None)
@@ -1082,6 +1085,316 @@ class M3ToolCallEnv(ToolCallEnv):
         else:
             raise RuntimeError(f"Unknown action: {action['type']}")
         return observation
+
+    @property
+    def curr_sample_idx(self) -> int:
+        return self.data[self.curr_instance_idx]['sample_id']
+
+
+class M3EvalEnv(M3ToolCallEnv):
+    def __init__(
+            self,
+            path_to_env_data: str,
+            es_config: dict,
+            api_config: dict,
+            horizon: int,
+            sub_domain: "SubDomain",
+            agent_template: "Template", 
+            scorer_llm=None,
+            scorer_llm_tokenizer=None,
+            scorer_llm_parameters=None,
+            partial_credit: bool = False,
+            summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
+            scorer_device: device = None
+    ):
+        self.scorer_llm_tokenizer = scorer_llm_tokenizer
+        self.scorer_llm_model = scorer_llm
+        self.scorer_device = scorer_device
+        scorer_llm_obj = get_lm(scorer_llm_parameters["model_name_or_path"], parameters=scorer_llm_parameters)
+
+
+        super().__init__(
+            path_to_env_data,
+            es_config,
+            api_config,
+            horizon,
+            sub_domain,
+            agent_template=agent_template,
+            scorer_llm=scorer_llm_obj,
+            scorer_llm_parameters=scorer_llm_parameters,
+            partial_credit = partial_credit,
+            summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
+    )
+
+    def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
+        # To get the data for the current instance of the environment
+        if inst_idx is not None:
+            assert isinstance(inst_idx, int)
+            self.curr_instance_idx = inst_idx
+        else:
+            self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
+
+        # Set the init params
+        self.history, self.curr_turn_history = [], []
+        self.curr_turn = 0
+
+        # Setup user queries
+        logger.info("Setting up User Queries")
+        self.setup_user_queries()
+        
+        # Setup tools
+        logger.info("Setting up Tools")
+        self.setup_tools()
+
+        logger.info("Setting up Scenarios")
+        # Determine the Tool Policy.
+        self.setup_scenarios()
+
+        # Determine the tool text
+        tool_text = self.agent_template.format_tools.apply(content=self.tools, tool_policy=self.tool_policy)[0]
+
+        # Form the system prompt
+        self.system: str = SYSTEM_PROMPT
+        system_prompt = self.system + tool_text  # This becomes the overall system (imitates the template.encode)
+
+        # Form the query prompt
+        curr_query = self.user_queries[self.curr_turn]
+        query_prompt = QUERY_PROMPT.format(query=curr_query)
+
+        # #################################### Create the init state #################################### #
+        state = [{"role": Role.SYSTEM.value, "content": system_prompt},
+                 {"role": Role.USER.value, "content": query_prompt}]
+        self.curr_state = state
+        self.curr_summarised_state = copy.deepcopy(state)
+        self.curr_step = 0
+        return state, 0.0, False, {
+            "terminated": False,
+            "truncated": False,
+            "success": False,
+        }
+    
+    def transition(self, observation, action, env_role):
+
+        # ############################################ Update State ############################################ #
+        # Get the current state
+        next_state = self.curr_state
+        next_summarised_state = self.curr_summarised_state
+
+        if action["type"] == "FINAL":  # Agent has reached the end of given turn
+
+            if not self.is_a_live_agent and self.curr_golden_answer is not None:
+                if self.final_answer_is_truncated:
+                    # To condition future reasoning on un-truncated context-response pairs.
+                    # Otherwise, entities being referred to in future reasoning could seem hallucinated
+                    final_answer = self.curr_raw_answer
+                else:
+                    final_answer = self.curr_golden_answer
+
+            else:
+                final_answer = action["value"]
+
+            next_summarised_state.extend(
+                [
+                    {
+                        "role": action["role"],
+                        "content": final_answer,  # No need to include thoughts
+                    },
+                    {
+                        "role": env_role,
+                        "content": observation,  # Is a Done signal if on last turn else a new user query
+                    }
+                ]
+            )
+            # NOTE: We update the turn if agent generates the final answer (even though it might be incorrect)
+            self.curr_turn += 1
+            self.curr_summarised_state = next_summarised_state
+
+            if self.summarise_turns_for_multi_turn:
+                # Agent will act on past turns summarised as context response pairs
+                self.curr_state = copy.deepcopy(next_summarised_state)
+
+            else:
+                # If we don't summarise, does not matter whether the agent is live or not, the actual predicted answer
+                # along with its thought in the state. Can't replace the predicted with golden since it won't naturally
+                # follow the agent's reasoning so far.
+                next_state.extend(
+                    [
+                        {
+                            "role": action["role"],
+                            "content": action["template_free_response"],
+                        },
+                        {
+                            "role": env_role,
+                            "content": observation,
+                        }
+                    ]
+                )
+                # Update the current state
+                self.curr_state = next_state
+
+        else:
+            next_state.extend(
+                [
+                    {
+                        "role": Role.ASSISTANT.value,
+                        "content": action["template_free_response"],
+                    },
+                    {
+                        "role": Role.USER.value,
+                        "content": observation,
+                    }
+                ]
+            )
+            # Update the current state
+            self.curr_state = next_state
+
+        # ############################################ Update History ############################################ #
+        self.curr_turn_history.append(
+            {
+                "action": action["type"],  # str, type of action
+                "action_arguments": action["value"],  # dict or str
+                "observation": observation,  # str
+            }
+        )
+        if action["type"] == "FINAL":
+            self.history.append(copy.deepcopy(self.curr_turn_history))
+            self.curr_turn_history = []
+        self.curr_step += 1
+
+    def setup_scenarios(self):
+        curr_instance_data = self.data[self.curr_instance_idx]
+        if ("scenarios" not in curr_instance_data.keys()) and ("_sc_" not in curr_instance_data["sample_id"]): # Make this more specific for only the data points without scenarios
+            curr_instance_data["scenarios"]= {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
+            self.scenarios = curr_instance_data["scenarios"]
+        domain=curr_instance_data["domain"]
+        scenarios=curr_instance_data["scenarios"]
+        self.scenarios = curr_instance_data["scenarios"]
+        self.tool_policy=create_ToolPolicy(scenarios=scenarios,current_domain=domain)
+        # Determine the final answer instructions and replace the slot
+        final_answer_instructions = self.get_final_answer_instructions()
+        self.tool_policy.final_answer_policy = final_answer_instructions
+
+    def get_final_answer_instructions(self) -> str:
+        # Determine the guidance for generating final answer
+        final_answer_instructions: str = "\n              Further Instructions for final answer generation (if any):"
+
+        # [1] For the case when scenarios render the question unanswerable
+        from prompts.agent import FINAL_ANSWER_FALLBACKS, FINAL_ANSWER_INSUFFICIENCY_TEMPLATES
+        chosen_template = random.choice(FINAL_ANSWER_INSUFFICIENCY_TEMPLATES)
+        chosen_fallback = random.choice(FINAL_ANSWER_FALLBACKS)
+        instr_insufficient_information: str = chosen_template.format(fb=chosen_fallback)
+        final_answer_instructions += "\n                  > " + instr_insufficient_information
+
+        # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
+        curr_instance_data = self.data[self.curr_instance_idx]
+        if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
+            # This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
+            # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
+            instr_resp_cutoff = curr_instance_data['resp_cutoff_inst']
+            final_answer_instructions += "\n                  > " + instr_resp_cutoff
+
+        return final_answer_instructions
+    
+    def get_reward(self, action, observation):
+        if 'error' in observation.lower():  # Don't penalise for server error
+
+            # Check for agent template specific errors
+            for e in ERRORS_AGENT_SPECIFIC_PARSING:
+                if e in observation:
+                    reward = "{REWARD_PARSING_ERROR}"
+                    return reward, False
+
+            # Check for bad tool calls
+            for e in ERRORS_BAD_TOOL_CALLS:
+                if e in observation:
+                    reward = "{REWARD_BAD_TOOL_CALL}"
+                    return reward, False
+
+            for e in ERRORS_NO_PENALTY:
+                if e in observation:
+                    reward = "{REWARD_NO_PENALTY}"
+                    return reward, False
+
+            reward = "{REWARD_ERROR_NO_CATEGORY}"
+            return reward, False
+
+        else:
+            if action["type"] == "FINAL":
+                # TODO: Update the logic:
+                #  Check for the current turn, if final_answer_is_truncated is True, then prediction should be matched
+                #  with the self.curr_raw_answer instead of self.curr_golden_answer. However, we train the model to
+                #  predict the truncated response.
+                #  IMP: Therefore in such cases, make the scorer_judge aware of the 'final_answer_policy' and
+                #  instruct that objects retained in `predicted_final_answer` with which a tool response is
+                #  truncated must be present in the self.curr_raw_answer
+                try:
+                    assert self.scorer_llm is not None
+                except AssertionError:
+                    raise NotImplementedError(f"Scorer LLM is not initialized. Initialise it to score responses.")
+
+                predicted_final_answer = action["value"]
+                scorer_prompt = get_scorer_prompt(
+                    user_query=self.curr_query,
+                    golden_answer=self.curr_golden_answer,
+                    predicted_final_answer=predicted_final_answer,
+                    partial_scoring=self.partial_credit,
+                    use_sample=False,
+                )
+                # formatted_text = self.scorer_llm_tokenizer.apply_chat_template(scorer_prompt, tokenize=False, add_generation_prompt=True)
+                # inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                # inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
+                # input_len = len(inputs["input_ids"][0])
+                # generated_ids = self.scorer_llm_model.generate(
+                #     input_ids=inputs["input_ids"],
+                #     attention_mask=inputs["attention_mask"], 
+                #     max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
+                #     do_sample=False)
+                # # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
+                # response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
+                try:
+                    parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+                except ValueError as e:
+                    error_msg = str(e)
+                    logger.info("Trying one more time to score the response after initial parsing failed.")
+                    # Give one more try
+                    parser_resolver_prompt = get_parser_resolver_prompt(
+                        prompt=scorer_prompt,
+                        response=response,
+                        error=error_msg,
+                    )
+                    # formatted_text = self.scorer_llm_tokenizer.apply_chat_template(parser_resolver_prompt, tokenize=False, add_generation_prompt=True)
+                    # inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
+                    # inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
+                    # input_len = len(inputs["input_ids"][0])
+                    # generated_ids = self.scorer_llm_model.generate(
+                    #     input_ids=inputs["input_ids"],
+                    #     attention_mask=inputs["attention_mask"], 
+                    #     max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
+                    #     do_sample=False)
+                    # # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
+                    # response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
+                    response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
+                    parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+
+                logger.info(f"[External Agent Call] Agent = Final_Scorer")
+                logger.info(
+                    f"Asking (partial credit={self.partial_credit})ScorerJudge LLM to score:\nQuery: {self.curr_query}\nGolden Answer: {self.curr_golden_answer}\nAgent Final Answer: ({predicted_final_answer})")
+                logger.info(f"ScorerJudge LLM said: {json.dumps(parsed_response, indent=2)}")
+
+                if parsed_response["success"]:
+                    reward = "{REWARD_FINAL_ANSWER_MATCH}"
+                else:
+                    reward = "{REWARD_FINAL_ANSWER_NO_MATCH}"
+                return reward, parsed_response["success"]
+
+            elif action["type"] == "RETRIEVE":
+                reward = "{REWARD_SUCCESS_RETRIEVAL_CALL}"
+                return reward, False
+            else:
+                reward = "{REWARD_SUCCESS_TOOL_CALL}"
+                return reward, False
+
 
     @property
     def curr_sample_idx(self) -> int:

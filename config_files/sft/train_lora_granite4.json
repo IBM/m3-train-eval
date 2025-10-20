@@ -1,11 +1,11 @@
 {
-  "template": "student_granite3",
+  "template": "student_granite4",
   "cutoff_len": 32768,
-  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth/",
+  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v2/",
   "dataset": ["mixed_sft_data.json"],
   "mask_history": true,
 
-  "model_name_or_path": "ibm-granite/granite-3.3-8b-instruct",
+  "model_name_or_path": "ibm-granite/granite-4.0-micro",
   "flash_attn": "fa2",
   "disable_gradient_checkpointing": false,
   "enable_liger_kernel": true,
@@ -13,21 +13,17 @@
   "stage": "sft",
   "adapter_name_or_path": null,
   "create_new_adapter": false,
-  "ref_model": "ibm-granite/granite-3.3-8b-instruct",
-  "ref_model_adapters": "ckpts/bird-dev_train/Mistral-7B-Instruct-v0.3/sft/final/PEFT/",
-  "preference_granularity": "step",
-  "mask_suboptimal_traces": true,
-  "pref_loss": "sigmoid",
-  "pref_beta": 0.1,
   "finetuning_type": "lora",
-  "lora_rank": 32,
+  "lora_rank": 64,
   "lora_alpha": 32,
   "lora_dropout": 0.1,
+  "lora_target": ["k_proj","v_proj","q_proj","out_proj","in_proj"],
 
   "deepspeed": "./config_files/training/zero_stage3_offload_config.json",
   "ddp_find_unused_parameters": null,
   "do_eval": false,
   "do_train": true,
+  "gradient_checkpointing": true,
   "learning_rate": 1e-5,
   "lr_scheduler_type": "cosine",
   "logging_dir": "./logging",
@@ -39,5 +35,7 @@
   "warmup_ratio": 0.1,
 
   "do_sample": false,
-  "max_new_tokens": 4096
+  "max_new_tokens": 4096, 
+  "infer_dtype": "bfloat16",
+  "enable_thinking": false
 }

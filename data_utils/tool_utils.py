@@ -376,6 +376,7 @@ class TeacherToolUtils(ToolUtils):
 
 class StudentMistralToolUtils(ToolUtils):
     r"""Mistral v0.3 tool using template [for my use case]."""
+    tool_call_start_tag = "[TOOL_CALLS]"
 
     @override
     @staticmethod
@@ -419,8 +420,8 @@ class StudentMistralToolUtils(ToolUtils):
     def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
         """Inverse of function_formatter"""
         tool = content.strip()
-        if tool.startswith('[TOOL_CALLS]'):
-            tool = tool[len('[TOOL_CALLS]'):]
+        if tool.find(StudentMistralToolUtils.tool_call_start_tag) != -1:
+            tool = tool.split(StudentMistralToolUtils.tool_call_start_tag)[1]
             tool = tool.strip()
 
         # # We don't want to return the parsing error for mistral, [TOOL_CALLS] is a special token which gets removed
@@ -458,6 +459,8 @@ class StudentMistralToolUtils(ToolUtils):
 
 class StudentQwenToolUtils(ToolUtils):
     r"""Qwen 2.5 tool using template [for my use case]."""
+    tool_call_start_tag = "<tool_call>"
+    tool_call_end_tag = "</tool_call>"
 
     @override
     @staticmethod
@@ -497,7 +500,7 @@ class StudentQwenToolUtils(ToolUtils):
             json.dumps({"name": name, "arguments": json.loads(arguments)}, ensure_ascii=False)
             for name, arguments in functions
         ]
-        return "\n".join([f"<tool_call>\n{text}\n</tool_call>" for text in function_texts])
+        return "\n".join([f"{StudentQwenToolUtils.tool_call_start_tag}\n{text}\n{StudentQwenToolUtils.tool_call_end_tag}" for text in function_texts])
 
     @override
     @staticmethod
@@ -506,7 +509,7 @@ class StudentQwenToolUtils(ToolUtils):
         # regex = re.compile(r"<tool_call>(.+?)</tool_call>(?=\s*<tool_call>|\s*$)", re.DOTALL)
         # tool_match: list[str] = re.findall(regex, content)
 
-        tool_match = re.findall(r"<tool_call>(.*?)</tool_call>", content, re.DOTALL)
+        tool_match = re.findall(fr"{StudentQwenToolUtils.tool_call_start_tag}(.*?){StudentQwenToolUtils.tool_call_end_tag}", content, re.DOTALL)
         if len(tool_match) > 1:
             error = "ParallelToolCallingError: Parallel Tool calls found. Only one tool call is supported at a time."
             return error
@@ -544,6 +547,7 @@ class StudentQwenToolUtils(ToolUtils):
 
 class StudentGraniteToolUtils(ToolUtils):
     r"""Granite 3.3 tool using template [for my use case]."""
+    tool_call_start_tag = "<|tool_call|>"
 
     @override
     @staticmethod
@@ -586,8 +590,8 @@ class StudentGraniteToolUtils(ToolUtils):
     def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
         """Inverse of function_formatter"""
         tool = content.strip()
-        if tool.startswith('<|tool_call|>'):
-            tool = tool[len('<|tool_call|>'):]
+        if tool.find(StudentGraniteToolUtils.tool_call_start_tag) != -1:
+            tool = tool.split(StudentGraniteToolUtils.tool_call_start_tag)[1]
             tool = tool.strip()
 
         # # We don't want to return the parsing error for granite, <|tool_call|> is a special token which gets removed
@@ -626,6 +630,8 @@ class StudentGraniteToolUtils(ToolUtils):
 
 class StudentGranite4ToolUtils(StudentGraniteToolUtils):
     r"""Granite 4 tool using template [for my use case]."""
+    tool_call_start_tag = "<tool_call>"
+    tool_call_end_tag = "</tool_call>"
 
     @override
     @staticmethod
@@ -671,8 +677,8 @@ class StudentGranite4ToolUtils(StudentGraniteToolUtils):
     def tool_extractor(content: str) -> Union[str, list["FunctionCall"]]:
         """Inverse of function_formatter"""
         tool = content.strip()
-        if tool.startswith('<tool_call>'):
-            tool = tool[len('<tool_call>'):]
+        if tool.find(StudentGranite4ToolUtils.tool_call_start_tag) != -1:
+            tool = tool.split(StudentGranite4ToolUtils.tool_call_start_tag)[1].replace(StudentGranite4ToolUtils.tool_call_end_tag, "")
             tool = tool.strip()
 
         # # We don't want to return the parsing error for granite, <tool_call> is a special token which gets removed

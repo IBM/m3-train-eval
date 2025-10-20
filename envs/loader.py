@@ -3,8 +3,8 @@ from typing import Dict
 
 from agents.llm import get_lm
 from data_utils import Template, TEMPLATES
-from envs.tool_call_env import ToolCallEnv, M3ToolCallEnv
-from envs.base_env import SubDomain, ToolPolicy
+from envs.tool_call_env import ToolCallEnv, M3ToolCallEnv, M3EvalEnv
+from envs.base_env import SubDomain
 from envs.expert_assist import ExpertAssist
 from loguru import logger
 
@@ -13,14 +13,15 @@ def get_agent_env(
         path_to_env_data: str,
         db_config: dict,
         api_config: dict,
-        expert_assist: "ExpertAssist",
-        horizon: int,
-        template_type: str,
-        overseer_llm_params: Dict,
-        scorer_llm_params: Dict,
-        env_subdomain_mode: str,
+        expert_assist: "ExpertAssist" = None,
+        horizon: int = 1,
+        template_type: str = None,
+        overseer_llm_params: Dict = None,
+        scorer_llm_params: Dict = None,
+        env_subdomain_mode: str = None,
         partial_credit: bool = False,
 ) -> ToolCallEnv:
+    
     # Load the template
     agent_template: "Template" = TEMPLATES[template_type]
 
