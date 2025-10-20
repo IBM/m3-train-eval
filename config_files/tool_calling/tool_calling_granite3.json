@@ -14,5 +14,6 @@
   "model_name_or_path": "ibm-granite/granite-3.3-8b-instruct",
   "max_new_tokens": 4096,
   "is_hf_agent": true,
-  "path_to_hf_config": "./config_files/infer_base.json"
+  "path_to_hf_config": "./config_files/infer_base.json",
+  "enable_thinking": true
 }

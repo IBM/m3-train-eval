@@ -88,13 +88,8 @@ class BaseDataset(TorchDataset):
 
 
     def convert_samples_to_supervised_features(self):
-        """[Original]
-            Convert the processed samples to features that can be used for supervised training.
-             > Overall input is {query_{tail trunc}, response_{tail trunc}}
-             > Older turns are likely to be completely masked out
-             > For tasks with mm_inputs, the plugin either adds image tokens using process_messages() before tokenization
-               or adds the image ids using process_token_ids() after tokenization.
-        """
+        """Convert the processed samples to features that can be used for supervised training."""
+
         inputs, labels, attn_masks, input_lens = [], [], [], []
         
         pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
@@ -114,6 +109,14 @@ class BaseDataset(TorchDataset):
                 sys.exit(-1)
 
             messages = sample['_prompt'] + sample['_response']
+
+            # Remove tags
+            for m in messages:
+                m['content'] = m['content'].replace("<FINAL>", "").replace("</FINAL>", "")
+                if not self.data_args.enable_thinking:
+                    m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
+                    m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
+
             system_prompt = sample['_system']
             tools = sample['_tools']
             tool_policy = sample['_tool_policy']
@@ -148,14 +151,11 @@ class BaseDataset(TorchDataset):
 
             formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
             tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
-            if len(tokens) > self.data_args.cutoff_len:
-                continue
 
             input_ids = tokens['input_ids'].squeeze(0)
             label_ids = tokens["input_ids"].squeeze(0).clone()
             attn_mask = tokens['attention_mask'].squeeze(0)
-            if len(input_ids) > 17000:
-                # label_ids = [IGNORE_INDEX] * len(label_ids)
+            if len(input_ids) > self.data_args.cutoff_len:
                 logger.info(f"Ignoring data point of with token length: {len(input_ids)}")
                 skipped_points+=1
                 continue

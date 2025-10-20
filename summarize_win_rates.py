@@ -19,8 +19,13 @@ def compute_success_fraction(directory_path: str, change_file: str):
     # List all files matching the pattern
     matching_files = [
         f for f in os.listdir(directory_path)
-        if f.startswith("trajectory_") and f.endswith(".json")
+        if f.startswith("metadata_") and f.endswith(".json")
     ]
+
+    if len(matching_files) == 0:
+        print(f"COULDN'T FIND ANY FILES AT LOCATION: {directory_path}. ")
+        print(f"Directory contents: {os.listdir(directory_path)}")
+        raise Exception("No files found")
 
     with open(change_file) as f:
         changes = json.load(f)
@@ -87,8 +92,8 @@ if __name__ == "__main__":
     }
     for s in args.split_type:
         change_file = os.path.join(CHANGE_STATS_DIR,f"change_stat_{s}.json")
-        #input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{s}_mixed/metadata")
-        input_file = args.input_metadata_dir
+        input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{s}_mixed/metadata")
+        # input_file = args.input_metadata_dir
         summary = compute_success_fraction(input_file, change_file)
         global_summary[s] = summary
         global_summary["all_eval_sets"]['total'] += summary['overall']['total']

@@ -27,28 +27,29 @@ def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedMode
 
     logger.info(f"Downloading {model_name} to cache location {os.environ['HF_HOME']}")
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    # model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-    model = LLM(
-            model=model_name,
-            tokenizer=model_name,
-            tensor_parallel_size=1,
-            dtype=torch.float16,
-            gpu_memory_utilization=0.9,
-            trust_remote_code=True,
-        )
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+    # model = LLM(
+    #         model=model_name,
+    #         tokenizer=model_name,
+    #         tensor_parallel_size=1,
+    #         dtype=torch.float16,
+    #         gpu_memory_utilization=0.9,
+    #         trust_remote_code=True,
+    #         runner="generate"
+    #     )
     device=torch.device("cpu")
 
-    # # [Optionally] Put the model on cuda
-    # if torch.cuda.is_available():
-    #     device = torch.device("cuda")
-    #     # Check if model is already on a CUDA device
-    #     if not next(model.parameters()).is_cuda:
-    #         logger.info("CUDA is available. Moving model to CUDA...")
-    #         model = model.cuda()
-    #     else:
-    #         logger.info("Model is already on CUDA.")
-    # else:
-    #     logger.info("CUDA not available. Model stays on CPU.")
+    # [Optionally] Put the model on cuda
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        # Check if model is already on a CUDA device
+        if not next(model.parameters()).is_cuda:
+            logger.info("CUDA is available. Moving model to CUDA...")
+            model = model.cuda()
+        else:
+            logger.info("Model is already on CUDA.")
+    else:
+        logger.info("CUDA not available. Model stays on CPU.")
 
     return tokenizer, model, device
 
@@ -144,20 +145,17 @@ def run_agent(args):
     # ############################################## Set up the run ############################################## #
     curr_time = datetime.now()
     curr_time = "_".join(str(curr_time).split(" ")).replace(":", ".")
-    if args.output_dir:
-        config['log_dir'] = f"{args.output_dir}"
-    else:
-        config['log_dir'] = f"./logging/{curr_time}"
-    os.makedirs(config['log_dir'], exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
 
     if args.input_filename:
         config["path_to_env_data"] = args.input_filename
 
     # Set up the os environment and logging
-    set_run_environment(dotenv_path=config['path_to_env_vars'], log_dir=config['log_dir'])
+    set_run_environment(dotenv_path=config['path_to_env_vars'], log_dir=args.output_dir)
 
     logger.info(json.dumps(config, indent=4))
-    save_traj_at = os.path.join(config['log_dir'], 'trajectories')
+    save_traj_at = os.path.join(args.output_dir, 'trajectories')
+    logger.info(f"Saving trajectories to {save_traj_at}")
     os.makedirs(save_traj_at, exist_ok=True)
 
     # ########################################## Configure the Agent ########################################## #
@@ -168,7 +166,7 @@ def run_agent(args):
         "temperature": config["temperature"],
         "stop_sequences": [],
     }
-    sampling_params = SamplingParams(n=1, temperature=config["temperature"], max_tokens=config["max_new_tokens"])
+    # sampling_params = SamplingParams(n=1, temperature=config["temperature"], max_tokens=config["max_new_tokens"])
 
 
 
@@ -204,10 +202,6 @@ def run_agent(args):
     env_instances_idxs: List[int] = list(range(total_runs))
 
     for i in tqdm(env_instances_idxs, total=len(env_instances_idxs), desc='Environment instance'):
-
-        if i > 2:
-            print("LET'S CUT THIS SHORT!")
-            break
         
         logger.info("="*100)
         logger.info(f"Environment Instantiated ({i})")
@@ -228,6 +222,7 @@ def run_agent(args):
             'num_hops':env.num_hops,
             'type':env.type,
             'sample_id': env.sample_id,
+            'change_state': env.change_state, 
             'tools': env.tools,
             'interactions': {},
             'scenarios': env.scenarios,
@@ -248,23 +243,24 @@ def run_agent(args):
             # Only take Agentic Actions
             logger.info("Tasking Agent to take the action")
             try:
-                system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + env.tool_policy.tool_use_policy
+                import pdb; pdb.set_trace()
+                system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + " " + env.tool_policy.tool_usage_policy
                 formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=system_prompt)
                 
-                # # Huggingface
-                # inputs = tokenizer(formatted_text, padding=False, return_attention_mask=True, return_tensors='pt')
-                # inputs = {k: v.to(device) for k, v in inputs.items()}
-                # input_len = len(inputs["input_ids"][0])
-                # with torch.no_grad():
-                #     generated_ids = model.generate(
-                #         input_ids=inputs["input_ids"],
-                #         attention_mask=inputs["attention_mask"], 
-                #         max_new_tokens=llm_parameters['max_new_tokens'],
-                #         do_sample=False)
-                # generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
+                # Huggingface
+                inputs = tokenizer(formatted_text, padding=False, return_attention_mask=True, return_tensors='pt')
+                inputs = {k: v.to(device) for k, v in inputs.items()}
+                input_len = len(inputs["input_ids"][0])
+                with torch.no_grad():
+                    generated_ids = model.generate(
+                        input_ids=inputs["input_ids"],
+                        attention_mask=inputs["attention_mask"], 
+                        max_new_tokens=llm_parameters['max_new_tokens'],
+                        do_sample=False)
+                generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
                 
                 # vllm
-                generated_text = model.generate(formatted_text, sampling_params=sampling_params, use_tqdm=False)
+                # generated_text = model.generate(formatted_text, sampling_params=sampling_params, use_tqdm=False)
                 parsed_response = parse_llm_response(generated_text, agent_template)
 
             except Exception as e:
@@ -314,9 +310,10 @@ def run_agent(args):
 
             t += 1
         
-        # Continue to the next example in for loop.
-        if next_example:
-            continue
+        # # Continue to the next example in for loop.
+        # if next_example:
+        #     logger.info(f"Skipping to the next example without saving anything. ")
+        #     continue
 
         # ###################################### Compute metrics/Save Metadata ###################################### #
         if not next_example_inference:
@@ -346,6 +343,7 @@ def run_agent(args):
         agent_trajectory["metadata"] = agent_metadata
 
         # Save the Agent trajectory
+        logger.info(f"Saving trajectory {i} to {save_traj_at}")
         with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
             json.dump(agent_trajectory, f, indent=2)
 
@@ -354,9 +352,9 @@ def run_agent(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output_dir', '-o', help="Output directory to save trajectories to", default=".")
-    parser.add_argument('--input_filename', '-i', default="./eval_debug_samples.json", help="Input filename.")
-    parser.add_argument('--infer_config','-ic', default="config_files/evaluate_tool_calling.json", 
+    parser.add_argument('--output_dir', help="Output directory to save trajectories to", required=True)
+    parser.add_argument('--input_filename', default="./eval_debug_samples.json", help="Input filename.")
+    parser.add_argument('--infer_config', default="config_files/evaluate_tool_calling.json", 
                         help="Config file for model training and evaluation. Default value config_files/evaluate_tool_calling.json")
     args = parser.parse_args()
     run_agent(args)

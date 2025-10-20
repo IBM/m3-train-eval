@@ -9,7 +9,8 @@ import torch
 
 BASE_MODELS=[
     "ibm-granite/granite-3.3-8b-instruct", 
-    "ibm-granite/granite-4.0-h-tiny",
+    "ibm-granite/granite-4.0-micro",
+    #"ibm-granite/granite-4.0-h-tiny",
     # "mistralai/Mistral-7B-Instruct-v0.3", 
     # "Qwen/Qwen3-8B",
     # "ibm-granite/granite-3.3-8b-instruct", 
@@ -24,8 +25,8 @@ BASE_MODELS=[
     # "/proj/m3benchmark/ben/checkpoints/granite4-warmup/r250825a/final/PEFT/"
 ]
 PEFT_ADAPTERS=[
-    "/proj/m3benchmark/ben/checkpoints/granite3-gt/final/PEFT", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-gt/final/PEFT", 
+    "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/final/PEFT", 
+    "/proj/m3benchmark/ben/checkpoints/granite4-micro-gt-v6/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/Mistral-7B-Instruct-v0.3/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/Qwen3-8B/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/granite3-gt/final/PEFT", 
@@ -40,8 +41,8 @@ PEFT_ADAPTERS=[
     # "/proj/m3benchmark/siyu/m3-train-eval/g4_wm_dpo/r250825a/final/PEFT"
 ]
 OUTPUT_DIRS=[
-    "/proj/m3benchmark/ben/checkpoints/granite3-gt/merged/", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-gt/merged/", 
+    "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/merged/", 
+    "/proj/m3benchmark/ben/checkpoints/granite4-micro-gt-v6/merged/", 
     # "/proj/m3benchmark/ben/checkpoints/granite-3.3-8b-instruct/merged", 
     # "/proj/m3benchmark/ben/checkpoints/Mistral-7B-Instruct-v0.3/merged", 
     # "/proj/m3benchmark/ben/checkpoints/Qwen3-8B/merged", 

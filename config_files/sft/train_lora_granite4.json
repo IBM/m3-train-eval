@@ -1,11 +1,11 @@
 {
   "template": "student_granite4",
-  "cutoff_len": 16384,
+  "cutoff_len": 32768,
   "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v2/",
   "dataset": ["mixed_sft_data.json"],
   "mask_history": true,
 
-  "model_name_or_path": "ibm-granite/granite-4.0-h-tiny",
+  "model_name_or_path": "ibm-granite/granite-4.0-micro",
   "flash_attn": "fa2",
   "disable_gradient_checkpointing": false,
   "enable_liger_kernel": true,
@@ -35,5 +35,7 @@
   "warmup_ratio": 0.1,
 
   "do_sample": false,
-  "max_new_tokens": 2048
+  "max_new_tokens": 4096, 
+  "infer_dtype": "bfloat16",
+  "enable_thinking": false
 }

@@ -39,5 +39,7 @@
   "warmup_ratio": 0.1,
 
   "do_sample": false,
-  "max_new_tokens": 4096
+  "max_new_tokens": 4096, 
+  "infer_dtype": "bfloat16",
+  "enable_thinking": true
 }

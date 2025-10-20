@@ -210,7 +210,7 @@ def read_cloud_json(cloud_path: str) -> list[Any]:
 # Downsample tool/API pool to fit in context
 # =============================
 
-def downsample_tools(tool_pool: Union[str, list], max_tools: int = 20,  required_tools: list[str] = None, keep_retrievers: bool = True) -> list[dict]:
+def downsample_tools(tool_pool: Union[str, list], max_tools: int = 50,  required_tools: list[str] = None, keep_retrievers: bool = True) -> list[dict]:
 
     pool = deepcopy(tool_pool) # Don't modify the original pool
     if isinstance(pool, str):
