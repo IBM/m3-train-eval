@@ -33,7 +33,7 @@ def create_context_response_pair(item, create_pairs=True,change_type=None,label=
     Returns list of trajectory objects.
     """
     final_samples=[]
-    if ("single_turn" in label) or (not create_pairs):
+    if ("single_turn" in label) or (not create_pairs) or (item["num_turns"]==1):
         item["guid"]=item["guid"]+"_"+str(0)
         item["sample_id"]=item["sample_id"]+"_"+str(0)
         item["change_state"]=change_type
@@ -58,6 +58,7 @@ def create_context_response_pair(item, create_pairs=True,change_type=None,label=
             new_item["type"]="".join(question_types[0:(traj_idx+1)])
             new_item["num_turns"]=len(new_item["turns"])
             new_item["num_hops"]=item["num_hops"][0:(traj_idx+1)]
+            assert new_item["num_turns"] == (traj_idx+1) == len(new_item["turns"]) == len(new_item["trajectory"])
             if change_type=="base":
                 new_item["change_state"]="base"
             elif (traj_idx+1)!=len(item["trajectory"]):
@@ -65,6 +66,8 @@ def create_context_response_pair(item, create_pairs=True,change_type=None,label=
             elif (traj_idx+1)==len(item["trajectory"]):
                 new_item["change_state"]=change_type
             final_samples.append(new_item)
+        assert len(final_samples) == item["num_turns"], f"Created {len(final_samples)} context response pairs but num turns of the dialogue were {item["num_turns"]}."
+        assert final_samples[-1]["num_turns"] == item['num_turns'], f"Last context response pair is not as long as num turns."
         return final_samples
 
 def get_scenario_types(data):
@@ -123,6 +126,7 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids,label):
         item_with_sceanrio = grouped_with_scenario[str(item["sample_id"])]
         intersection_set = list(set([str(i["sample_id"]) for i in item_with_sceanrio]) & set(changed_ids))
         non_changed_ids = list(set([id["sample_id"] for id in item_with_sceanrio if id["sample_id"] not in intersection_set]))
+        assert len(intersection_set)+len(non_changed_ids)==len(item_with_sceanrio) != 0
 
         # Add base data point of scenario
         item["guid"] = str(item["domain"])+"_"+str(item["sample_id"]) # Context-Response pair ID will get added below
@@ -157,7 +161,12 @@ def check_mixed_dataset(data,data_no_scenarios,data_with_scenarios):
     assert len(sample_id_lst)==len(set(sample_id_lst))
 
     # # Total number of samples in data is sum of turns from no_scenarios and with_scenarios
-    assert (sum([i["num_turns"] for i in data_no_scenarios])+sum([i["num_turns"] for i in data_with_scenarios])) != len(data)
+    # TODO: Following assertion is not complete as we don't have all scenario support yet. Some data points are being dropped from scenarios.
+    # updated_data_with_senarios=[d for d in data_with_scenarios if ("ONLY_API" in d['sample_id']) or ("ONLY_RAG" in d['sample_id']) or ("EXCLUDE_GT" not in d['sample_id'])]
+    # if (sum([i["num_turns"] for i in data_no_scenarios])+sum([i["num_turns"] for i in updated_data_with_senarios])) != len(data):
+    #     import pdb
+    #     pdb.set_trace()
+    # assert (sum([i["num_turns"] for i in data_no_scenarios])+sum([i["num_turns"] for i in updated_data_with_senarios])) == len(data)
     return True
 
 def get_data_stats(data):
