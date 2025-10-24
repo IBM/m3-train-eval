@@ -19,7 +19,7 @@ def compute_success_fraction(directory_path: str, change_file: str):
     # List all files matching the pattern
     matching_files = [
         f for f in os.listdir(directory_path)
-        if f.startswith("metadata_") and f.endswith(".json")
+        if f.startswith("trajectory_") and f.endswith(".json")
     ]
 
     if len(matching_files) == 0:
@@ -46,20 +46,20 @@ def compute_success_fraction(directory_path: str, change_file: str):
                 if domain in changes.keys() and sample_id in changes[domain]:
                     # Change scenario
                     summary["changed_scenarios"]["total"] += 1
-                    summary["changed_scenarios"]["total_steps"] += data["total_time_steps"]
-                    if data.get("success") is True:
+                    summary["changed_scenarios"]["total_steps"] += data["metadata"]["total_time_steps"]
+                    if data["metadata"].get("success") is True:
                         summary["changed_scenarios"]["successes"] += 1
                 else:
                     # Unchange scenario
                     summary["unchanged_scenarios"]["total"] += 1
-                    summary["unchanged_scenarios"]["total_steps"] += data["total_time_steps"]
-                    if data.get("success") is True:
+                    summary["unchanged_scenarios"]["total_steps"] += data["metadata"]["total_time_steps"]
+                    if data["metadata"].get("success") is True:
                         summary["unchanged_scenarios"]["successes"] += 1
             else:
                 # No scenario
                 summary["no_scenarios"]["total"] += 1
-                summary["no_scenarios"]["total_steps"] += data["total_time_steps"]
-                if data.get("success") is True:
+                summary["no_scenarios"]["total_steps"] += data["metadata"]["total_time_steps"]
+                if data["metadata"].get("success") is True:
                     summary["no_scenarios"]["successes"] += 1
         except (json.JSONDecodeError, IOError) as e:
             print(f"⚠️ Failed to load {filename}: {e}")
@@ -92,8 +92,8 @@ if __name__ == "__main__":
     }
     for s in args.split_type:
         change_file = os.path.join(CHANGE_STATS_DIR,f"change_stat_{s}.json")
-        input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{s}_mixed/metadata")
-        # input_file = args.input_metadata_dir
+        # input_file = os.path.join(args.input_metadata_dir,f"{args.model}/{s}_mixed/metadata")
+        input_file = args.input_metadata_dir
         summary = compute_success_fraction(input_file, change_file)
         global_summary[s] = summary
         global_summary["all_eval_sets"]['total'] += summary['overall']['total']
