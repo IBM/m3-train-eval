@@ -612,7 +612,10 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         self.domain = curr_instance_data["domain"]
         self.sample_id = curr_instance_data["sample_id"]
-        self.change_state = curr_instance_data["change_state"]
+
+        # "change_state" isn't present in the output of generate.py or run.py it is added while creating CRP pairs
+        if "change_state" in curr_instance_data.keys():
+            self.change_state = curr_instance_data["change_state"]
         # Optional parameters used for reporting
         self.guid=curr_instance_data.get("guid",None)
         self.num_turns=curr_instance_data.get("num_turns",None)
