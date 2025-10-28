@@ -1,14 +1,17 @@
 import os
-import json
+import re
 import json
 import random
 import argparse
 from collections import defaultdict
 from tqdm import tqdm
-import re
+from data_utils.create_data_splits.utils import scenario_based_sample, downsample_data
+
 
 """
 Create the training dataset.
+Usage:
+PYTHONPATH=./ python data_utils/create_data_splits/create_samples_for_sft.py -t ground_truth -od /proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v4/ -of sft_data.json -sd 0.05 -sn 0.03
 """
 CHANGE_FILES = {
     "multi": "./change_stat_train_multiturn.json",
@@ -87,14 +90,6 @@ def convert_to_dict(data: list[dict]):
     return data_dict
 
 
-def get_nondisruptor_timestep(interactions):
-    """
-    Scenario policies just makes the last user turn a disruptor i.e. a scenario description actually chnages the state of the dialogue making the last turn a disruptor turn.
-    Function to get the timestep associated with the disruptor turn.
-    """
-    return [inter_id for inter_id, interaction in enumerate(interactions) if interaction["input"][-1]["role"]=="user"][-1]
-
-
 def create_context_response_pair(item, change_type=None):
     """
     Returns list of trajectory objects.
@@ -127,7 +122,6 @@ def create_context_response_pair(item, change_type=None):
         if change_type in ["base","nondisruptor"]:
             crp_item["change_state"]= item["change_state"]
         elif (change_type=="disruptor"):
-            # disruptor_idx=get_nondisruptor_timestep(crp_item["interactions"])
             if crp_item["num_turns"]!= item["num_turns"]: # Interaction is not the last interaction
                 crp_item["change_state"]="nondisruptor"
             else:
@@ -143,7 +137,10 @@ def group_by_original_sample_id(data: list[dict], inconsistent_sample: list):
         sample_id=d["sample_id"]
         original_sample_id = str(d['sample_id']).split("_sc_")[0]
         if sample_id not in inconsistent_sample:
-            grouped_data[original_sample_id].append(d)
+            if ("ONLY_API" not in d['sample_id']) and ("ONLY_RAG" not in d['sample_id']):
+                continue
+            else:
+                grouped_data[original_sample_id].append(d)
     return grouped_data
 
 def get_base_data(domain):
@@ -312,6 +309,8 @@ def process_data(args=None, format="single"):
     return mixed_data
 
 def run(args):
+    os.makedirs(args.output_dir, exist_ok=True)
+
     # Data mixing between single and multi-turn can be taken care here
     single_turn_data=process_data(args=args,format="single")
     multi_turn_data=process_data(args=args,format="multi")
@@ -319,6 +318,48 @@ def run(args):
     with open(os.path.join(args.output_dir,"mixed_"+args.output_filename), 'w') as f:
         json.dump(output_data, f)
     print(f"mixed_{args.output_filename}, {len(output_data)}")
+
+    # Downsample based on percentage
+    if args.sample_disruptor or args.sample_nondisruptor:
+        os.makedirs(os.path.join(args.output_dir,"downsampled/"), exist_ok=True)
+
+        print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")    
+        print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+
+        # # Downsample Single Turn
+        single_turn_downsampled_data=downsample_data(single_turn_data,sample_disruptor=args.sample_disruptor,sample_nondisruptor=args.sample_nondisruptor)
+        filename=os.path.join(args.output_dir,"downsampled",f"single_{args.output_filename}")
+        with open(filename, 'w') as f:
+            json.dump(single_turn_downsampled_data, f)
+        scenarios, num_turns, change_state = get_data_stats(single_turn_downsampled_data)
+        print(scenarios)
+        print(num_turns)
+        print(change_state)
+        print(f"{filename}, {len(single_turn_downsampled_data)}")
+
+        # Downsample Multi Turn
+        multi_turn_downsampled_data=downsample_data(multi_turn_data,sample_disruptor=args.sample_disruptor,sample_nondisruptor=args.sample_nondisruptor)
+        filename=os.path.join(args.output_dir,"downsampled","multi_"+args.output_filename)
+        with open(filename, 'w') as f:
+            json.dump(multi_turn_downsampled_data, f)
+        scenarios, num_turns, change_state = get_data_stats(multi_turn_downsampled_data)
+        print(scenarios)
+        print(num_turns)
+        print(change_state)
+        print(f"{filename}, {len(multi_turn_downsampled_data)}")
+
+
+        # Combined file
+        output_data_sampled=multi_turn_downsampled_data+single_turn_downsampled_data        
+        filename=os.path.join(args.output_dir,"downsampled","mixed_"+args.output_filename)
+        with open(filename, 'w') as f:
+            json.dump(output_data_sampled, f)
+        scenarios, num_turns, change_state = get_data_stats(output_data_sampled)
+        print(scenarios)
+        print(num_turns)
+        print(change_state)
+        print(f"{filename}, {len(output_data_sampled)}")
+
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")    
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")            
     return output_data
@@ -327,8 +368,10 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--traj_type', '-t', required=True, choices=["ground_truth", "exploratory"], help="Create SFT data from ground truth trajectories or exploratory trajectories.") # exploratory
     parser.add_argument("--change_stats_dir", "-cs", default="/proj/m3benchmark/m3data/0923/auxiliary_data", help="The directory which change stats file.")
-    parser.add_argument("--inconsistency_dir", "-s", default="/proj/m3benchmark/m3data/0923/auxiliary_data", help="The directory which contains inconsistent ground truth samples ids.")
+    parser.add_argument("--inconsistency_dir", "-id", default="/proj/m3benchmark/m3data/0923/auxiliary_data", help="The directory which contains inconsistent ground truth samples ids.") # /proj/m3benchmark/m3data/0923/train_data/sft_exploratory/
     parser.add_argument("--output_dir",'-od', required=True, help="Directory to save files.") # "/proj/m3benchmark/m3data/0923/train_data/sft_exploratory"
-    parser.add_argument('--output_filename', '-of', required=True, help="Filename to save trajectories.")
+    parser.add_argument('--output_filename', '-of', required=True, help="Filename to save trajectories.") # sft_data.json
+    parser.add_argument('--sample_disruptor', '-sd', type=float, default=None, help="Percentage of disruptor to sample. No sampling if set to None.") # 0.05
+    parser.add_argument('--sample_nondisruptor', '-sn', type=float, default=None, help="Percentage of nondisruptor to sample. No sampling if set to None.") # 0.03   
     args = parser.parse_args()
     run(args=args)
