@@ -625,7 +625,7 @@ class M3ToolCallEnv(ToolCallEnv):
             self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
             self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
             self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in curr_instance_data["turns"]]
-            if self.discard_long_response:
+            if (self.discard_long_response) and (len(self.raw_answers)!=0):
                 raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in self.raw_answers]
                 max_raw_answer_len = max(raw_answer_token_lens)
                 if max_raw_answer_len > self.discard_token_n:
@@ -675,11 +675,6 @@ class M3ToolCallEnv(ToolCallEnv):
                             else:
                                 raise ValueError(f"Unknown agent of type {item_1['agent']}")
                     ordered_sub_ques_composition.append(json.dumps(curr_turn_ordered_sub_ques_composition))
-            if self.discard_long_response:
-                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in response_lst]
-                max_raw_answer_len = max(raw_answer_token_lens)
-                if max_raw_answer_len > self.discard_token_n:
-                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")                    
 
             # For [Older] Single-turn data
             # TODO : Long answer length to be fixed in this one
@@ -703,6 +698,12 @@ class M3ToolCallEnv(ToolCallEnv):
                         else:
                             raise ValueError(f"Unknown agent of type {item_1['agent']}")
                 ordered_sub_ques_composition = [json.dumps(ordered_sub_ques_composition)]
+
+            if self.discard_long_response and (len(response_lst)!=0):
+                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in response_lst]
+                max_raw_answer_len = max(raw_answer_token_lens)
+                if max_raw_answer_len > self.discard_token_n:
+                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")
 
         self.ordered_sub_ques_composition = ordered_sub_ques_composition
 
