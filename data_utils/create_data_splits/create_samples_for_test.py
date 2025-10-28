@@ -1,10 +1,21 @@
 import os
 import re
 import json
-import json
 import random
-from collections import defaultdict
+import argparse
 from tqdm import tqdm
+from collections import defaultdict
+from data_utils.create_data_splits.utils import downsample_data
+
+
+"""
+Usage : Create balanced test set
+PYTHONPATH=./ python data_utils/create_data_splits/create_samples_for_test.py -sn 1.0 -sd 1.0 -od /proj/m3benchmark/m3data/0923/evaluation_data/v9/unbalanced/
+
+Usage : Downsample created test set
+PYTHONPATH=./ python data_utils/create_data_splits/create_samples_for_test.py -du 0.1 -uf /proj/m3benchmark/m3data/0923/evaluation_data/v9/balanced/pct100/complete/ood_multi_turn_mixed.json -od /proj/m3benchmark/m3data/0923/evaluation_data/v9/balanced/pct10
+"""
+
 
 AGENT_DIRS = [
     ('/proj/m3benchmark/m3data/0923/data/ood/multi/no_scenarios/generate/final/','/proj/m3benchmark/m3data/0923/data/ood/multi/scenarios/generate/final/'), # Multi Turn OOD
@@ -22,8 +33,7 @@ CHANGE_STATS=[
     "/proj/m3benchmark/m3data/0923/auxiliary_data/change_stat_test_multi_turn.json", # Test Multi-turn
 ]
 
-scenario_mixing_probability=0.5
-OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v6"
+OUTPUT_FOLDERNAME="/proj/m3benchmark/m3data/0923/evaluation_data/v8"
 NUM_SAMPLES=list(range(400,12001,400))
 NUM_SAMPLES=[str(i) for i in NUM_SAMPLES]
 NUM_SAMPLES.append("ALL")
@@ -66,32 +76,9 @@ def create_context_response_pair(item, create_pairs=True,change_type=None,label=
             elif (traj_idx+1)==len(item["trajectory"]):
                 new_item["change_state"]=change_type
             final_samples.append(new_item)
-        assert len(final_samples) == item["num_turns"], f"Created {len(final_samples)} context response pairs but num turns of the dialogue were {item["num_turns"]}."
+        assert len(final_samples) == item["num_turns"], f"Created {len(final_samples)} context response pairs but num turns of the dialogue were {item['num_turns']}."
         assert final_samples[-1]["num_turns"] == item['num_turns'], f"Last context response pair is not as long as num turns."
         return final_samples
-
-def get_scenario_types(data):
-    """
-    Get list of changed scenarios.
-    """
-    scenario_type=[]
-    for filename in CHANGE_STATS:
-        if os.path.isfile(filename):
-            with open(filename,'r') as f:
-                data=json.load(f)
-            for k, v in data.items():
-                for i in v:
-                   scenario_type.append(i.split("_sc_")[1])
-    return set(scenario_type)
-
-def create_stat(data):
-    """Create the change stats file for Single Turn OOD."""
-    scenario_type=get_scenario_types(data=data)
-    chanegd_scenarios_lst = []
-    for item in data:
-        if item["sample_id"].split("_sc_")[1] in scenario_type:
-            chanegd_scenarios_lst.append(item["sample_id"])
-    return chanegd_scenarios_lst
 
 def load_metadata(file_path):
     with open(file_path, "r") as f:
@@ -123,10 +110,10 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids,label):
 
     keep_scenarios = []
     for _, item in enumerate(data_no_scenarios):
-        item_with_sceanrio = grouped_with_scenario[str(item["sample_id"])]
-        intersection_set = list(set([str(i["sample_id"]) for i in item_with_sceanrio]) & set(changed_ids))
-        non_changed_ids = list(set([id["sample_id"] for id in item_with_sceanrio if id["sample_id"] not in intersection_set]))
-        assert len(intersection_set)+len(non_changed_ids)==len(item_with_sceanrio) != 0
+        item_with_scenario = grouped_with_scenario[str(item["sample_id"])]
+        intersection_set = list(set([str(i["sample_id"]) for i in item_with_scenario]) & set(changed_ids))
+        non_changed_ids = list(set([id["sample_id"] for id in item_with_scenario if id["sample_id"] not in intersection_set]))
+        assert len(intersection_set)+len(non_changed_ids)==len(item_with_scenario) != 0
 
         # Add base data point of scenario
         item["guid"] = str(item["domain"])+"_"+str(item["sample_id"]) # Context-Response pair ID will get added below
@@ -198,9 +185,10 @@ def get_data_stats(data):
     return scenarios, question_types, num_turns, change_state
 
 
-def write_data_splits(data,label,num_samples_per_split=400,complete=True):
+def write_data_splits(data,label,num_samples_per_split=400,complete=True,output_foldername=None):
     if complete:
-        output_filename=f"{OUTPUT_FOLDERNAME}/complete/{label}.json"
+        os.makedirs(os.path.join(output_foldername,"complete/"), exist_ok=True)
+        output_filename=f"{output_foldername}/complete/{label}.json"
         with open(output_filename, 'w') as f:
             json.dump(data, f)
         print(f"File {output_filename} was written with {len(data)} samples.")
@@ -209,46 +197,84 @@ def write_data_splits(data,label,num_samples_per_split=400,complete=True):
     # All but last split created
     for i in range(1,num_splits+1):
         data_split=data[400*max(0,i-1):i*400]
-        output_filename=f"{OUTPUT_FOLDERNAME}/{label}_{NUM_SAMPLES[i-1]}.json"
+        output_filename=f"{output_foldername}/{label}_{NUM_SAMPLES[i-1]}.json"
         with open(output_filename, 'w') as f:
             json.dump(data_split, f)
         print(f"File {output_filename} was written with {len(data_split)} samples.")
     
     # Last split
-    data_split=data[i*400:]
-    output_filename=f"{OUTPUT_FOLDERNAME}/{label}_{NUM_SAMPLES[-1]}.json"
-    with open(output_filename, 'w') as f:
-        json.dump(data_split, f)
-    print(f"File {output_filename} was written with {len(data_split)} samples.")
+    start_idx = num_splits * num_samples_per_split
+    data_split=data[start_idx:]
+    if len(data_split)!=0:
+        output_filename=f"{output_foldername}/{label}_{NUM_SAMPLES[-1]}.json"
+        with open(output_filename, 'w') as f:
+            json.dump(data_split, f)
+        print(f"File {output_filename} was written with {len(data_split)} samples.")
 
-def main():
-    for (foldername_no_scenario, foldername_with_scenario), label, change_stat_filename in zip(AGENT_DIRS,LABELS,CHANGE_STATS):
-        if change_stat_filename != "":
-            with open(change_stat_filename, 'r') as f:
-                change_dict=json.load(f)
-        else:
-            change_dict=None
-        
-        domain_names=[i.split("_multiturn_")[0] for i in os.listdir(foldername_no_scenario) if "_final.json" in i]
-        mixed_data=[]
-        for domain in tqdm(domain_names,desc="[DOMAIN]"):
-            data_no_scenarios=load_metadata(f"{foldername_no_scenario}/{domain}_multiturn_bird_chunked_final.json")
-            data_with_scenario=load_metadata(f"{foldername_with_scenario}/{domain}_multiturn_bird_chunked_final.json")
-            if change_dict:
-                change_stat_domain=change_dict[domain]
-            else:
-                change_stat_domain=create_stat(data_with_scenario)
-            mixed_label_data=get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,label)
-            mixed_data.extend(mixed_label_data)
-            assert check_mixed_dataset(mixed_label_data,data_no_scenarios,data_with_scenario)
-        print(f"{label}, {foldername_no_scenario}, {foldername_with_scenario}, {len(mixed_data)}")
-
-        scenarios, question_types, num_turns, change_state = get_data_stats(mixed_data)
+def main(args=None):
+    if args.downsample_universe:
+        assert args.universe_filename, f"Mention the filename to downsample using downsample percent {args.downsample_universe}"
+        with open(args.universe_filename,'r') as f:
+            data=json.load(f)
+        num_samples=int(args.downsample_universe*len(data))
+        label=args.universe_filename.split("_mixed")[0].split("/")[-1]
+        final_data=random.sample(data,num_samples)
+        os.makedirs(args.output_dir, exist_ok=True)
+        print(f"Downsample dataset file {args.universe_filename} to {len(final_data)}. Writing the split files to directory {args.output_dir}.")
+        write_data_splits(final_data,label=label,complete=True,output_foldername=args.output_dir)
+        scenarios, question_types, num_turns, change_state = get_data_stats(final_data)
         print(scenarios)
         print(question_types)
         print(num_turns)
-        print(change_state)
-        write_data_splits(mixed_data,label=label,complete=True)
+        print(change_state)            
+        print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")    
+        print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")        
+    else:
+        for (foldername_no_scenario, foldername_with_scenario), label, change_stat_filename in zip(AGENT_DIRS,LABELS,CHANGE_STATS):
+            if change_stat_filename != "":
+                with open(change_stat_filename, 'r') as f:
+                    change_dict=json.load(f)
+            else:
+                change_dict=None
+            
+            domain_names=[i.split("_multiturn_")[0] for i in os.listdir(foldername_no_scenario) if "_final.json" in i]
+            mixed_data=[]
+            for domain in tqdm(domain_names,desc="[DOMAIN]"):
+                data_no_scenarios=load_metadata(f"{foldername_no_scenario}/{domain}_multiturn_bird_chunked_final.json")
+                data_with_scenario=load_metadata(f"{foldername_with_scenario}/{domain}_multiturn_bird_chunked_final.json")
+                change_stat_domain=change_dict[domain]
+                mixed_label_data=get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,label)
+                mixed_data.extend(mixed_label_data)
+                assert check_mixed_dataset(mixed_label_data,data_no_scenarios,data_with_scenario)
+            print(f"{label}, {foldername_no_scenario}, {foldername_with_scenario}, {len(mixed_data)}")
+
+            scenarios, question_types, num_turns, change_state = get_data_stats(mixed_data)
+            print(scenarios)
+            print(question_types)
+            print(num_turns)
+            print(change_state)
+            write_data_splits(mixed_data,label=label,complete=True,output_foldername=os.path.join(args.output_dir,"unbalanced/"))
+
+            if args.sample_disruptor or args.sample_nondisruptor:
+                print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")    
+                print(f"---------------------------------------------------------------------------[DOWNSAMPLING]------------------------------------------------------------------------------------")
+                os.makedirs(os.path.join(args.output_dir,"balanced/pct100/"), exist_ok=True)
+                final_data=downsample_data(mixed_data=mixed_data,sample_disruptor=args.sample_disruptor,sample_nondisruptor=args.sample_nondisruptor)
+                write_data_splits(final_data,label=label,complete=True,output_foldername=os.path.join(args.output_dir,"balanced/pct100"))
+                scenarios, question_types, num_turns, change_state = get_data_stats(final_data)
+                print(scenarios)
+                print(question_types)
+                print(num_turns)
+                print(change_state)            
+                print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")    
+                print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 
 if __name__=="__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output_dir",'-od', default=OUTPUT_FOLDERNAME, help="Directory to save files.") # "/proj/m3benchmark/m3data/0923/evaluation_data/v6"
+    parser.add_argument('--sample_disruptor', '-sd', type=float, default=None, help="Percentage of disruptor to sample. No sampling if set to None.") # 1.0
+    parser.add_argument('--sample_nondisruptor', '-sn', type=float, default=None, help="Percentage of nondisruptor to sample. No sampling if set to None.") # 1.0
+    parser.add_argument("--downsample_universe", "-du",default=None,type=float,help="Downsample a file based on percentage.") # 0.1
+    parser.add_argument("--universe_filename","-uf",default=None,type=str,help="Set if downsample_universe is set.") # /proj/m3benchmark/m3data/0923/evaluation_data/v9/balanced/pct100/complete/ood_multi_turn_mixed.json
+    args = parser.parse_args()
+    main(args=args)
