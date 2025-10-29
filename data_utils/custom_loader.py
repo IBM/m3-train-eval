@@ -130,6 +130,7 @@ class BaseDataset(TorchDataset):
                 'input_length': len(input_ids), 
                 'domain': sample['domain'], 
                 'sample_id': sample['sample_id'],
+                # 'formatted_text': formatted_text
 
             })
         

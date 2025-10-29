@@ -64,13 +64,13 @@ class Trainer(BaseTrainer):
 
     def _init_trackers(self):
         # Initialize the trackers
-        # args = {**vars(self.training_args), **vars(self.data_args), **vars(self.model_args),
-        #         **vars(self.finetuning_args), **vars(self.generating_args)}
+        args = {**vars(self.training_args), **vars(self.data_args), **vars(self.model_args),
+                **vars(self.finetuning_args), **vars(self.generating_args)}
         if 'wandb' in self.training_args.report_to:
             with self.accelerator.main_process_first():
                 self.accelerator.init_trackers(
                     project_name='AI4ToolInvocation',
-                    # config=args,
+                    config=args,
                     init_kwargs={"wandb": {"name": self.training_args.run_name}},
                 )
 
