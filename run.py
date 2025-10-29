@@ -174,6 +174,7 @@ def run_agent(args):
 
     # ########################################## Run the Agent ########################################## #
     metrics = defaultdict(int)
+    error_logs = []
     total_runs = len(env) # len(env)
     if "include_thoughts" in config and config["include_thoughts"] == False:
         include_thoughts = False
@@ -207,6 +208,7 @@ def run_agent(args):
             state, reward, done, env_metadata = env.reset(inst_idx=i)
         except Exception as e:
             logger.error(f"Environment Reset Exception for env instance {i}: {e}. Skipping!")
+            error_logs.append([i, 'env.reset', str(e)])
             traceback.print_exc()
             continue
 
@@ -265,6 +267,7 @@ def run_agent(args):
                     logger.error(f"Couldn't process example for env instance {i} within inference to take action task due to error {e}. Skipping!")
                     traceback.print_exc()
                     next_example_inference=True # At inference we still want to write a failed log
+                    error_logs.append([i, 'agent.take_action', str(e)])
                     break
 
             elif expert_assist.mode == 'ground_truth' or expert_assist.mode == 'ground_truth_non_live':
@@ -309,6 +312,7 @@ def run_agent(args):
                         logger.error(f"Couldn't process example for env instance {i} within Expert to take action task due to error {e}. Skipping!")
                         traceback.print_exc()
                         next_example=True
+                        error_logs.append([i, 'expert_agent.take_action', str(e)])
                         break
 
                 else:
@@ -327,6 +331,7 @@ def run_agent(args):
                         logger.error(f"Couldn't process example for env instance {i} within Agent to take action task due to error {e}. Skipping!")
                         traceback.print_exc()
                         next_example=True
+                        error_logs.append([i, 'agent.take_action 2', str(e)])
                         break
 
                     # For training with expert-assistance in multi-turn, the final answer at the current turn
@@ -351,6 +356,7 @@ def run_agent(args):
                             logger.error(f"Couldn't process example for env instance {i} within FINAL state due to error {e}. Skipping!")
                             traceback.print_exc()
                             next_example=True
+                            error_logs.append([i, 'expert_agent.take_action 2', str(e)])
                             break
 
 
@@ -402,6 +408,7 @@ def run_agent(args):
                 logger.error(f"Couldn't identify if agent is stuck for env instance {i} due to error {e}. Skipping!")
                 traceback.print_exc()
                 next_example=True
+                error_logs.append([i, 'env.is_expert_help_needed', str(e)])
                 break
 
             if next_example:
@@ -424,6 +431,7 @@ def run_agent(args):
                             logger.error(f"Couldn't generate alternate trace for env instance {i} due to error {e}. Skipping!")
                             traceback.print_exc()
                             next_example=True
+                            error_logs.append([i, 'get_alternate_action_trace agent', str(e)])
                             break
 
                 else:
@@ -440,6 +448,7 @@ def run_agent(args):
                                     logger.error(f"Couldn't generate alternate trace for env instance {i} due to error {e}. Skipping!")
                                     traceback.print_exc()
                                     next_example=True
+                                    error_logs.append([i, 'get_alternate_action_trace expert', str(e)])
                                     break
             curr_interaction["alternate_trace"] = alternate_trace
             # Store the current interaction in the agent trajectory
@@ -484,6 +493,8 @@ def run_agent(args):
                 "total_time_steps": t,
                 "expert_assistance": {}
             }
+        
+        agent_trajectory["metadata"] = agent_metadata
 
         # Save the Agent trajectory
         with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
@@ -491,6 +502,9 @@ def run_agent(args):
         # Save its metadata
         with open(os.path.join(save_metadata_at, f"metadata_{env.domain}_{env.sample_id}.json"), "w") as f:
             json.dump(agent_metadata, f, indent=2)
+        
+        with open(os.path.join(save_metadata_at, f"errors_{env.domain}_{env.sample_id}.json"), "w") as f:
+            json.dump(error_logs, f, indent=2)
 
     metrics["total_runs"] = total_runs
     logger.info("Metrics: \n{}".format(json.dumps(metrics, indent=2)))

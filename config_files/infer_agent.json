@@ -20,7 +20,7 @@
   "is_hf_agent": true,
   "path_to_hf_config": "./config_files/infer_base.json",
 
-  "expert_assist_mode": null,
+  "expert_assist_mode": "ground_truth_non_live",
   "save_alternate_trace": false,
   "include_thoughts": false,
   "expert_assist_init_limit": 2,
