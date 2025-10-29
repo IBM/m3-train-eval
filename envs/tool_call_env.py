@@ -612,7 +612,10 @@ class M3ToolCallEnv(ToolCallEnv):
         curr_instance_data = self.data[self.curr_instance_idx]
         self.domain = curr_instance_data["domain"]
         self.sample_id = curr_instance_data["sample_id"]
-        self.change_state = curr_instance_data["change_state"]
+
+        # "change_state" isn't present in the output of generate.py or run.py it is added while creating CRP pairs
+        if "change_state" in curr_instance_data.keys():
+            self.change_state = curr_instance_data["change_state"]
         # Optional parameters used for reporting
         self.guid=curr_instance_data.get("guid",None)
         self.num_turns=curr_instance_data.get("num_turns",None)
@@ -625,7 +628,7 @@ class M3ToolCallEnv(ToolCallEnv):
             self.golden_answers = [turn_data["answer"] for turn_data in curr_instance_data["turns"]]
             self.raw_answers = [turn_data["raw_answer"] for turn_data in curr_instance_data["turns"]]
             self.were_final_answers_truncated = [turn_data["was_raw_answer_truncated"] for turn_data in curr_instance_data["turns"]]
-            if self.discard_long_response:
+            if (self.discard_long_response) and (len(self.raw_answers)!=0):
                 raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in self.raw_answers]
                 max_raw_answer_len = max(raw_answer_token_lens)
                 if max_raw_answer_len > self.discard_token_n:
@@ -675,11 +678,6 @@ class M3ToolCallEnv(ToolCallEnv):
                             else:
                                 raise ValueError(f"Unknown agent of type {item_1['agent']}")
                     ordered_sub_ques_composition.append(json.dumps(curr_turn_ordered_sub_ques_composition))
-            if self.discard_long_response:
-                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in response_lst]
-                max_raw_answer_len = max(raw_answer_token_lens)
-                if max_raw_answer_len > self.discard_token_n:
-                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")                    
 
             # For [Older] Single-turn data
             # TODO : Long answer length to be fixed in this one
@@ -703,6 +701,12 @@ class M3ToolCallEnv(ToolCallEnv):
                         else:
                             raise ValueError(f"Unknown agent of type {item_1['agent']}")
                 ordered_sub_ques_composition = [json.dumps(ordered_sub_ques_composition)]
+
+            if self.discard_long_response and (len(response_lst)!=0):
+                raw_answer_token_lens = [tokenizer(ra, return_tensors="pt").input_ids.size()[1] for ra in response_lst]
+                max_raw_answer_len = max(raw_answer_token_lens)
+                if max_raw_answer_len > self.discard_token_n:
+                    raise RuntimeError(f"Long Context error: {curr_instance_data['domain']} sample id: {curr_instance_data['sample_id']}")
 
         self.ordered_sub_ques_composition = ordered_sub_ques_composition
 
