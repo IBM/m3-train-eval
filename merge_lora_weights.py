@@ -8,8 +8,9 @@ import torch
 
 
 BASE_MODELS=[
-    "ibm-granite/granite-3.3-8b-instruct", 
+    # "ibm-granite/granite-3.3-8b-instruct", 
     "ibm-granite/granite-4.0-micro",
+    "ibm-granite/granite-4.0-h-tiny",
     #"ibm-granite/granite-4.0-h-tiny",
     # "mistralai/Mistral-7B-Instruct-v0.3", 
     # "Qwen/Qwen3-8B",
@@ -25,8 +26,9 @@ BASE_MODELS=[
     # "/proj/m3benchmark/ben/checkpoints/granite4-warmup/r250825a/final/PEFT/"
 ]
 PEFT_ADAPTERS=[
-    "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/final/PEFT", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-micro-gt-v6/final/PEFT", 
+    # "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/final/PEFT", 
+    "/proj/m3benchmark/ben/checkpoints/granite4-micro-10-27/final/PEFT", 
+    "/proj/m3benchmark/ben/checkpoints/granite4-tiny-10-27/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/Mistral-7B-Instruct-v0.3/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/Qwen3-8B/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/granite3-gt/final/PEFT", 
@@ -41,8 +43,9 @@ PEFT_ADAPTERS=[
     # "/proj/m3benchmark/siyu/m3-train-eval/g4_wm_dpo/r250825a/final/PEFT"
 ]
 OUTPUT_DIRS=[
-    "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/merged/", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-micro-gt-v6/merged/", 
+    # "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/merged/", 
+    "/proj/m3benchmark/ben/checkpoints/granite4-micro-10-27/merged/", 
+    "/proj/m3benchmark/ben/checkpoints/granite4-tiny-10-27/merged/",
     # "/proj/m3benchmark/ben/checkpoints/granite-3.3-8b-instruct/merged", 
     # "/proj/m3benchmark/ben/checkpoints/Mistral-7B-Instruct-v0.3/merged", 
     # "/proj/m3benchmark/ben/checkpoints/Qwen3-8B/merged", 
@@ -68,7 +71,7 @@ def merge_peft_adapter(
     base_model_path: str,
     peft_adapter_path: str,
     output_path: str,
-    torch_dtype=torch.float16,
+    torch_dtype=torch.float32,
     is_dpo: bool = True,
     dpo_adapter: str = None,
 ):
@@ -117,6 +120,9 @@ def merge_peft_adapter(
 
     # Get the actual base model (should strip all PEFT wrapper)
     base_model_merged = merged_model.base_model if hasattr(merged_model, 'base_model') else merged_model
+
+    # Double check the merged weights are cast correctly
+    base_model_merged = base_model_merged.to(torch_dtype)
 
     print(f"💾 Saving merged model to: {output_path}")
     base_model_merged.save_pretrained(output_path)
