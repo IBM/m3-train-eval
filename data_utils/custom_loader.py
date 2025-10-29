@@ -111,7 +111,9 @@ class BaseDataset(TorchDataset):
             if tool_policy.final_answer_policy is not None:
                 system_prompt += tool_policy.final_answer_policy
 
+            # TODO: maybe try putting the tool_usage_policy and final_answer_policy at the end of the prompt (after the tool specs)
             formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
+            # formatted_text is the final text before tokenization. check this to see what's actually getting passed into the model
             tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
 
             input_ids = tokens['input_ids'].squeeze(0)
