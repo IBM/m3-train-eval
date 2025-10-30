@@ -20,7 +20,6 @@ from data_utils.utils import load_data_files
 if TYPE_CHECKING:
     from data_utils.template import Template
     from hparams import DataArguments
-    from data_utils.mm_plugin import MMProcessor
 
 
 class BaseDataset(TorchDataset):
@@ -28,7 +27,6 @@ class BaseDataset(TorchDataset):
             self,
             template: "Template",
             tokenizer: Any,
-            processor: Any,
             data_args: "DataArguments",
             train_setting: str,
             for_pref_modelling: bool = False,
@@ -37,7 +35,6 @@ class BaseDataset(TorchDataset):
     ):
         self.template = template
         self.tokenizer = tokenizer
-        self.processor = processor
 
         self._name = data_args.dataset
         self.data_args = data_args
@@ -340,7 +337,7 @@ class AgentTrajectorySFTData(BaseDataset):
         skipped_missing_gt = 0
 
         # Collect interactions from trajectories
-        for traj in trajectories:
+        for traj in trajectories[:20]:
             # Skip exclude GT samples
             if "EXCLUDE_GT" in traj['sample_id']:
                 skipped_missing_gt += 1

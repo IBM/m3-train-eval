@@ -34,7 +34,10 @@ class Trainer(BaseTrainer):
             dataset = AgentTrajectorySFTData(
                 self.template,
                 self.tokenizer,
+<<<<<<< HEAD
                 self.processor, 
+=======
+>>>>>>> d62a3f2 (val split/loss calculation)
                 self.data_args,
                 setting,
                 dataset=self.data_args.dataset
@@ -98,6 +101,7 @@ class Trainer(BaseTrainer):
                     project_name='dummy_name'
                 )
         if 'tensorboard' in self.training_args.report_to:
+<<<<<<< HEAD
             
             # TensorBoard doesn't need to be wrapped in main_process_first() 
             # because Accelerate handles logging only from the main process.
@@ -105,6 +109,26 @@ class Trainer(BaseTrainer):
             self.accelerator.init_trackers(
                 config=args,
                 project_name='dummy_name'
+=======
+            # Get the run_name to use as the TensorBoard subdirectory name
+            run_name = self.training_args.run_name
+            
+            # TensorBoard doesn't need to be wrapped in main_process_first() 
+            # because Accelerate handles logging only from the main process.
+
+            # Crucial: You need to specify a 'logging_dir' in ProjectConfiguration 
+            # for this to work correctly, 
+            # or rely on Accelerate's default behavior, which usually creates a 
+            # 'runs' folder in your project directory.
+            
+            self.accelerator.init_trackers(
+                project_name='AI4ToolInvocation',
+                config=args,
+                # Explicitly specify the tracker
+                tracker_project_name="tensorboard", 
+                # TensorBoard uses the run_name to create a timestamped subdirectory
+                run_name=run_name 
+>>>>>>> d62a3f2 (val split/loss calculation)
             )
 
     # @override
