@@ -123,6 +123,10 @@ class DataArguments:
         default=True,
         metadata={"help": "Whether or not to enable thinking mode for reasoning models."},
     )
+    include_thinking: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether or not to include thinking text for training."},
+    )
     tokenized_path: Optional[str] = field(
         default=None,
         metadata={

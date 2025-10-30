@@ -99,9 +99,22 @@ class BaseDataset(TorchDataset):
                 elif m['role'] == Role.OBSERVATION.value:
                     m['role'] = Role.USER.value
                 m['content'] = m['content'].replace("<FINAL>", "").replace("</FINAL>", "")
+                if not self.data_args.include_thinking:
+                    t1 = m['content'].find("<think>")
+                    t2 = m['content'].find("</think>")
+                    if t1 != -1 and t2 != -1:
+                        t2 = t2 + len("</think>")
+                        m['content'] = m['content'].replace(m['content'][t1:t2] , "")
+
+                    t1 = m['content'].find("<thought>")
+                    t2 = m['content'].find("</thought>")
+                    if t1 != -1 and t2 != -1:
+                        t2 = t2 + len("</thought>")
+                        m['content'] = m['content'].replace(m['content'][t1:t2], "")
                 if not self.data_args.enable_thinking:
                     m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
                     m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
+
 
             system_prompt = sample['system']
             tools = sample['tools']
@@ -113,6 +126,7 @@ class BaseDataset(TorchDataset):
 
             # TODO: maybe try putting the tool_usage_policy and final_answer_policy at the end of the prompt (after the tool specs)
             formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
+            print("findal prompt: ", formatted_text)
             # formatted_text is the final text before tokenization. check this to see what's actually getting passed into the model
             tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
 
