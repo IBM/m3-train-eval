@@ -95,6 +95,7 @@ class BaseDataset(TorchDataset):
                 if m['role'] == Role.FUNCTION.value:
                     m['role'] = Role.ASSISTANT.value
                     parsed = m['content'].split('</think>{"name"')
+                    print("m['content']:", m['content'])
                     m['content'] = parsed[0] + "</think>" + "<tool_call>\n" + '{"name"' + parsed[1] + "\n</tool_call>"
                 elif m['role'] == Role.OBSERVATION.value:
                     m['role'] = Role.USER.value
