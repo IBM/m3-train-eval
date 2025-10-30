@@ -1,8 +1,9 @@
 import os
 
 from loguru import logger
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from typing_extensions import override
+from torch import Generator
 
 from data_utils.collator import SFTDataCollatorWith4DAttentionMask
 from data_utils.custom_loader import AgentTrajectorySFTData
@@ -35,7 +36,6 @@ class Trainer(BaseTrainer):
             dataset = AgentTrajectorySFTData(
                 self.template,
                 self.tokenizer,
-                self.processor,
                 self.data_args,
                 setting,
             )
@@ -46,12 +46,29 @@ class Trainer(BaseTrainer):
                 label_pad_token_id=IGNORE_INDEX if self.data_args.ignore_pad_token_for_loss else self.tokenizer.pad_token_id,
                 pad_to_multiple_of=8 if setting.lower() == "supervised" else None,  # for shift short attention <-?
                 template=self.template,
-                processor=self.processor,
             )
+        
+        if self.training_args.do_eval:
+            # Do a train/validation split
+            val_len = int(len(dataset) * self.data_args.val_size)
+            train_len = len(dataset) - val_len
 
-        # # Leave this as is to only read prompt for any type of data
-        ds_loader = DataLoader(dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator)
-        self.train_dataset, self.train_dataloader = dataset, ds_loader
+            train_dataset, eval_dataset = random_split(
+                dataset, [train_len, val_len], generator=Generator().manual_seed(42)) # Use a fixed seed for reproducibility!
+            
+            train_dataloader = DataLoader(train_dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator, shuffle=False)
+            eval_dataloader = DataLoader(eval_dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator, shuffle=False)
+            self.train_dataset, self.train_dataloader = train_dataset, train_dataloader
+            self.eval_dataset, self.eval_dataloader = eval_dataset, eval_dataloader
+        else:
+            ds_loader = DataLoader(dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator)
+            self.train_dataset, self.train_dataloader = dataset, ds_loader
+            self.eval_dataset, self.eval_dataloader = None, None
+
+    @override
+    def _build_eval_dataloader(self, setting):
+        # Eval dataloader is created at the same time as train dataloader
+        pass
 
     def init_foundation_model(self, is_trainable):
         logger.info(f"Initializing foundation model...")
@@ -73,6 +90,26 @@ class Trainer(BaseTrainer):
                     config=args,
                     init_kwargs={"wandb": {"name": self.training_args.run_name}},
                 )
+        if 'tensorboard' in self.training_args.report_to:
+            # Get the run_name to use as the TensorBoard subdirectory name
+            run_name = self.training_args.run_name
+            
+            # TensorBoard doesn't need to be wrapped in main_process_first() 
+            # because Accelerate handles logging only from the main process.
+
+            # Crucial: You need to specify a 'logging_dir' in ProjectConfiguration 
+            # for this to work correctly, 
+            # or rely on Accelerate's default behavior, which usually creates a 
+            # 'runs' folder in your project directory.
+            
+            self.accelerator.init_trackers(
+                project_name='AI4ToolInvocation',
+                config=args,
+                # Explicitly specify the tracker
+                tracker_project_name="tensorboard", 
+                # TensorBoard uses the run_name to create a timestamped subdirectory
+                run_name=run_name 
+            )
 
     # @override
     # def _save(self, dir_tag: str):

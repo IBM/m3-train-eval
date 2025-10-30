@@ -162,8 +162,8 @@ class BaseTrainer(object):
             "project_config": project_config,
             "kwargs_handlers": handlers
         }
-        if 'wandb' in self.training_args.report_to:
-            args["log_with"] = ["wandb"]
+
+        args["log_with"] = self.training_args.report_to
 
         """             [Here] From the original implementation of HF trainer           """
         # accelerator_config is a subset of arguments relating to the underlying [`accelerate.Accelerator`]
@@ -522,7 +522,7 @@ class BaseTrainer(object):
                 self.optimizer.zero_grad()
 
             # Log
-            if 'wandb' in self.training_args.report_to:
+            if 'tensorboard' in self.training_args.report_to:
                 log_dict = {
                         "Step/Loss": tr_loss_step.cpu().item(),
                         # "Step/Learning Rate": self.optimizer.param_groups[0]["lr"],
@@ -554,7 +554,69 @@ class BaseTrainer(object):
         return epoch_metrics
 
     def _eval_epoch(self):
-        raise NotImplementedError
+        # Set the model to evaluation mode
+        self.model.eval() 
+        
+        # Use defaultdict to easily aggregate lists of values
+        log_data = defaultdict(list)
+        
+        total_loss = 0.0
+        num_batches = 0
+
+        # Start the evaluation loop
+        for step, batch in enumerate(self.eval_dataloader):
+            
+            # 1. Forward Pass and Loss/Metric Computation
+            with torch.no_grad():
+                # Use the existing function to compute loss and a dictionary of metrics
+                # E.g., metrics = {'accuracy': 0.9, 'f1': 0.85}
+                loss, metrics = self.compute_loss(batch) 
+                
+            # 2. Accumulate Loss and Metrics
+            total_loss += loss.detach().float()
+            num_batches += 1
+
+            # Extend the lists for metrics that need to be aggregated (e.g., accuracy, F1)
+            # We assume 'metrics' is a dictionary of Tensors/scalars from your compute_loss
+            for key, value in metrics.items():
+                # We move them to CPU and detach them for safe list storage
+                log_data[key].append(value.detach().cpu()) 
+
+        # 3. Calculate Average Loss for the entire evaluation on THIS RANK
+        avg_loss = total_loss / num_batches
+        
+        # 4. Gather/Reduce Data Across All Processes
+        # The eval_metrics dictionary will store the final, gathered metrics
+        eval_metrics = {}
+        
+        # a) Gather the average loss
+        # Accelerate will sum this across all ranks. We then divide by the total number of ranks.
+        gathered_loss_sum = self.accelerator.reduce(avg_loss, reduction="sum")
+        global_avg_loss = gathered_loss_sum / self.accelerator.num_processes
+        eval_metrics['eval_loss'] = global_avg_loss.item()
+        logger.info(f"Eval Epoch complete, result = {eval_metrics}")
+
+        # b) Gather the list of all individual metrics
+        for key, values_list in log_data.items():
+            # Concatenate the list of tensors into a single tensor
+            concatenated_values = torch.cat(values_list, dim=0) 
+            
+            # Gather all of these tensors from all processes to the main process
+            gathered_values = self.accelerator.gather_for_metrics(concatenated_values)
+            
+            # NOTE: This part is crucial!
+            # You need an external function (not shown here) to compute the final metric
+            # (e.g., global accuracy) from the aggregated tensor.
+            if self.accelerator.is_main_process:
+                # Example: Calculate a final mean or a classification metric
+                # You must define 'calculate_final_metric_score'
+                final_score = self.calculate_final_metric_score(key, gathered_values)
+                eval_metrics[f'Eval/{key}'] = final_score
+
+        # Set model back to training mode (in case it's used elsewhere, though train() usually handles this)
+        self.model.train()
+        
+        return eval_metrics
 
     def train(self):
         r"""Training loop. The public entry of training process."""

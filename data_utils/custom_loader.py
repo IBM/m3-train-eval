@@ -9,7 +9,7 @@ from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
 
 from data_utils.processor.processor_utils import infer_seqlen
-from data_utils.utils import Role, downsample_tools, update_retrieval_tools
+from data_utils.utils import Role
 from envs.tool_call_env import ERRONEOUS_CATEGORIES
 from extras.constants import IGNORE_INDEX, PREFERENCE_KEYS
 from data_utils.tool_utils import create_ToolPolicy
@@ -20,7 +20,6 @@ from data_utils.utils import load_data_files
 if TYPE_CHECKING:
     from data_utils.template import Template
     from hparams import DataArguments
-    from data_utils.mm_plugin import MMProcessor
 
 
 class BaseDataset(TorchDataset):
@@ -28,7 +27,6 @@ class BaseDataset(TorchDataset):
             self,
             template: "Template",
             tokenizer: Any,
-            processor: Any,
             data_args: "DataArguments",
             train_setting: str,
             for_pref_modelling: bool = False,
@@ -36,7 +34,6 @@ class BaseDataset(TorchDataset):
     ):
         self.template = template
         self.tokenizer = tokenizer
-        self.processor = processor
 
         self._name = data_args.dataset
         self.data_args = data_args
@@ -323,7 +320,7 @@ class AgentTrajectorySFTData(BaseDataset):
         skipped_missing_gt = 0
 
         # Collect interactions from trajectories
-        for traj in trajectories:
+        for traj in trajectories[:20]:
             # Skip exclude GT samples
             if "EXCLUDE_GT" in traj['sample_id']:
                 skipped_missing_gt += 1

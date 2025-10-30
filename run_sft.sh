@@ -57,5 +57,5 @@ for i in "${!configs[@]}"; do
     echo "Using label: ${label}"
     # base="-oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1"
     # bcommand=${base}${bs_config}
-    bsub -oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1 -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "select[hname != cccxc604]" -R "rusage[mem=256GB, cpu=8]" accelerate launch --config_file ${ds_config} tune.py --tune_config ${config_file}
+    bsub -oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1 -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "select[hname != cccxc606]" -R "rusage[mem=256GB, cpu=8]" accelerate launch --config_file ${ds_config} tune.py --tune_config ${config_file}
 done
