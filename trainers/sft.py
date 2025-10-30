@@ -36,6 +36,7 @@ class Trainer(BaseTrainer):
             dataset = AgentTrajectorySFTData(
                 self.template,
                 self.tokenizer,
+                self.processor, 
                 self.data_args,
                 setting,
             )
@@ -46,6 +47,7 @@ class Trainer(BaseTrainer):
                 label_pad_token_id=IGNORE_INDEX if self.data_args.ignore_pad_token_for_loss else self.tokenizer.pad_token_id,
                 pad_to_multiple_of=8 if setting.lower() == "supervised" else None,  # for shift short attention <-?
                 template=self.template,
+                processor=self.processor
             )
         
         if self.training_args.do_eval:
@@ -106,7 +108,6 @@ class Trainer(BaseTrainer):
                 project_name='AI4ToolInvocation',
                 config=args,
                 # Explicitly specify the tracker
-                tracker_project_name="tensorboard", 
                 # TensorBoard uses the run_name to create a timestamped subdirectory
                 run_name=run_name 
             )

@@ -79,6 +79,7 @@ class Trainer(BaseTrainer):
             dataset = AgentTrajectoryPreferenceData(
                 self.template,
                 self.tokenizer,
+                self.processor, 
                 self.data_args,
                 setting,
             )
