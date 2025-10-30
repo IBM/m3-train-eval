@@ -100,18 +100,18 @@ class BaseDataset(TorchDataset):
                 elif m['role'] == Role.OBSERVATION.value:
                     m['role'] = Role.USER.value
                 m['content'] = m['content'].replace("<FINAL>", "").replace("</FINAL>", "")
-                if not self.data_args.include_thinking:
-                    t1 = m['content'].find("<think>")
-                    t2 = m['content'].find("</think>")
-                    if t1 != -1 and t2 != -1:
-                        t1 = t1 + len("<think>")
-                        m['content'] = m['content'][:t1] + m['content'][t2:]
-
-                    t1 = m['content'].find("<thought>")
-                    t2 = m['content'].find("</thought>")
-                    if t1 != -1 and t2 != -1:
-                        t1 = t1 + len("<thought>")
-                        m['content'] = m['content'][:t1] + m['content'][t2:]
+                # if not self.data_args.include_thinking:
+                #     t1 = m['content'].find("<think>")
+                #     t2 = m['content'].find("</think>")
+                #     if t1 != -1 and t2 != -1:
+                #         t1 = t1 + len("<think>")
+                #         m['content'] = m['content'][:t1] + m['content'][t2:]
+                #
+                #     t1 = m['content'].find("<thought>")
+                #     t2 = m['content'].find("</thought>")
+                #     if t1 != -1 and t2 != -1:
+                #         t1 = t1 + len("<thought>")
+                #         m['content'] = m['content'][:t1] + m['content'][t2:]
                 if not self.data_args.enable_thinking:
                     m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
                     m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
