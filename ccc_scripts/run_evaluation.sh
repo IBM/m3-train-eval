@@ -67,7 +67,6 @@ OUTPUT_DIR="YOUR OUTPUT DIR"
 # Only one config file should be required for all models.
 CONFIG_FILE="/u/belder/m3-train-eval/config_files/m3_evaluation.json"
 
-<<<<<<< HEAD
 GPU_STR="num=1:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB"
 port=7000
 for i in "${!MODEL_NAME[@]}"; do
@@ -85,53 +84,23 @@ for i in "${!MODEL_NAME[@]}"; do
         else
             echo "$INPUT_FILE_NAME does not exist."
         fi
-=======
-# Setup the following locations and paramters for the run
-RUN_TYPE="sft-10-31" # Update to the required folder
-MODEL_NAME=( 
-    "granite4-tiny-sft" 
-    "granite4-micro-sft" 
-    )
-MODEL_PATH=(
-    "ibm-granite/granite-4.0-h-tiny"
-    "ibm-granite/granite-4.0-micro"
-)
-
-INPUT_DIR="/proj/m3benchmark/m3data/0923/evaluation_data/v9/balanced/pct1"
-OUTPUT_DIR="/proj/m3benchmark/m3data/0923/m3_test_evaluation/${RUN_TYPE}"
-CONFIG_FILE="/u/belder/m3-train-eval/config_files/m3_evaluation.json"
-
-GPU_STR="num=1:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB"
+        
 for i in "${!MODEL_NAME[@]}"; do
     mn="${MODEL_NAME[$i]}"
     mfile="${MODEL_PATH[$i]}"
     mkdir -p runs/${RUN_DATE}/${mn}
     mkdir -p ${OUTPUT_DIR}/${mn}/trajectories/
 
-<<<<<<< HEAD
-        # for ns in "${NUM_SAMPLES[@]}"; do
-        for INPUT_FILE_NAME in "${INPUT_DIR}"/*.json; do
-            # INPUT_FILE_NAME=${INPUT_DIR}/${it}_${ns}.json
-            if [ -e "$INPUT_FILE_NAME" ]; then
-                FILENAME=$(basename "$INPUT_FILE_NAME")
-                FILENAME_NO_EXT="${FILENAME%.json}"
-                LOGFILE="runs/${RUN_DATE}/${mn}/${it}/${FILENAME_NO_EXT}.log"
-                bsub -n 1 -U infusion -gpu ${GPU_STR} -R "select[hname != cccxc606] rusage[mem=64GB, cpu=4]" -J "${mn}_${FILENAME_NO_EXT}" -o ${LOGFILE} ./ccc_scripts/single_evaluation_command.sh ${mfile} ${OUTPUT_DIR}/${mn}/${INPUT_TYPE} ${INPUT_FILE_NAME} ${CONFIG_DIR}/${config}
-            else
-                echo "$INPUT_FILE_NAME does not exist."
-            fi
-        done
->>>>>>> 7488702 (more updates)
-=======
+    # for ns in "${NUM_SAMPLES[@]}"; do
     for INPUT_FILE_NAME in "${INPUT_DIR}"/*.json; do
+        # INPUT_FILE_NAME=${INPUT_DIR}/${it}_${ns}.json
         if [ -e "$INPUT_FILE_NAME" ]; then
             FILENAME=$(basename "$INPUT_FILE_NAME")
             FILENAME_NO_EXT="${FILENAME%.json}"
-            LOGFILE="runs/${RUN_DATE}/${mn}/${FILENAME_NO_EXT}.log"
-            bsub -n 1 -U infusion -gpu ${GPU_STR} -R "select[hname != cccxc606] rusage[mem=64GB, cpu=4]" -J "${mn}_${FILENAME_NO_EXT}" -o ${LOGFILE} ./ccc_scripts/single_evaluation_command.sh ${mfile} ${OUTPUT_DIR}/${mn} ${INPUT_FILE_NAME} ${CONFIG_FILE}
+            LOGFILE="runs/${RUN_DATE}/${mn}/${it}/${FILENAME_NO_EXT}.log"
+            bsub -n 1 -U infusion -gpu ${GPU_STR} -R "select[hname != cccxc606] rusage[mem=64GB, cpu=4]" -J "${mn}_${FILENAME_NO_EXT}" -o ${LOGFILE} ./ccc_scripts/single_evaluation_command.sh ${mfile} ${OUTPUT_DIR}/${mn}/${INPUT_TYPE} ${INPUT_FILE_NAME} ${CONFIG_DIR}/${config}
         else
             echo "$INPUT_FILE_NAME does not exist."
         fi
->>>>>>> 8f92e86 (simplify configs)
     done
 done
