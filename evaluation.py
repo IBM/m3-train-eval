@@ -407,6 +407,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', help="Output directory to save trajectories to", required=True)
     parser.add_argument('--input_filename', default="./eval_debug_samples.json", help="Input filename.")
+    parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--infer_config', default="config_files/evaluate_tool_calling.json", 
                         help="Config file for model training and evaluation. Default value config_files/evaluate_tool_calling.json")
     parser.add_argument('--num_workers', '-w', type=int, default=8, help='Number of processes. If using hf inference this must be one. ')

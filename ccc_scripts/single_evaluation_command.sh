@@ -42,4 +42,6 @@ echo "Server is up!"
 python -u evaluation.py \
     --output_dir "${OUTPUT_DIR}" \
     --input_filename "${INPUT_FILE_NAME}" \
-    --infer_config "${CONFIG_FILE}"
+    --infer_config "${CONFIG_FILE}" \
+    --model "${MODEL_FILE}" \
+    --num_workers 8
