@@ -104,6 +104,8 @@ class BaseDataset(TorchDataset):
                 if not self.data_args.enable_thinking:
                     m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
                     m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
+            
+            messages[-1]['content'] = sample['thought'] + messages[-1]['content']
 
             system_prompt = sample['system']
             tools = sample['tools']
@@ -339,6 +341,7 @@ class AgentTrajectorySFTData(BaseDataset):
                         "idx": sample_idx,
                         "input": traj["input"],
                         "output": traj["output"],
+                        "thought": list(traj['interactions'][0].values())[0]['metadata']['thought'], 
                         "system": system,
                         "tools": tools,
                         "tool_policy": tool_policy,

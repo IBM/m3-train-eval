@@ -479,6 +479,22 @@ class BaseTrainer(object):
                 smoothing=0.04,
                 disable=not self.accelerator.is_main_process,
         ):
+
+            # Do evaluation epoch
+            # Hardcode the frequency to every 665 steps for now (about 1/4 of our current train size)
+            if self.training_args.do_eval and int(self.global_step) % 665 == 0:
+                logger.info("***** Running Evaluation *****")
+                eval_metrics = self._eval_epoch()
+                for keys, values in eval_metrics.items():
+                    logger.info("  |- Eval/{}: {:.6f}".format(keys, values))
+                    if 'wandb' in self.training_args.report_to:
+                        # if is_rank_0():
+                        #     print("epoch: ", self.epoch)
+                        #     print("epoch valid_losses[loss]: ", values)
+                        self.accelerator.log(
+                            {"Epoch/Eval/{}".format(keys): values},
+                            step=self.global_step,
+                        )
             self.global_step += 1
             do_sync_step = (self.global_step + 1) % self.training_args.gradient_accumulation_steps == 0 or (self.global_step + 1) == steps_in_epoch
             # Since we perform prefetching, we need to manually set sync_gradients
