@@ -349,11 +349,12 @@ def run_agent(args):
     # ########################################## Configure the Agent ########################################## #
 
     llm_parameters = {
-        "model_name_or_path": config["model_name_or_path"],
+        "model_name_or_path": args.model,
         "max_new_tokens": config["max_new_tokens"],
         "temperature": config["temperature"],
         "stop_sequences": [],
     }
+    config["model_name_or_path"] = args.model
 
     path = Path(config['path_to_env_data'])
     if path.is_file() and path.suffix == '.json':
@@ -374,7 +375,7 @@ def run_agent(args):
     print(f"Launching {len(conversations)} jobs across {args.num_workers} processes...")
 
     if RUNNER_TYPE == 'hf':
-        tokenizer, model, device = load_model(config["model_name_or_path"])
+        tokenizer, model, device = load_model(args.model)
         metrics = []
         for conversation in tqdm(conversations):
             traj_stats = run_single_trajectory(

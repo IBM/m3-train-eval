@@ -33,19 +33,23 @@ export CUDA_LAUNCH_BLOCKING=1
 
 RUN_DATE=$(date "+%m%d")
 
-# Setup the following locations and paramters for the run
-RUN_TYPE="sft-10-31" # Update to the required folder
+# This is just a tag that will be used for logfiles and output directories. 
+# You can make it whatever you want. 
 MODEL_NAME=( 
     "granite4-tiny-sft" 
     "granite4-micro-sft" 
     )
+# This needs to be a valid huggingface name or a path to a local checkpoint
 MODEL_PATH=(
     "ibm-granite/granite-4.0-h-tiny"
     "ibm-granite/granite-4.0-micro"
 )
 
+# Input data loaded from here
 INPUT_DIR="/proj/m3benchmark/m3data/0923/evaluation_data/v9/balanced/pct1"
-OUTPUT_DIR="/proj/m3benchmark/m3data/0923/m3_test_evaluation/${RUN_TYPE}"
+# Output files (trajectories) will go in here. 
+OUTPUT_DIR="/proj/m3benchmark/m3data/0923/m3_test_evaluation/sft-10-31"
+# Only one config file should be required for all models. 
 CONFIG_FILE="/u/belder/m3-train-eval/config_files/m3_evaluation.json"
 
 GPU_STR="num=1:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB"
