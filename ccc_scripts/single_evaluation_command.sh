@@ -37,6 +37,7 @@ until curl -s http://localhost:8000/v1/models > /dev/null; do
     sleep 10;
 done;
 echo "Server is up!"
+sleep 30; # Make sure the server is really up before we start, otherwise the first few samples will fail
 
 # 3. Run the evaluation script
 python -u evaluation.py \
