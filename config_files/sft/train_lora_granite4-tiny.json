@@ -1,7 +1,7 @@
 {
   "template": "student_granite4",
   "cutoff_len": 32768,
-  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v6/downsampled/",
+  "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v8/downsampled/",
   "dataset": ["mixed_sft_data.json"],
   "mask_history": true,
 
@@ -30,7 +30,7 @@
   "num_train_epochs": 1,
   "per_device_train_batch_size": 1,
   "report_to": ["tensorboard"],
-  "output_dir": "/proj/m3benchmark/ben/checkpoints/granite4-tiny-10-27-v2", 
+  "output_dir": "./logging", 
   "save_only_model": true,
   "save_steps": -1,
   "warmup_ratio": 0.1,

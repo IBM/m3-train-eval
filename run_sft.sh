@@ -38,11 +38,15 @@ export CUDA_LAUNCH_BLOCKING=1
 
 configs=(
     "config_files/sft/train_lora_granite4-micro.json"
-    # "config_files/sft/train_lora_granite4-tiny.json"
+    "config_files/sft/train_lora_granite4-tiny.json"
+    "config_files/sft/train_lora_granite4-micro-v2.json"
+    "config_files/sft/train_lora_granite4-tiny-v2.json"
 )
 labels=(
-    "granite4_gt-micro"
-    # "granite4_gt-tiny"
+    "granite4-micro-l64"
+    "granite4-tiny-l64"
+    "granite4-micro-l32"
+    "granite4-tiny-l32"
 )
 
 # Loop through the arrays
@@ -50,12 +54,11 @@ for i in "${!configs[@]}"; do
     config_file="${configs[$i]}"
     ds_config="config_files/training/multi_gpu_ds_stage3.yml"
     # bs_config=' -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAH10080GBHBM3" -R "select[hname != cccxc604]" -R "rusage[mem=256GB, cpu=8]" '
-    bs_config=' -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "select[hname != cccxc606]" -R "rusage[mem=256GB, cpu=8]" '
     label="${labels[$i]}"
 
     echo "Processing job: ${config_file}"
     echo "Using label: ${label}"
     # base="-oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1"
     # bcommand=${base}${bs_config}
-    bsub -oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1 -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "select[hname != cccxc606]" -R "rusage[mem=256GB, cpu=8]" accelerate launch --config_file ${ds_config} tune.py --tune_config ${config_file}
+    bsub -oo logging/tune_${label}.log -eo logging/tune_${label}.log -J tune_${label} -U infusion -q normal -n 1 -gpu "num=4:mode=exclusive_process:gmodel=NVIDIAA100_SXM4_80GB" -R "select[hname != cccxc604]" -R "rusage[mem=256GB, cpu=8]" accelerate launch --config_file ${ds_config} tune.py --tune_config ${config_file}
 done

@@ -127,6 +127,7 @@ class BaseTrainer(object):
     def create_accelerator_and_postprocess(self):
         project_config = ProjectConfiguration(
             logging_dir=self.training_args.logging_dir,
+            project_dir=self.training_args.logging_dir, 
         )
 
         # For allocating accelerator's ddp_handler (handler_class_to_attr = {DistributedDataParallelKwargs: "ddp_handler")..}
@@ -534,6 +535,7 @@ class BaseTrainer(object):
                     for k, v in tr_metrics.items():
                         log_dict[f"Step/{k}"] = v
                 self.accelerator.log(log_dict, step=self.global_step)
+                logger.info(f"Metrics (step {self.global_step}): {log_dict}")
 
             epoch_metrics['loss'] += tr_loss_step.cpu().item()
             if tr_metrics:

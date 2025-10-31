@@ -1,5 +1,3 @@
-import os
-
 from loguru import logger
 from torch.utils.data import DataLoader, random_split
 from typing_extensions import override
@@ -88,28 +86,18 @@ class Trainer(BaseTrainer):
         if 'wandb' in self.training_args.report_to:
             with self.accelerator.main_process_first():
                 self.accelerator.init_trackers(
-                    project_name='AI4ToolInvocation',
                     config=args,
                     init_kwargs={"wandb": {"name": self.training_args.run_name}},
+                    project_name='dummy_name'
                 )
         if 'tensorboard' in self.training_args.report_to:
-            # Get the run_name to use as the TensorBoard subdirectory name
-            run_name = self.training_args.run_name
             
             # TensorBoard doesn't need to be wrapped in main_process_first() 
             # because Accelerate handles logging only from the main process.
-
-            # Crucial: You need to specify a 'logging_dir' in ProjectConfiguration 
-            # for this to work correctly, 
-            # or rely on Accelerate's default behavior, which usually creates a 
-            # 'runs' folder in your project directory.
             
             self.accelerator.init_trackers(
-                project_name='AI4ToolInvocation',
                 config=args,
-                # Explicitly specify the tracker
-                # TensorBoard uses the run_name to create a timestamped subdirectory
-                run_name=run_name 
+                project_name='dummy_name'
             )
 
     # @override
