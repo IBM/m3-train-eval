@@ -91,6 +91,7 @@ class BaseDataset(TorchDataset):
             messages = sample['input'] + [sample['output']]
 
             # Remove tags
+            # TODO: if we run models besides granite 4 this parsing logic will need to change
             for m in messages:
                 if m['role'] == Role.FUNCTION.value:
                     m['role'] = Role.ASSISTANT.value

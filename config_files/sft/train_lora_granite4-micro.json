@@ -20,7 +20,7 @@
 
   "deepspeed": "./config_files/training/zero_stage3_offload_config.json",
   "ddp_find_unused_parameters": null,
-  "do_eval": false,
+  "do_eval": true,
   "do_train": true,
   "gradient_checkpointing": true,
   "learning_rate": 1e-5,
@@ -31,7 +31,7 @@
   "report_to": ["tensorboard"],
   "output_dir": "./logging", 
   "save_only_model": true,
-  "save_steps": -1,
+  "save_steps": 166,
   "warmup_ratio": 0.1,
 
   "do_sample": false,
