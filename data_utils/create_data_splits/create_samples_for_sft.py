@@ -19,8 +19,8 @@ CHANGE_FILES = {
 }
 
 IGNORE_FILES = {
-    "multi": "./inconsistency_multiturn_train.json", 
-    "single": "./inconsistency_single_turn.json", 
+    "multi": "./inconsistency_by_domain_multi_turn_train.json", 
+    "single": "./inconsistency_by_domain_single_turn_train.json", 
 }
 
 scenario_mixing_probability = 0.5
@@ -29,9 +29,10 @@ OOD_DOMAINS = ["video_games", "chicago_crime", "simpson_episodes",
                "public_review_platform", "movie","movie_3", "movielens", "movies_4"]
 DIRECTORY_MULTI_TURN={
     "ground_truth":{
-        "no_scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_expert/trajectories",
-        # "scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_scenarios_expert/trajectories",
-        "scenarios": "/proj/m3benchmark/m3data/0923/data/train/multi/scenarios/run_gt_non_live/trajectories"
+        "no_scenarios":"/proj/m3benchmark/m3data/0923/data/train/multi/no_scenarios/run_gt_non_live/trajectories",
+        "scenarios": "/proj/m3benchmark/m3data/0923/data/train/multi/scenarios/run_gt_non_live/trajectories",
+        # "no_scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_expert/trajectories",
+        # "scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_scenarios_expert/trajectories",        
     },
     "exploratory":{
         "no_scenarios":"/proj/m3benchmark/m3data/0905/balanced_rest_v4_exploratory_trajectory/trajectories",
@@ -41,9 +42,13 @@ DIRECTORY_MULTI_TURN={
 
 DIRECTORY_SINGLE_TURN={
     "ground_truth":{
-        "no_scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_single_turn_expert/trajectories",
-        "scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_single_turn_scenarios_expert/trajectories",
+        "no_scenarios": "/proj/m3benchmark/m3data/0923/data/train/single/no_scenarios/run_gt_non_live/trajectories",
+        "scenarios": "/proj/m3benchmark/m3data/0923/data/train/single/scenarios/run_gt_non_live/trajectories"
     },
+    # "ground_truth":{
+    #     "no_scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_single_turn_expert/trajectories",
+    #     "scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_single_turn_scenarios_expert/trajectories",
+    # },
     "exploratory":{
         "no_scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_exploratory_trajectory/trajectories",
         "scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_chunked_scenarios_st_exp/trajectories",
@@ -278,7 +283,8 @@ def process_data(args=None, format="single"):
     data_no_scenarios_dict, data_with_scenario_dict = load_files(foldername_no_scenario), load_files(foldername_with_scenario)
     print(f"Datasets Loaded for {format} turn data.")
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-    assert set(data_no_scenarios_dict.keys()) == set(data_with_scenario_dict.keys())
+    # TODO : Currently the multi-turn dataset has domains missing
+    # assert set(data_no_scenarios_dict.keys()) == set(data_with_scenario_dict.keys()), f"Scenarios and base dataset donot have the same domains"
     ignore_data_filename=os.path.join(args.inconsistency_dir,IGNORE_FILES[format])
     domain_names=list(data_no_scenarios_dict.keys())
     filename=os.path.join(args.output_dir,f"{format}_{args.output_filename}")
@@ -295,7 +301,7 @@ def process_data(args=None, format="single"):
             continue
         data_no_scenarios, data_with_scenario = data_no_scenarios_dict[domain], data_with_scenario_dict[domain]
         change_stat_domain=change_dict[domain]
-        ignore_domain=ignore_dict[domain]
+        ignore_domain=ignore_dict.get(domain,[])
         mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,ignore_domain,format,domain))
     with open(filename, 'w') as f:
         json.dump(mixed_data, f)
@@ -312,7 +318,9 @@ def run(args):
     os.makedirs(args.output_dir, exist_ok=True)
 
     # Data mixing between single and multi-turn can be taken care here
+    print("Processing Single Turn Data")
     single_turn_data=process_data(args=args,format="single")
+    print("Processing Multi Turn Data")
     multi_turn_data=process_data(args=args,format="multi")
     output_data=multi_turn_data+single_turn_data
     with open(os.path.join(args.output_dir,"mixed_"+args.output_filename), 'w') as f:
