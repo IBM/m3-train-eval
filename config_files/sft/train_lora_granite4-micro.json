@@ -24,7 +24,6 @@
   "ddp_find_unused_parameters": null,
   "do_eval": true,
   "do_train": true,
-  "val_size": 0.1, 
   "gradient_checkpointing": true,
   "learning_rate": 3e-5,
   "lr_scheduler_type": "cosine",
