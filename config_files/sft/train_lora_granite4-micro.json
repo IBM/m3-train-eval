@@ -2,7 +2,8 @@
   "template": "student_granite4",
   "cutoff_len": 32768,
   "dataset_dir": "/proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v8/downsampled/",
-  "dataset": ["mixed_sft_data.json"],
+  "dataset": ["mixed_sft_data_train_split.json"],
+  "eval_dataset": ["mixed_sft_data_val_split.json"], 
   "mask_history": true,
 
   "model_name_or_path": "ibm-granite/granite-4.0-micro",
@@ -14,7 +15,7 @@
   "adapter_name_or_path": null,
   "create_new_adapter": false,
   "finetuning_type": "lora",
-  "lora_rank": 64,
+  "lora_rank": 16,
   "lora_alpha": 32,
   "lora_dropout": 0.1,
 
@@ -22,7 +23,6 @@
   "ddp_find_unused_parameters": null,
   "do_eval": true,
   "do_train": true,
-  "val_size": 0.1, 
   "gradient_checkpointing": true,
   "learning_rate": 1e-5,
   "lr_scheduler_type": "cosine",
