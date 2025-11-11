@@ -436,7 +436,7 @@ class AgentTrajectoryPreferenceData(BaseDataset):
         task_idxs, data = [], []
 
         # Collect interactions from trajectories
-        for traj in trajectories[0:16]:
+        for traj in trajectories:
 
             system, tools = traj['system'], traj['tools']
             tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
