@@ -54,12 +54,12 @@ def verify_cuda():
     logger.info(f"System CUDA (nvcc) version: {system_cuda_version or 'nvcc not found'}")
 
 
-if is_rank_0():
-    set_run_environment(dotenv_path="./.env")
-    print("LOGGING IN")
-    # Login with the hf_token
-    from huggingface_hub import login
-    login(token=os.environ.get("HF_TOKEN", ""))
+# if is_rank_0():
+#     set_run_environment(dotenv_path="./.env",log_dir=)
+#     print("LOGGING IN")
+#     # Login with the hf_token
+#     from huggingface_hub import login
+#     login(token=os.environ.get("HF_TOKEN", ""))
 
 def main(path_to_config: str):
 
@@ -72,6 +72,13 @@ def main(path_to_config: str):
     # Check that data exists before we start up. 
     with open(os.path.join(path_to_config), 'r') as f:
         override_args = json.load(f)
+
+    if is_rank_0():
+        set_run_environment(dotenv_path="./.env",log_dir=override_args['logging_dir'])
+        print("LOGGING IN")
+        # Login with the hf_token
+        from huggingface_hub import login
+        login(token=os.environ.get("HF_TOKEN", ""))        
     
     logger.info(f"USING CONFIG FILE: {path_to_config}")
     for dataset in override_args['dataset']:
