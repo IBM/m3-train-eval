@@ -6,11 +6,63 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 import torch
 
+# MODELS_TO_MERGE=[ # Base model , adaptar, merged path
+#     # ("ibm-granite/granite-4.0-h-tiny","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-h-tiny/final/PEFT","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-h-tiny/merged/final"),
+#     # ("ibm-granite/granite-4.0-h-tiny","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-h-tiny/model_step_1800/PEFT","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-h-tiny/merged/model_step_1800"),
+#     # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-micro/model_step_1200/PEFT","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-micro/merged/model_step_1800"),    
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-micro/final/PEFT","/dccstor/arnaik_data/routing/m3-train-eval/logging/v4/granite-4.0-micro/merged/final"),        
+# ]
+
+# MODELS_TO_MERGE=[ # Base model , adaptar, merged path
+#     # lr_e4_no_thoughts_rank64_epoch1
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/final/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/final"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/model_step_600/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/model_step_600"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/model_step_1200"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/model_step_1800/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e4_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/model_step_1800"),
+#     # lr_e5_no_thoughts_rank64_epoch1
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/final/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/final"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/model_step_600/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/model_step_600"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/model_step_1200"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/model_step_1800/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank64_epoch1/granite-4.0-micro/merged/model_step_1800"),
+#     # lr_e5_no_thoughts_rank16_epoch3
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/final/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/merged/final"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/model_step_600/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_600"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_1200"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/model_step_1800/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_1800"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/model_step_2400/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_no_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_2400"),
+#     # lr_e5_thoughts_rank16_epoch3
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/final/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/final"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_600/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_600"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_1200"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_1800/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_1800"),
+#     ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_2400/PEFT","/proj/m3benchmark/ankita/logging/v5/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_2400"),
+# ]
+
+# MODELS_TO_MERGE=[ # Base model , adaptar, merged path
+#     # lr_e5_thoughts_rank16_epoch3
+#     # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/final/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/final"),
+#     # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_6600/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_6600"),
+#     # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_e5_thoughts_rank16_epoch3_old/granite-4.0-micro/model_step_5400/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_e5_thoughts_rank16_epoch3_old/granite-4.0-micro/merged/model_step_5400"),
+#     # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_3e5_thoughts_rank32_alpha64_epoch3/granite-4.0-micro/model_step_6600/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_3e5_thoughts_rank32_alpha64_epoch3/granite-4.0-micro//merged/model_step_6600"),
+#     # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_3e5_no_thoughts_rank32_alpha64_epoch3/granite-4.0-micro/final/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_3e5_no_thoughts_rank32_alpha64_epoch3/granite-4.0-micro/merged/final"),
+# ]
+
+MODELS_TO_MERGE=[ # Base model , adaptar, merged path
+    # # lr_e5_thoughts_rank16_epoch3
+    # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_1200"),
+    # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_1800/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_1800"),
+    # lr_3e5_thoughts_rank32_alpha64_epoch3
+    ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_3e5_thoughts_rank32_alpha64_epoch3/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_3e5_thoughts_rank32_alpha64_epoch3/granite-4.0-micro//merged/model_step_1200"),
+    ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_3e5_thoughts_rank32_alpha64_epoch3/granite-4.0-micro/model_step_1800/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_3e5_thoughts_rank32_alpha64_epoch3/granite-4.0-micro//merged/model_step_1800"),    
+    # lr_3e5_no_thoughts_rank32_alpha64_epoch3
+    ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_3e5_no_thoughts_rank32_alpha64_epoch3/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_3e5_no_thoughts_rank32_alpha64_epoch3/granite-4.0-micro//merged/model_step_1200"),
+    ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_3e5_no_thoughts_rank32_alpha64_epoch3/granite-4.0-micro/model_step_1800/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_3e5_no_thoughts_rank32_alpha64_epoch3/granite-4.0-micro//merged/model_step_1800"),        
+]
 
 BASE_MODELS=[
     # "ibm-granite/granite-3.3-8b-instruct", 
     "ibm-granite/granite-4.0-micro",
-    "ibm-granite/granite-4.0-h-tiny",
+    # "ibm-granite/granite-4.0-h-tiny",
     #"ibm-granite/granite-4.0-h-tiny",
     # "mistralai/Mistral-7B-Instruct-v0.3", 
     # "Qwen/Qwen3-8B",
@@ -24,11 +76,12 @@ BASE_MODELS=[
     # "/proj/m3benchmark/granite4_ckpts/granite-4.0-tiny-prerelease-greylock/r250825a", 
     # "/proj/m3benchmark/granite4_ckpts/granite-4.0-tiny-prerelease-greylock/r250825a", 
     # "/proj/m3benchmark/ben/checkpoints/granite4-warmup/r250825a/final/PEFT/"
+    # "ibm-granite/granite-4.0-h-tiny",
 ]
 PEFT_ADAPTERS=[
     # "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/final/PEFT", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-micro-10-27/final/PEFT", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-tiny-10-27/final/PEFT", 
+    # "/proj/m3benchmark/ben/checkpoints/granite4-micro-10-27/final/PEFT", 
+    # "/proj/m3benchmark/ben/checkpoints/granite4-tiny-10-27/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/Mistral-7B-Instruct-v0.3/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/Qwen3-8B/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/granite3-gt/final/PEFT", 
@@ -40,12 +93,14 @@ PEFT_ADAPTERS=[
     # "/proj/m3benchmark/ben/checkpoints/granite4-warmup/r250825a/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/granite4-gt/r250825a/final/PEFT", 
     # "/proj/m3benchmark/ben/checkpoints/granite4-warmup/r250825a/final/PEFT", 
-    # "/proj/m3benchmark/siyu/m3-train-eval/g4_wm_dpo/r250825a/final/PEFT"
+    # "/proj/m3benchmark/siyu/m3-train-eval/g4_wm_dpo/r250825a/final/PEFT",
+    # "/dccstor/arnaik_data/routing/m3-train-eval/logging/granite-4.0-h-tiny/final/PEFT"
+    "/dccstor/arnaik_data/routing/m3-train-eval/logging/granite-4.0-micro/final/PEFT"
 ]
 OUTPUT_DIRS=[
     # "/proj/m3benchmark/ben/checkpoints/granite3-gt-v6/merged/", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-micro-10-27/merged/", 
-    "/proj/m3benchmark/ben/checkpoints/granite4-tiny-10-27/merged/",
+    # "/proj/m3benchmark/ben/checkpoints/granite4-micro-10-27/merged/", 
+    # "/proj/m3benchmark/ben/checkpoints/granite4-tiny-10-27/merged/",
     # "/proj/m3benchmark/ben/checkpoints/granite-3.3-8b-instruct/merged", 
     # "/proj/m3benchmark/ben/checkpoints/Mistral-7B-Instruct-v0.3/merged", 
     # "/proj/m3benchmark/ben/checkpoints/Qwen3-8B/merged", 
@@ -58,7 +113,8 @@ OUTPUT_DIRS=[
     # "/proj/m3benchmark/ben/checkpoints/granite4-warmup/r250825a/merged", 
     # "/proj/m3benchmark/ben/checkpoints/granite4-gt/r250825a/merged", 
     # "/proj/m3benchmark/ben/checkpoints/granite4-warmup/r250825a/merged", 
-    # "/proj/m3benchmark/ben/checkpoints/g4_wm_dpo/r250825a/merged"
+    # "/proj/m3benchmark/ben/checkpoints/g4_wm_dpo/r250825a/merged",
+    "/dccstor/arnaik_data/routing/m3-train-eval/logging/merged"
 ]
 
 
@@ -71,7 +127,7 @@ def merge_peft_adapter(
     base_model_path: str,
     peft_adapter_path: str,
     output_path: str,
-    torch_dtype=torch.float32,
+    torch_dtype=torch.bfloat16,
     is_dpo: bool = True,
     dpo_adapter: str = None,
 ):
@@ -113,7 +169,11 @@ def merge_peft_adapter(
     else:
         # Only one adapter for sft
         print(f"🔁 Loading PEFT adapter: {peft_adapter_path}")
-        model = PeftModel.from_pretrained(base_model, peft_adapter_path)
+        try:
+            model = PeftModel.from_pretrained(base_model, peft_adapter_path)
+        except Exception as e:
+            print(f"Merge failed for adapter {peft_adapter_path} due to {e}.")
+            return False
 
     print("🔁 Merging PEFT adapter into base model...")
     merged_model = model.merge_and_unload()
@@ -143,7 +203,9 @@ if __name__ == "__main__":
     #     dpo_adapter="/proj/m3benchmark/siyu/m3-train-eval/g4_wm_dpo/r250825a/final/PEFT"
     # )
 
-    for base, adapter, outdir in zip(BASE_MODELS, PEFT_ADAPTERS, OUTPUT_DIRS):
+    # for base, adapter, outdir in zip(BASE_MODELS, PEFT_ADAPTERS, OUTPUT_DIRS):
+    for (base, adapter, outdir) in MODELS_TO_MERGE:
+        os.makedirs(outdir, exist_ok=True)
         merge_peft_adapter(
             base_model_path=base,
             peft_adapter_path=adapter,
