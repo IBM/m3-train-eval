@@ -46,16 +46,13 @@ class BaseDataset(TorchDataset):
         # Read Data
         self.task_idxs, self.processed_samples = self.read_data()
 
-        # Process samples
-        self.print_data_sample()
-
         # # Convert samples to features
         if train_setting.lower() == "supervised":
 
             if not for_pref_modelling:
-                self.inputs, self.labels, self.attn_masks, self.input_lens = self.convert_samples_to_supervised_features()
+                self.inputs, self.labels, self.attn_masks, self.input_lens, self.formatted_prompts = self.convert_samples_to_supervised_features()
             else:
-                self.inputs, self.labels, self.attn_masks, self.input_lens = self.convert_samples_to_supervised_preference_features()
+                self.inputs, self.labels, self.attn_masks, self.input_lens, self.formatted_prompts = self.convert_samples_to_supervised_preference_features()
 
         else:
             raise ValueError(f"Unknown training setting: {train_setting}")
@@ -67,6 +64,10 @@ class BaseDataset(TorchDataset):
                     input_lens.append(v)
         else:
             input_lens = self.input_lens
+
+        # Process samples
+        self.print_data_sample()
+                    
         logger.info(f"Input Length (system + history + context + query) Stats: Min = {min(input_lens)}, Max = {max(input_lens)}, Avg = {sum(input_lens) / len(input_lens)}")
 
     def read_data(self) -> List[dict]:
@@ -81,6 +82,7 @@ class BaseDataset(TorchDataset):
         inputs, labels, attn_masks, input_lens = [], [], [], []
         pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
         stats = []
+        formatted_prompts=[]
         skipped_points = 0
         for i in range(len(self.processed_samples)):
 
@@ -97,15 +99,17 @@ class BaseDataset(TorchDataset):
                     m['role'] = Role.ASSISTANT.value
                     # parsed = m['content'].split('</think>{"name"')
                     parsed = m['content'].split('{"name"')
-                    m['content'] = parsed[0] + "</think>" + "<tool_call>\n" + '{"name"' + parsed[1] + "\n</tool_call>"
+                    m['content'] = "<think>" + parsed[0] + "</think>" + "<tool_call>\n" + '{"name"' + parsed[1] + "\n</tool_call>"
                 elif m['role'] == Role.OBSERVATION.value:
                     m['role'] = Role.USER.value
                 m['content'] = m['content'].replace("<FINAL>", "").replace("</FINAL>", "")
-                if not self.data_args.enable_thinking:
-                    m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
-                    m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
+                # if not self.data_args.enable_thinking:
+                # Specifically for granite we don't need <think> or <FINAL> tags.
+                m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
+                m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
             
-            messages[-1]['content'] = sample['thought'] + messages[-1]['content']
+            if self.data_args.enable_thinking:
+                messages[-1]['content'] = sample['thought'] + messages[-1]['content']
 
             system_prompt = sample['system']
             tools = sample['tools']
@@ -117,6 +121,7 @@ class BaseDataset(TorchDataset):
 
             # TODO: maybe try putting the tool_usage_policy and final_answer_policy at the end of the prompt (after the tool specs)
             formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
+            formatted_prompts.append(formatted_text)
             # formatted_text is the final text before tokenization. check this to see what's actually getting passed into the model
             tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
 
@@ -143,11 +148,11 @@ class BaseDataset(TorchDataset):
         logger.info(f"Skipped {skipped_points} long context points out of a total of {len(input_lens)}. ")
         with open(f"stats.json", "w") as f:
             json.dump(stats, f)
-        return inputs, labels, attn_masks, input_lens
+        return inputs, labels, attn_masks, input_lens, formatted_prompts
 
     def convert_samples_to_supervised_preference_features(self):
 
-        inputs, labels, attn_masks, input_lens = [], [], [], []  # This will now be a list of dicts
+        inputs, labels, attn_masks, input_lens, formatted_prompts = [], [], [], [], []  # This will now be a list of dicts
 
         pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to preference features: ")
         for i in range(len(self.processed_samples)):
@@ -236,7 +241,7 @@ class BaseDataset(TorchDataset):
             input_lens.append(pref_input_lens)
             pbar.update()
 
-        return inputs, labels, attn_masks, input_lens
+        return inputs, labels, attn_masks, input_lens, formatted_prompts
 
     def get_processed_sample(self, i: int):
         """Get the (processed) sample at index i.
@@ -279,15 +284,16 @@ class BaseDataset(TorchDataset):
     def print_data_sample(self):
         for _ in range(2):
             # Get a random sample from the dataset
-            random_sample = random.choice(self.processed_samples)
+            random_sample = random.choice(self.formatted_prompts)            
             if random_sample is None:
-                random_sample = random.choice(self.processed_samples)
+                random_sample = random.choice(self.formatted_prompts)
 
             logger.info(
                 "\n|======================================================================================|\n"
-                "|============================== Random Processed Sample ===============================|\n"
+                "|============================== Random Processed Sample Prompt ==========================|\n"
                 "|======================================================================================|\n"
-                f"{json.dumps(make_json_serializable(random_sample), indent=4)}"
+                f"{random_sample}"
+                # f"{json.dumps(make_json_serializable(random_sample), indent=4)}"
                 "\n|======================================================================================|\n"
             )
 
@@ -419,7 +425,7 @@ class AgentTrajectoryPreferenceData(BaseDataset):
         task_idxs, data = [], []
 
         # Collect interactions from trajectories
-        for traj in trajectories:
+        for traj in trajectories[0:16]:
 
             system, tools = traj['system'], traj['tools']
             tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
