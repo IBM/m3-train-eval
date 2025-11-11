@@ -469,6 +469,7 @@ class BaseTrainer(object):
         steps_in_epoch = len(active_dataloader)
         grad_norm: Optional[float] = None
         learning_rate = None
+        disable=not self.accelerator.is_main_process
         for batch in tqdm(
                 active_dataloader,
                 desc=f"Training Epoch {self.epoch}",
@@ -477,12 +478,13 @@ class BaseTrainer(object):
                 leave=False,
                 dynamic_ncols=True,
                 smoothing=0.04,
-                disable=not self.accelerator.is_main_process,
+                disable=disable,
         ):
 
             # Do evaluation epoch
             # Hardcode the frequency to every 665 steps for now (about 1/4 of our current train size)
-            if self.training_args.do_eval and int(self.global_step) % 665 == 0:
+            # if (not disable) and (self.training_args.do_eval) and (int(self.global_step) %  self.training_args.save_steps == 0):
+            if (self.training_args.do_eval) and (int(self.global_step) %  self.training_args.save_steps == 0):            
                 logger.info("***** Running Evaluation *****")
                 eval_metrics = self._eval_epoch()
                 for keys, values in eval_metrics.items():
@@ -495,8 +497,16 @@ class BaseTrainer(object):
                             {"Epoch/Eval/{}".format(keys): values},
                             step=self.global_step,
                         )
+
+            # if (self.training_args.save_steps > 0) and (self.global_step % self.training_args.save_steps == 0) and (self.global_step != 0):
+            if (self.training_args.save_steps > 0) and (int(self.global_step) %  self.training_args.save_steps == 0):
+                self.accelerator.wait_for_everyone()
+                # if not disable:
+                self._save(f"model_step_{self.global_step}")
+                # self.accelerator.wait_for_everyone()
+
             self.global_step += 1
-            do_sync_step = (self.global_step + 1) % self.training_args.gradient_accumulation_steps == 0 or (self.global_step + 1) == steps_in_epoch
+            do_sync_step = ((self.global_step + 1) % self.training_args.gradient_accumulation_steps == 0) or ((self.global_step + 1) == steps_in_epoch)
             # Since we perform prefetching, we need to manually set sync_gradients
             self.accelerator.gradient_state._set_sync_gradients(do_sync_step)
 
