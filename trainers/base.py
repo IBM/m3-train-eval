@@ -90,7 +90,9 @@ class BaseTrainer(object):
             logger.info("Building dataset...")
             start = time.monotonic_ns()
             self._build_dataloader('supervised')
-            self._build_eval_dataloader('supervised')
+            if self.training_args.do_eval:
+                assert self.data_args.eval_dataset is not None
+                self._build_eval_dataloader('supervised')
             end = time.monotonic_ns()
             logger.success(f"Building dataset done in {(end - start) / 1e6:.2f}ms")
 

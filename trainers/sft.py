@@ -37,6 +37,7 @@ class Trainer(BaseTrainer):
                 self.processor, 
                 self.data_args,
                 setting,
+                dataset=self.data_args.dataset
             )
 
             # Define the collator.
@@ -48,27 +49,33 @@ class Trainer(BaseTrainer):
                 processor=self.processor
             )
         
-        if self.training_args.do_eval:
-            # Do a train/validation split
-            val_len = int(len(dataset) * self.data_args.val_size)
-            train_len = len(dataset) - val_len
-
-            train_dataset, eval_dataset = random_split(
-                dataset, [train_len, val_len], generator=Generator().manual_seed(42)) # Use a fixed seed for reproducibility!
-            
-            train_dataloader = DataLoader(train_dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator, shuffle=False)
-            eval_dataloader = DataLoader(eval_dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator, shuffle=False)
-            self.train_dataset, self.train_dataloader = train_dataset, train_dataloader
-            self.eval_dataset, self.eval_dataloader = eval_dataset, eval_dataloader
-        else:
-            ds_loader = DataLoader(dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator)
-            self.train_dataset, self.train_dataloader = dataset, ds_loader
-            self.eval_dataset, self.eval_dataloader = None, None
+        ds_loader = DataLoader(dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator)
+        self.train_dataset, self.train_dataloader = dataset, ds_loader
 
     @override
     def _build_eval_dataloader(self, setting):
         # Eval dataloader is created at the same time as train dataloader
-        pass
+        with self.accelerator.main_process_first():
+            dataset = AgentTrajectorySFTData(
+                self.template,
+                self.tokenizer,
+                self.processor, 
+                self.data_args,
+                setting, 
+                dataset=self.data_args.eval_dataset
+            )
+
+            # Define the collator.
+            collator = SFTDataCollatorWith4DAttentionMask(
+                tokenizer=self.tokenizer,
+                label_pad_token_id=IGNORE_INDEX if self.data_args.ignore_pad_token_for_loss else self.tokenizer.pad_token_id,
+                pad_to_multiple_of=8 if setting.lower() == "supervised" else None,  # for shift short attention <-?
+                template=self.template,
+                processor=self.processor
+            )
+        
+        ds_loader = DataLoader(dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator)
+        self.eval_dataset, self.eval_dataloader = dataset, ds_loader
 
     def init_foundation_model(self, is_trainable):
         logger.info(f"Initializing foundation model...")

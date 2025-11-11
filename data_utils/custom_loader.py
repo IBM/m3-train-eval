@@ -32,6 +32,7 @@ class BaseDataset(TorchDataset):
             data_args: "DataArguments",
             train_setting: str,
             for_pref_modelling: bool = False,
+            dataset: str = None
 
     ):
         self.template = template
@@ -42,6 +43,9 @@ class BaseDataset(TorchDataset):
         self.data_args = data_args
         self.train_setting = train_setting
         self.for_pref_modelling = for_pref_modelling
+
+        self.dataset_dir = data_args.dataset_dir
+        self.dataset = dataset if dataset is not None else self.data_args.dataset
 
         # Read Data
         self.task_idxs, self.processed_samples = self.read_data()
@@ -309,7 +313,8 @@ class AgentTrajectorySFTData(BaseDataset):
             tokenizer: Any,
             processor: "MMProcessor",
             data_args: "DataArguments",
-            train_setting: str
+            train_setting: str, 
+            dataset: str = None
     ):
         # Use this to control if you want to train on interactions from expert or agent or both
         self.accept_interactions_from = 'expert'  #  Possible values: expert, agent, both
@@ -320,13 +325,14 @@ class AgentTrajectorySFTData(BaseDataset):
             tokenizer=tokenizer,
             processor=processor,
             data_args=data_args,
-            train_setting=train_setting
+            train_setting=train_setting, 
+            dataset=dataset
         )
 
     def read_data(self):
 
         # Collect trajectories
-        trajectories = load_data_files(self.data_args.dataset_dir, self.data_args.dataset)
+        trajectories = load_data_files(self.dataset_dir, self.dataset)
         total_trajectories = len(trajectories)
         sample_idx = 0
         task_idxs, data = [], []
@@ -339,7 +345,8 @@ class AgentTrajectorySFTData(BaseDataset):
                 skipped_missing_gt += 1
                 continue
             
-            system, tools = traj['system'], traj['tools']
+            system = traj['system']
+            tools = random.shuffle(json.loads(traj['tools']))
             tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
             tool_policy.tool_usage_policy = traj['tool_usage_policy']
             tool_policy.final_answer_policy = traj['final_answer_policy']
@@ -402,7 +409,8 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             tokenizer: Any,
             processor: "MMProcessor",
             data_args: "DataArguments",
-            train_setting: str
+            train_setting: str, 
+            dataset: str = None
     ):
         # self.preference_granularity: str = 'step'  # 'step' (collected using single agent) or 'trajectory' (collected using multiple agents)
         # self.mask_suboptimal_traces: bool = True  # Used with trajectory-level preference granularity
@@ -413,7 +421,8 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             processor=processor,
             data_args=data_args,
             train_setting=train_setting,
-            for_pref_modelling=True
+            for_pref_modelling=True, 
+            dataset = dataset
         )
 
     def read_step_preferences(self):

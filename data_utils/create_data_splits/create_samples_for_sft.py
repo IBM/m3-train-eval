@@ -3,7 +3,7 @@ import re
 import json
 import random
 import argparse
-from collections import defaultdict
+from collections import defaultdict, Counter
 from tqdm import tqdm
 from data_utils.create_data_splits.utils import scenario_based_sample, downsample_data
 
@@ -239,6 +239,75 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsis
     # assert len(keep_scenarios) >= len(data_no_scenarios), f"Total samples kept for this file are {len(keep_scenarios)} which is lesser than base samples without scenarions {len(data_no_scenarios)}"
     return keep_scenarios
 
+def split_sample_ids_random(counter, ratio=0.9, seed=None):
+    """
+    Randomly split unique sample_ids into two sets so that the first set covers
+    approximately `ratio` (default 0.9) of the total instances.
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    sample_ids = list(counter.keys())
+    random.shuffle(sample_ids)
+
+    total = sum(counter.values())
+    running_total = 0
+
+    set1, set2 = set(), set()
+
+    for sample_id in sample_ids:
+        if running_total / total < ratio:
+            set1.add(sample_id)
+            running_total += counter[sample_id]
+        else:
+            set2.add(sample_id)
+
+    return set1, set2
+
+def get_unique_id(datapoint: dict) -> str:
+    uid = datapoint['domain']+"_"+datapoint["sample_id"].split("_sc_")[0]
+    return uid
+
+def perform_train_val_split(json_path: str, ratio=0.9, seed=42):
+    
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    if not isinstance(data, list):
+        raise ValueError("Expected the JSON file to contain a list of objects.")
+
+    sample_ids = [get_unique_id(row) for row in data]
+    counts = Counter(sample_ids)
+    
+    # Random split (set a seed for reproducibility if desired)
+    train_ids, val_ids = split_sample_ids_random(counts, ratio=ratio, seed=seed)
+    
+    # Print summary
+    print(f"Total unique sample_ids: {len(counts)}")
+    print(f"Train set (~90%): {len(train_ids)} unique IDs, {sum([counts[t] for t in train_ids])} C-R pairs. ")
+    print(f"Val set (~10%): {len(val_ids)} unique IDs, {sum([counts[t] for t in val_ids])} C-R pairs. \n")
+
+    train_set = []
+    val_set = []
+    for d in data:
+        uid = get_unique_id(d)
+        if uid in val_ids:
+            val_set.append(d)
+        else:
+            assert uid in train_ids
+            train_set.append(d)
+
+    train_file = json_path.replace(".json", "_train_split.json")
+    with open(train_file, "w") as f:
+        json.dump(train_set, f)
+    print(f"Wrote {len(train_set)} / {len(data)} rows to {train_file}")
+
+    val_file = json_path.replace(".json", "_val_split.json")
+    with open(val_file, "w") as f:
+        json.dump(val_set, f)
+    print(f"Wrote {len(val_set)} / {len(data)} rows to {val_file}")
+            
+
 def get_data_stats(data):
     pattern = r"^([A-Za-z_]+)_([A-Za-z0-9_]+)$" # guid should have this pattern
     scenarios=defaultdict(int)
@@ -359,6 +428,9 @@ def run(args):
         print(num_turns)
         print(change_state)
         print(f"{filename}, {len(output_data_sampled)}")
+
+        # Also save separate train and validation splits
+        perform_train_val_split(filename)
 
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")    
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")            
