@@ -138,7 +138,7 @@ def merge_peft_adapter(
         base_model_path (str): Path to the base model directory.
         peft_adapter_path (str): Path to the PEFT adapter directory.
         output_path (str): Path to save the merged model.
-        torch_dtype (torch.dtype, optional): Data type for loading the model. Defaults to torch.float16.
+        torch_dtype (torch.dtype, optional): Data type for loading the model. Defaults to torch.bfloat16.
 
     Returns:
         None

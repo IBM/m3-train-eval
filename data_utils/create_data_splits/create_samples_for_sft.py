@@ -14,13 +14,13 @@ Usage:
 PYTHONPATH=./ python data_utils/create_data_splits/create_samples_for_sft.py -t ground_truth -od /proj/m3benchmark/m3data/0923/train_data/sft_ground_truth_v4/ -of sft_data.json -sd 0.05 -sn 0.03
 """
 CHANGE_FILES = {
-    "multi": "./change_stat_train_multiturn.json",
-    "single": "./change_stat_train_single_turn.json"
+    "multi": "change_stat_train_multiturn.json",
+    "single": "change_stat_train_single_turn.json"
 }
 
 IGNORE_FILES = {
-    "multi": "./inconsistency_multiturn_train.json", 
-    "single": "./inconsistency_single_turn.json", 
+    "multi": "inconsistency_by_domain_multi_turn_train.json", 
+    "single": "inconsistency_by_domain_single_turn_train.json", 
 }
 
 scenario_mixing_probability = 0.5
@@ -34,8 +34,8 @@ DIRECTORY_MULTI_TURN={
         "scenarios": "/proj/m3benchmark/m3data/0923/data/train/multi/scenarios/run_gt_non_live/trajectories"
     },
     "exploratory":{
-        "no_scenarios":"/proj/m3benchmark/m3data/0905/balanced_rest_v4_exploratory_trajectory/trajectories",
-        "scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_chunked_scenarios_exp/trajectories",
+        "no_scenarios":"/proj/m3benchmark/danish/10282025/m3_train_test_ood_rest_v2/train_chunked_exp/trajectories",
+        "scenarios":"/proj/m3benchmark/danish/10282025/m3_train_test_ood_rest_v2/train_chunked_scenarios_exp/trajectories",
     }
 }
 
@@ -45,8 +45,8 @@ DIRECTORY_SINGLE_TURN={
         "scenarios":"/proj/m3benchmark/m3data/0923/m3_train_test_ood_rest_v2_single_turn_scenarios_expert/trajectories",
     },
     "exploratory":{
-        "no_scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_exploratory_trajectory/trajectories",
-        "scenarios":"/proj/m3benchmark/m3data/0905/m3_train_test_ood_rest_v2_single_turn_chunked_scenarios_st_exp/trajectories",
+        "no_scenarios":"/proj/m3benchmark/danish/10282025/m3_train_test_ood_rest_v2/train_single_turn_chunked_exp/trajectories",
+        "scenarios":"/proj/m3benchmark/danish/10282025/m3_train_test_ood_rest_v2/train_single_turn_chunked_scenarios_exp/trajectories",
     }
 }
 
@@ -131,6 +131,59 @@ def create_context_response_pair(item, change_type=None):
     assert len(final_samples)==len(item["interactions"].keys())
     return final_samples
 
+
+def create_context_response_pair_from_alternate_trace(item, change_type=None):
+    """
+    Returns list of trajectory objects.
+    """
+
+    final_samples=[]
+    if change_type in ["base","nondisruptor"]:
+        item["change_state"]=change_type
+    
+    for (t, timestep) in item["interactions"].items():
+        if timestep['alternate_trace'] == []:
+            # Only keep responses where an intervention happened
+            continue
+        reward = timestep['alternate_trace'][0]['reward']
+        if reward not in ['{REWARD_SUCCESS_TOOL_CALL}', '{REWARD_SUCCESS_RETRIEVAL_CALL}']:
+            # Only keep responses where a successful action was created
+            continue
+        if timestep['actor'] != 'expert':
+            # Only keep pairs where the expert response is being used
+            continue
+
+        crp_item={
+            "idx": t,
+            "guid": item["guid"],
+            "sample_id": item["sample_id"],
+            "domain": item["domain"],
+            "format": item["format"],
+            "type": item["type"],
+            "num_turns": len([input for input in timestep["input"] if input["role"]=="user"]), # num_turns is equal to the number of user turns in the context            
+            "system":item["system"],
+            "tools": item["tools"],
+            "input": timestep["input"],
+            "output": timestep["output"],
+            "interactions": [{t:timestep}],
+            "scenarios": item["scenarios"],
+            "tool_availability_policy": item["tool_availability_policy"],
+            "tool_usage_policy": item["tool_usage_policy"],
+            "final_answer_policy": item["final_answer_policy"],
+        }
+
+        if change_type in ["base","nondisruptor"]:
+            crp_item["change_state"]= item["change_state"]
+        elif (change_type=="disruptor"):
+            if crp_item["num_turns"]!= item["num_turns"]: # Interaction is not the last interaction
+                crp_item["change_state"]="nondisruptor"
+            else:
+                crp_item["change_state"]="disruptor"
+
+        final_samples.append(crp_item)
+    return final_samples
+
+
 def group_by_original_sample_id(data: list[dict], inconsistent_sample: list):
     grouped_data = defaultdict(list)
     for d in data:
@@ -168,7 +221,7 @@ def get_base_item(base_data,domain: str,sample_id: str,format: str,type: str):
             return item
     return None
 
-def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsistency_ids=None, format=None, domain=None):
+def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsistency_ids=None, format=None, domain=None, trajectory_type: str = "ground_truth"):
     data_with_scenarios_dict=convert_to_dict(data_with_scenarios)
     grouped_with_scenario=group_by_original_sample_id(data_with_scenarios,inconsistency_ids) # Removes scenario data which is inconsistent list
     base_data=get_base_data(domain)
@@ -192,7 +245,10 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsis
             item["type"]=base_item["type"]
             item["num_turns"]=base_item["num_turns"]
             item["num_hops"]=base_item["num_hops"]
-        crp_items=create_context_response_pair(item=item,change_type="base")
+        if trajectory_type == "ground_truth":
+            crp_items=create_context_response_pair(item=item,change_type="base")
+        else:
+            crp_items=create_context_response_pair_from_alternate_trace(item=item,change_type="base")
         keep_scenarios.extend(crp_items)
         del crp_items
         del base_item
@@ -211,7 +267,10 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsis
                     scenario_to_keep["type"]=base_item["type"]
                     scenario_to_keep["num_turns"]=base_item["num_turns"]
                     scenario_to_keep["num_hops"]=base_item["num_hops"]
-                crp_items=create_context_response_pair(item=scenario_to_keep,change_type="disruptor")
+                if trajectory_type == "ground_truth":
+                    crp_items=create_context_response_pair(item=scenario_to_keep,change_type="disruptor")
+                else:
+                    crp_items=create_context_response_pair_from_alternate_trace(item=scenario_to_keep, change_type="disruptor")
                 keep_scenarios.extend(crp_items)
                 del crp_items
                 del base_item
@@ -230,7 +289,10 @@ def get_mixed_data(data_no_scenarios, data_with_scenarios, changed_ids, inconsis
                 scenario_to_keep["type"]=base_item["type"]
                 scenario_to_keep["num_turns"]=base_item["num_turns"]
                 scenario_to_keep["num_hops"]=base_item["num_hops"]
-            crp_items=create_context_response_pair(item=scenario_to_keep,change_type="nondisruptor")
+            if trajectory_type == "ground_truth":
+                crp_items=create_context_response_pair(item=scenario_to_keep,change_type="nondisruptor")
+            else:
+                crp_items=create_context_response_pair_from_alternate_trace(item=scenario_to_keep,change_type="nondisruptor")
             keep_scenarios.extend(crp_items)
             del crp_items
             del base_item            
@@ -347,7 +409,7 @@ def process_data(args=None, format="single"):
     data_no_scenarios_dict, data_with_scenario_dict = load_files(foldername_no_scenario), load_files(foldername_with_scenario)
     print(f"Datasets Loaded for {format} turn data.")
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-    assert set(data_no_scenarios_dict.keys()) == set(data_with_scenario_dict.keys())
+    # assert set(data_no_scenarios_dict.keys()) == set(data_with_scenario_dict.keys())
     ignore_data_filename=os.path.join(args.inconsistency_dir,IGNORE_FILES[format])
     domain_names=list(data_no_scenarios_dict.keys())
     filename=os.path.join(args.output_dir,f"{format}_{args.output_filename}")
@@ -364,8 +426,8 @@ def process_data(args=None, format="single"):
             continue
         data_no_scenarios, data_with_scenario = data_no_scenarios_dict[domain], data_with_scenario_dict[domain]
         change_stat_domain=change_dict[domain]
-        ignore_domain=ignore_dict[domain]
-        mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,ignore_domain,format,domain))
+        ignore_domain=ignore_dict.get(domain,[])
+        mixed_data.extend(get_mixed_data(data_no_scenarios,data_with_scenario,change_stat_domain,ignore_domain,format,domain,args.traj_type))
     with open(filename, 'w') as f:
         json.dump(mixed_data, f)
     scenarios, num_turns, change_state = get_data_stats(mixed_data)
@@ -382,7 +444,9 @@ def run(args):
 
     # Data mixing between single and multi-turn can be taken care here
     single_turn_data=process_data(args=args,format="single")
+    print(f"Created single turn data: {len(single_turn_data)}")
     multi_turn_data=process_data(args=args,format="multi")
+    print(f"Created multi turn data: {len(multi_turn_data)}")
     output_data=multi_turn_data+single_turn_data
     with open(os.path.join(args.output_dir,"mixed_"+args.output_filename), 'w') as f:
         json.dump(output_data, f)
