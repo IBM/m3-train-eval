@@ -1,8 +1,8 @@
 
 
 export PYTHONPATH=.
-export HF_HOME="/proj/m3benchmark/ben/cache/"
-export HF_CACHE="/proj/m3benchmark/ben/cache/"
+export HF_HOME="YOUR HF HOME"
+#export HF_CACHE="/proj/m3benchmark/ben/cache/"
 
 
 export CUDA_HOME=/opt/share/cuda-12.6
@@ -23,16 +23,17 @@ MODEL_FILE=$1
 OUTPUT_DIR=$2
 INPUT_FILE_NAME=$3
 CONFIG_FILE=$4
+PORT=$5
 
 # 1. Start the vLLM OpenAI API server in the background
 echo "Starting vLLM API server with model: ${MODEL_FILE}"
 python -m vllm.entrypoints.openai.api_server \
     --model "${MODEL_FILE}" \
     --host 0.0.0.0 \
-    --port 8000 &
+    --port "${PORT}" &
 
 # 2. Wait until the server is healthy (using a loop)
-until curl -s http://localhost:8000/v1/models > /dev/null; do
+until curl -s "http://localhost:${PORT}/v1/models" > /dev/null; do
     echo -n "."
     sleep 10;
 done;
@@ -45,4 +46,5 @@ python -u evaluation.py \
     --input_filename "${INPUT_FILE_NAME}" \
     --infer_config "${CONFIG_FILE}" \
     --model "${MODEL_FILE}" \
-    --num_workers 8
+    --num_workers 4 \
+    --port "${PORT}"

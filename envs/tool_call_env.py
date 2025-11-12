@@ -25,7 +25,7 @@ from data_utils.utils import downsample_tools, update_retrieval_tools
 from agents.llm import get_lm
 from transformers import AutoTokenizer
 device = "auto"
-model_path = "ibm-granite/granite-3.0-8b-base"
+model_path = "ibm-granite/granite-4.0-micro"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 

@@ -27,7 +27,7 @@ from envs.base_env import SubDomain
 
 # Setup vLLM endpoint
 RUNNER_TYPE = "vllm" # Set this to vllm or hf
-
+#RUNNER_TYPE = "hf"
 def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
 
     logger.info(f"Downloading {model_name} to cache location {os.environ['HF_HOME']}")
@@ -91,7 +91,10 @@ def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any
     parsed_response["no_thought_response"] = no_thought_response
 
     # Extract tool call
-    actionic_response: Union[str, list["FunctionCall"]] = agent_template.extract_tool(no_thought_response)
+    try:
+        actionic_response: Union[str, list["FunctionCall"]] = agent_template.extract_tool(no_thought_response)
+    except:
+        actionic_response = no_thought_response
 
     if isinstance(actionic_response, str):
         if agent_template.format_function.tool_utils.tool_call_start_tag in response:
@@ -130,7 +133,8 @@ def run_single_trajectory(
         llm_parameters: dict, 
         save_traj_at: str, 
         conversation: dict, # Current conversation
-        tokenizer: AutoTokenizer = None, 
+        port: str,
+        tokenizer: AutoTokenizer = None,
         model: AutoModelForCausalLM = None, 
         device: torch.DeviceObjType = None
         ) -> dict:
@@ -157,7 +161,7 @@ def run_single_trajectory(
         scorer_llm_parameters=scorer_llm_params
     )
     if RUNNER_TYPE == "vllm":
-        client = OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
+        client = OpenAI(base_url=f"http://localhost:{port}/v1", api_key="EMPTY")
     
     # ######################################## Reset the environment ######################################## #
     metrics = defaultdict(int)  
@@ -196,12 +200,17 @@ def run_single_trajectory(
         # Only take Agentic Actions
         logger.info("Tasking Agent to take the action")
         try:
-            system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + " " + env.tool_policy.tool_usage_policy
-
+            #system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + " " + env.tool_policy.tool_usage_policy
+            if env.tool_policy.tool_use_policy is not None and f"{env.tool_policy.tool_usage_policy}" not in state[0]['content']:
+                state[0]['content'] = f"{state[0]['content']} {env.tool_policy.tool_usage_policy}"
             if RUNNER_TYPE == "hf":
-                formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=system_prompt)
-                
                 # Huggingface
+                formatted_text = tokenizer.apply_chat_template(state, tokenize=False,
+                                                               add_generation_prompt=True,
+                                                               #tools=json.loads(env.tools),
+                                                               system="Placeholder"
+                                                               )
+                logger.info(f"(t={t}) Prompt Data: {formatted_text}")
                 inputs = tokenizer(formatted_text, padding=False, return_attention_mask=True, return_tensors='pt')
                 inputs = {k: v.to(device) for k, v in inputs.items()}
                 input_len = len(inputs["input_ids"][0])
@@ -212,12 +221,17 @@ def run_single_trajectory(
                         max_new_tokens=llm_parameters['max_new_tokens'],
                         do_sample=False)
                 generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
+                logger.info(f"(t={t}) Response Data before parse: {generated_text}")
             elif RUNNER_TYPE == "vllm":
                 messages = state.copy()
 
                 # Step 1: Prepend system prompt
-                messages.insert(0, {"role": "system", "content": system_prompt})
-                
+                #messages.insert(0, {"role": "system", "content": system_prompt})
+                #messages[0] = {"role": "system", "content": system_prompt}
+                log_info = "\n"
+                for m in messages:
+                    log_info += f"{m['role']}: {m['content']}\n"
+                logger.info(f"(t={t}) Prompt Data im messages: {log_info}")
                 # Step 2: Send request to vLLM server
                 response = client.chat.completions.create(
                     model=config["model_name_or_path"],  # must match the model passed to vLLM server
@@ -230,8 +244,9 @@ def run_single_trajectory(
 
                 # Step 3: Extract generated text
                 generated_text = response.choices[0].message.content
-            
+                logger.info(f"(t={t}) Response Data before parse: {generated_text}")
             parsed_response = parse_llm_response(generated_text, agent_template)
+
 
         except Exception as e:
             logger.error(f"Couldn't process example for env instance {conversation['domain']}_{conversation['sample_id']} within inference to take action task due to error {e}. Skipping!")
@@ -379,7 +394,7 @@ def run_agent(args):
         metrics = []
         for conversation in tqdm(conversations):
             traj_stats = run_single_trajectory(
-                config, llm_parameters, save_traj_at, conversation, 
+                config, llm_parameters, save_traj_at, conversation, args.port,
                 tokenizer=tokenizer, model=model, device=device
             )
             metrics.append(traj_stats)
@@ -388,7 +403,7 @@ def run_agent(args):
         # Prepare the input argument tuples
         if args.num_workers > 1:
             worker_inputs = [
-                (config, llm_parameters, save_traj_at, conv)
+                (config, llm_parameters, save_traj_at, conv, args.port)
                 for conv in conversations
             ]
 
@@ -398,7 +413,7 @@ def run_agent(args):
         else:
             for i, conv in enumerate(conversations):
                 logger.info(f"Starting conversation {i}")
-                metrics = run_single_trajectory(config, llm_parameters, save_traj_at, conv)
+                metrics = run_single_trajectory(config, llm_parameters, save_traj_at, conv, args.port)
 
 
     logger.info("Metrics: \n{}".format(json.dumps(metrics, indent=2)))
@@ -412,5 +427,8 @@ if __name__ == "__main__":
     parser.add_argument('--infer_config', default="config_files/evaluate_tool_calling.json", 
                         help="Config file for model training and evaluation. Default value config_files/evaluate_tool_calling.json")
     parser.add_argument('--num_workers', '-w', type=int, default=8, help='Number of processes. If using hf inference this must be one. ')
+    parser.add_argument('--port', type=str, default="8000",
+                        help='Number of processes. If using hf inference this must be one. ')
+
     args = parser.parse_args()
     run_agent(args)
