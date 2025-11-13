@@ -1357,3 +1357,59 @@ class M3EvalEnv(M3ToolCallEnv):
             else:
                 reward = "{REWARD_SUCCESS_TOOL_CALL}"
                 return reward, False
+            
+
+class M3GRPOEnv(M3ToolCallEnv):
+    def __init__(
+            self,
+            es_config: dict,
+            api_config: dict,
+            horizon: int,
+            sub_domain: "SubDomain",
+            scorer_llm_parameters=None,
+            partial_credit: bool = False,
+            summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
+    ):
+
+        scorer_llm_obj = get_lm(scorer_llm_parameters["model_name_or_path"], parameters=scorer_llm_parameters)
+
+
+        super().__init__(
+            conversation=None,
+            es_config=es_config,
+            api_config=api_config,
+            horizon=horizon,
+            sub_domain=sub_domain,
+            agent_template=None,
+            scorer_llm=scorer_llm_obj,
+            scorer_llm_parameters=scorer_llm_parameters,
+            partial_credit = partial_credit,
+            summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
+    )
+        
+    def setup_tools(self, tools, doc_collections, domain):
+
+        # 1. Get the tool list
+        tools: List[dict] = tools
+        self.document_collections = doc_collections
+        self.api_config=self.api_config_dict[domain]
+        index_name="clapnq-"+domain.replace("_","-")
+        self.es_config["index_name"]=index_name
+
+        # 2. Configure the API usage for the env
+        if self.sub_domain.mode not in ["slot_filling", "selection"]:
+            initialization_specs = None
+            dataset_name = None
+
+        # 3. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
+        tools, self.document_collections=update_retrieval_tools(tools, doc_collections)
+
+        # 5. Setup tools for API
+        self.pre_setup_tools(tools, dataset_name, initialization_specs)
+
+        # 5. Configure the document retrieval tool for the env
+        self.setup_document_retrieval_tool()
+        
+        # 5. Format the list of final tools into the Google docstring format
+        tools = reformat_tools(tools)
+        self.tools: str = json.dumps(tools)        
