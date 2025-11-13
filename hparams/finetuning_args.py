@@ -451,6 +451,10 @@ class FinetuningArguments(
         default=False,
         metadata={"help": "Whether or not to compute effective tokens per second."},
     )
+    num_generations: int = field(
+        default=False,
+        metadata={"help": "Number of generations per sample for GRPO."}
+    )
 
     def __post_init__(self):
         def split_arg(arg):

@@ -16,7 +16,8 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from torch.nn.utils.rnn import pad_sequence
+from typing import TYPE_CHECKING, Any, Literal, Optional, List, Dict
 
 import numpy as np
 import torch
@@ -216,6 +217,83 @@ class MultiModalDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
             return {"data": features, "input_ids": features["input_ids"], "labels": features["labels"]}
 
         return features
+
+@dataclass
+class GRPODataCollatorWith4DAttentionMask:
+    """
+    GRPO Data Collator (Tool Calling) with optional 4D attention mask.
+    Assumes features already contain tokenized input_ids and attention_mask.
+    """
+
+    tokenizer: Any
+    block_diag_attn: bool = False
+    attn_implementation: Literal["eager", "sdpa", "flash_attention_2"] = "eager"
+    compute_dtype: torch.dtype = torch.float32
+    pad_to_multiple_of: int = 8
+    template: Any = None
+    processor: Any = None
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+        # Extract input_ids and attention_masks
+        input_ids = [torch.tensor(f["input_ids"], dtype=torch.long) for f in features]
+        attention_masks = [torch.tensor(f["attention_mask"], dtype=torch.long) for f in features]
+
+        # Pad to longest sequence
+        batch_input_ids = pad_sequence(
+            input_ids,
+            batch_first=True,
+            padding_value=self.tokenizer.pad_token_id
+        )
+        batch_attention_mask = pad_sequence(
+            attention_masks,
+            batch_first=True,
+            padding_value=0
+        )
+
+        # Optional: pad further to multiple of 8 for tensor cores
+        if self.pad_to_multiple_of:
+            seq_len = batch_input_ids.shape[1]
+            pad_to = (seq_len + self.pad_to_multiple_of - 1) // self.pad_to_multiple_of * self.pad_to_multiple_of
+            pad_extra = pad_to - seq_len
+            if pad_extra > 0:
+                batch_input_ids = torch.nn.functional.pad(
+                    batch_input_ids,
+                    (0, pad_extra),
+                    value=self.tokenizer.pad_token_id
+                )
+                batch_attention_mask = torch.nn.functional.pad(
+                    batch_attention_mask,
+                    (0, pad_extra),
+                    value=0
+                )
+
+        # Optional 4D attention mask (if enabled and not using flash attention)
+        if self.block_diag_attn and self.attn_implementation != "flash_attention_2":
+            batch_attention_mask = prepare_4d_attention_mask(
+                batch_attention_mask,
+                self.compute_dtype
+            )
+
+        # Cast float tensors to compute_dtype if needed
+        if torch.is_floating_point(batch_attention_mask):
+            batch_attention_mask = batch_attention_mask.to(self.compute_dtype)
+
+        # Gather auxiliary fields
+        prompts = [f.get("prompt") for f in features]
+        contexts = [f.get("context") for f in features]
+        expected_tool_calls = [f.get("expected_tool_call") for f in features]
+
+        # Final batch
+        batch = {
+            "input_ids": batch_input_ids,
+            "attention_mask": batch_attention_mask,
+            "prompts": prompts,
+            "contexts": contexts,
+            "expected_tool_calls": expected_tool_calls,
+        }
+
+        return batch
+
 
 
 @dataclass
