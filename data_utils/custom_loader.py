@@ -117,6 +117,7 @@ class BaseDataset(TorchDataset):
 
             system_prompt = sample['system']
             tools = sample['tools']
+            assert len(tools) > 0 # Make sure you're actually passing the tool list. 
             tool_policy = sample['tool_policy']
             if tool_policy.tool_usage_policy is not None:
                 system_prompt += " " + tool_policy.tool_usage_policy

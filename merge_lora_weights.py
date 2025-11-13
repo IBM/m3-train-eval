@@ -6,7 +6,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 import torch
 
-STEP="3500"
+STEP="500"
+OUTPUT_DIR="/proj/m3benchmark/ben/checkpoints/11-13"
 MODELS_TO_MERGE=[ # Base model , adapter, merged path
     # # lr_e5_thoughts_rank16_epoch3
     # ("ibm-granite/granite-4.0-micro","/dccstor/arnaik_data/routing/m3-train-eval/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/model_step_1200/PEFT","/proj/m3benchmark/ankita/logging/v6/lr_e5_thoughts_rank16_epoch3/granite-4.0-micro/merged/model_step_1200"),
@@ -20,31 +21,23 @@ MODELS_TO_MERGE=[ # Base model , adapter, merged path
     # micro-base
     ("ibm-granite/granite-4.0-micro",
      f"/u/belder/m3-train-eval/logging/granite4-micro/granite-4.0-micro/model_step_{STEP}/PEFT",
-     f"/proj/m3benchmark/ben/checkpoints/11-12/granite4-micro/model_step_{STEP}"),
-    # lr_1e5_rank32
-    ("ibm-granite/granite-4.0-micro",
-     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-lr-e4/granite-4.0-micro/model_step_{STEP}/PEFT",
-     f"/proj/m3benchmark/ben/checkpoints/11-12/granite4-micro-expl-lr-e4/model_step_{STEP}"),
-    # lr_1e5_rank32
-    ("ibm-granite/granite-4.0-micro",
-     f"/u/belder/m3-train-eval/logging/granite4-micro-lr-1e5/granite-4.0-micro/model_step_{STEP}/PEFT",
-     f"/proj/m3benchmark/ben/checkpoints/11-12/granite4-micro-lr-1e5/model_step_{STEP}"),
-    # lr_3e5_rank16
-    ("ibm-granite/granite-4.0-micro",
-     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-16/granite-4.0-micro/model_step_{STEP}/PEFT",
-     f"/proj/m3benchmark/ben/checkpoints/11-12/granite4-micro-expl-16/model_step_{STEP}"),
+     f"{OUTPUT_DIR}/granite4-micro/model_step_{STEP}"),
     # lr_3e5_rank32
     ("ibm-granite/granite-4.0-micro",
-     f"/u/belder/m3-train-eval/logging/granite4-micro-expl/granite-4.0-micro/model_step_{STEP}/PEFT",
-     f"/proj/m3benchmark/ben/checkpoints/11-12/granite4-micro-expl/model_step_{STEP}"),
+     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-lr-3e5-r32/granite-4.0-micro/model_step_{STEP}/PEFT",
+     f"{OUTPUT_DIR}/granite4-micro-expl-lr-3e5-r32/model_step_{STEP}"),
+    # lr_1e4_rank32
+    ("ibm-granite/granite-4.0-micro",
+     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-lr-1e4-r32/granite-4.0-micro/model_step_{STEP}/PEFT",
+     f"{OUTPUT_DIR}/granite4-micro-expl-lr-1e4-r32/model_step_{STEP}"),
     # lr_3e5_rank64
     ("ibm-granite/granite-4.0-micro",
-     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-r-64/granite-4.0-micro/model_step_{STEP}/PEFT",
-     f"/proj/m3benchmark/ben/checkpoints/11-12/granite4-micro-expl-r-64/model_step_{STEP}"),
+     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-lr-3e5-r64/granite-4.0-micro/model_step_{STEP}/PEFT",
+     f"{OUTPUT_DIR}/granite4-micro-expl-lr-3e5-r64/model_step_{STEP}"),
     # lr_3e5_rank64_alpha_64
     ("ibm-granite/granite-4.0-micro",
-     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-r-64-alpha-64/granite-4.0-micro/model_step_{STEP}/PEFT",
-     f"/proj/m3benchmark/ben/checkpoints/11-12/granite4-micro-expl-r-64-alpha-64/model_step_{STEP}"),
+     f"/u/belder/m3-train-eval/logging/granite4-micro-expl-lr-3e5-r64-alpha64/granite-4.0-micro/model_step_{STEP}/PEFT",
+     f"{OUTPUT_DIR}/granite4-micro-expl-lr-3e5-r64-alpha64/model_step_{STEP}"),
 ]
 
 
