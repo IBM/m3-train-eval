@@ -90,7 +90,9 @@ class BaseTrainer(object):
             logger.info("Building dataset...")
             start = time.monotonic_ns()
             self._build_dataloader('supervised')
-            self._build_eval_dataloader('supervised')
+            if self.training_args.do_eval:
+                assert self.data_args.eval_dataset is not None
+                self._build_eval_dataloader('supervised')
             end = time.monotonic_ns()
             logger.success(f"Building dataset done in {(end - start) / 1e6:.2f}ms")
 
@@ -127,6 +129,7 @@ class BaseTrainer(object):
     def create_accelerator_and_postprocess(self):
         project_config = ProjectConfiguration(
             logging_dir=self.training_args.logging_dir,
+            project_dir=self.training_args.logging_dir, 
         )
 
         # For allocating accelerator's ddp_handler (handler_class_to_attr = {DistributedDataParallelKwargs: "ddp_handler")..}
@@ -162,8 +165,8 @@ class BaseTrainer(object):
             "project_config": project_config,
             "kwargs_handlers": handlers
         }
-        if 'wandb' in self.training_args.report_to:
-            args["log_with"] = ["wandb"]
+
+        args["log_with"] = self.training_args.report_to
 
         """             [Here] From the original implementation of HF trainer           """
         # accelerator_config is a subset of arguments relating to the underlying [`accelerate.Accelerator`]
@@ -468,6 +471,7 @@ class BaseTrainer(object):
         steps_in_epoch = len(active_dataloader)
         grad_norm: Optional[float] = None
         learning_rate = None
+        disable=not self.accelerator.is_main_process
         for batch in tqdm(
                 active_dataloader,
                 desc=f"Training Epoch {self.epoch}",
@@ -476,10 +480,35 @@ class BaseTrainer(object):
                 leave=False,
                 dynamic_ncols=True,
                 smoothing=0.04,
-                disable=not self.accelerator.is_main_process,
+                disable=disable,
         ):
+
+            # Do evaluation epoch
+            # Hardcode the frequency to every 665 steps for now (about 1/4 of our current train size)
+            # if (not disable) and (self.training_args.do_eval) and (int(self.global_step) %  self.training_args.save_steps == 0):
+            if (self.training_args.do_eval) and (int(self.global_step) %  self.training_args.save_steps == 0):            
+                logger.info("***** Running Evaluation *****")
+                eval_metrics = self._eval_epoch()
+                for keys, values in eval_metrics.items():
+                    logger.info("  |- Eval/{}: {:.6f}".format(keys, values))
+                    if 'wandb' in self.training_args.report_to:
+                        # if is_rank_0():
+                        #     print("epoch: ", self.epoch)
+                        #     print("epoch valid_losses[loss]: ", values)
+                        self.accelerator.log(
+                            {"Epoch/Eval/{}".format(keys): values},
+                            step=self.global_step,
+                        )
+
+            # if (self.training_args.save_steps > 0) and (self.global_step % self.training_args.save_steps == 0) and (self.global_step != 0):
+            if (self.training_args.save_steps > 0) and (int(self.global_step) %  self.training_args.save_steps == 0):
+                self.accelerator.wait_for_everyone()
+                # if not disable:
+                self._save(f"model_step_{self.global_step}")
+                # self.accelerator.wait_for_everyone()
+
             self.global_step += 1
-            do_sync_step = (self.global_step + 1) % self.training_args.gradient_accumulation_steps == 0 or (self.global_step + 1) == steps_in_epoch
+            do_sync_step = ((self.global_step + 1) % self.training_args.gradient_accumulation_steps == 0) or ((self.global_step + 1) == steps_in_epoch)
             # Since we perform prefetching, we need to manually set sync_gradients
             self.accelerator.gradient_state._set_sync_gradients(do_sync_step)
 
@@ -522,7 +551,7 @@ class BaseTrainer(object):
                 self.optimizer.zero_grad()
 
             # Log
-            if 'wandb' in self.training_args.report_to:
+            if 'tensorboard' in self.training_args.report_to:
                 log_dict = {
                         "Step/Loss": tr_loss_step.cpu().item(),
                         # "Step/Learning Rate": self.optimizer.param_groups[0]["lr"],
@@ -534,6 +563,7 @@ class BaseTrainer(object):
                     for k, v in tr_metrics.items():
                         log_dict[f"Step/{k}"] = v
                 self.accelerator.log(log_dict, step=self.global_step)
+                logger.info(f"Metrics (step {self.global_step}): {log_dict}")
 
             epoch_metrics['loss'] += tr_loss_step.cpu().item()
             if tr_metrics:
@@ -554,7 +584,69 @@ class BaseTrainer(object):
         return epoch_metrics
 
     def _eval_epoch(self):
-        raise NotImplementedError
+        # Set the model to evaluation mode
+        self.model.eval() 
+        
+        # Use defaultdict to easily aggregate lists of values
+        log_data = defaultdict(list)
+        
+        total_loss = 0.0
+        num_batches = 0
+
+        # Start the evaluation loop
+        for step, batch in enumerate(self.eval_dataloader):
+            
+            # 1. Forward Pass and Loss/Metric Computation
+            with torch.no_grad():
+                # Use the existing function to compute loss and a dictionary of metrics
+                # E.g., metrics = {'accuracy': 0.9, 'f1': 0.85}
+                loss, metrics = self.compute_loss(batch) 
+                
+            # 2. Accumulate Loss and Metrics
+            total_loss += loss.detach().float()
+            num_batches += 1
+
+            # Extend the lists for metrics that need to be aggregated (e.g., accuracy, F1)
+            # We assume 'metrics' is a dictionary of Tensors/scalars from your compute_loss
+            for key, value in metrics.items():
+                # We move them to CPU and detach them for safe list storage
+                log_data[key].append(value.detach().cpu()) 
+
+        # 3. Calculate Average Loss for the entire evaluation on THIS RANK
+        avg_loss = total_loss / num_batches
+        
+        # 4. Gather/Reduce Data Across All Processes
+        # The eval_metrics dictionary will store the final, gathered metrics
+        eval_metrics = {}
+        
+        # a) Gather the average loss
+        # Accelerate will sum this across all ranks. We then divide by the total number of ranks.
+        gathered_loss_sum = self.accelerator.reduce(avg_loss, reduction="sum")
+        global_avg_loss = gathered_loss_sum / self.accelerator.num_processes
+        eval_metrics['eval_loss'] = global_avg_loss.item()
+        logger.info(f"Eval Epoch complete, result = {eval_metrics}")
+
+        # b) Gather the list of all individual metrics
+        for key, values_list in log_data.items():
+            # Concatenate the list of tensors into a single tensor
+            concatenated_values = torch.cat(values_list, dim=0) 
+            
+            # Gather all of these tensors from all processes to the main process
+            gathered_values = self.accelerator.gather_for_metrics(concatenated_values)
+            
+            # NOTE: This part is crucial!
+            # You need an external function (not shown here) to compute the final metric
+            # (e.g., global accuracy) from the aggregated tensor.
+            if self.accelerator.is_main_process:
+                # Example: Calculate a final mean or a classification metric
+                # You must define 'calculate_final_metric_score'
+                final_score = self.calculate_final_metric_score(key, gathered_values)
+                eval_metrics[f'Eval/{key}'] = final_score
+
+        # Set model back to training mode (in case it's used elsewhere, though train() usually handles this)
+        self.model.train()
+        
+        return eval_metrics
 
     def train(self):
         r"""Training loop. The public entry of training process."""

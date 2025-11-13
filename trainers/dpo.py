@@ -79,7 +79,7 @@ class Trainer(BaseTrainer):
             dataset = AgentTrajectoryPreferenceData(
                 self.template,
                 self.tokenizer,
-                self.processor,
+                self.processor, 
                 self.data_args,
                 setting,
             )
@@ -90,7 +90,6 @@ class Trainer(BaseTrainer):
                 label_pad_token_id=IGNORE_INDEX if self.data_args.ignore_pad_token_for_loss else self.tokenizer.pad_token_id,
                 pad_to_multiple_of=8 if setting.lower() == "supervised" else None,  # for shift short attention <-?
                 template=self.template,
-                processor=self.processor,
             )
 
         # # Leave this as is to only read prompt for any type of data

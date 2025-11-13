@@ -7,7 +7,7 @@ import requests
 from loguru import logger
 from transformers import AutoModelForCausalLM, AutoTokenizer
 device = "auto"
-model_path = "ibm-granite/granite-3.0-8b-base"
+model_path = "ibm-granite/granite-4.0-micro"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 # slim down response: None does no slimming

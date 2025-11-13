@@ -1,8 +1,7 @@
-import os
-
 from loguru import logger
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from typing_extensions import override
+from torch import Generator
 
 from data_utils.collator import SFTDataCollatorWith4DAttentionMask
 from data_utils.custom_loader import AgentTrajectorySFTData
@@ -35,9 +34,10 @@ class Trainer(BaseTrainer):
             dataset = AgentTrajectorySFTData(
                 self.template,
                 self.tokenizer,
-                self.processor,
+                self.processor, 
                 self.data_args,
                 setting,
+                dataset=self.data_args.dataset
             )
 
             # Define the collator.
@@ -46,12 +46,36 @@ class Trainer(BaseTrainer):
                 label_pad_token_id=IGNORE_INDEX if self.data_args.ignore_pad_token_for_loss else self.tokenizer.pad_token_id,
                 pad_to_multiple_of=8 if setting.lower() == "supervised" else None,  # for shift short attention <-?
                 template=self.template,
-                processor=self.processor,
+                processor=self.processor
             )
-
-        # # Leave this as is to only read prompt for any type of data
+        
         ds_loader = DataLoader(dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator)
         self.train_dataset, self.train_dataloader = dataset, ds_loader
+
+    @override
+    def _build_eval_dataloader(self, setting):
+        # Eval dataloader is created at the same time as train dataloader
+        with self.accelerator.main_process_first():
+            dataset = AgentTrajectorySFTData(
+                self.template,
+                self.tokenizer,
+                self.processor, 
+                self.data_args,
+                setting, 
+                dataset=self.data_args.eval_dataset
+            )
+
+            # Define the collator.
+            collator = SFTDataCollatorWith4DAttentionMask(
+                tokenizer=self.tokenizer,
+                label_pad_token_id=IGNORE_INDEX if self.data_args.ignore_pad_token_for_loss else self.tokenizer.pad_token_id,
+                pad_to_multiple_of=8 if setting.lower() == "supervised" else None,  # for shift short attention <-?
+                template=self.template,
+                processor=self.processor
+            )
+        
+        ds_loader = DataLoader(dataset, batch_size=self.training_args.per_device_train_batch_size, collate_fn=collator)
+        self.eval_dataset, self.eval_dataloader = dataset, ds_loader
 
     def init_foundation_model(self, is_trainable):
         logger.info(f"Initializing foundation model...")
@@ -64,15 +88,24 @@ class Trainer(BaseTrainer):
 
     def _init_trackers(self):
         # Initialize the trackers
-        # args = {**vars(self.training_args), **vars(self.data_args), **vars(self.model_args),
-        #         **vars(self.finetuning_args), **vars(self.generating_args)}
+        args = {**vars(self.training_args), **vars(self.data_args), **vars(self.model_args),
+                **vars(self.finetuning_args), **vars(self.generating_args)}
         if 'wandb' in self.training_args.report_to:
             with self.accelerator.main_process_first():
                 self.accelerator.init_trackers(
-                    project_name='AI4ToolInvocation',
-                    # config=args,
+                    config=args,
                     init_kwargs={"wandb": {"name": self.training_args.run_name}},
+                    project_name='dummy_name'
                 )
+        if 'tensorboard' in self.training_args.report_to:
+            
+            # TensorBoard doesn't need to be wrapped in main_process_first() 
+            # because Accelerate handles logging only from the main process.
+            
+            self.accelerator.init_trackers(
+                config=args,
+                project_name='dummy_name'
+            )
 
     # @override
     # def _save(self, dir_tag: str):

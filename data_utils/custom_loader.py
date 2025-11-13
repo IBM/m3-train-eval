@@ -9,7 +9,7 @@ from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
 
 from data_utils.processor.processor_utils import infer_seqlen
-from data_utils.utils import Role, downsample_tools, update_retrieval_tools
+from data_utils.utils import Role
 from envs.tool_call_env import ERRONEOUS_CATEGORIES
 from extras.constants import IGNORE_INDEX, PREFERENCE_KEYS
 from data_utils.tool_utils import create_ToolPolicy
@@ -32,6 +32,7 @@ class BaseDataset(TorchDataset):
             data_args: "DataArguments",
             train_setting: str,
             for_pref_modelling: bool = False,
+            dataset: str = None
 
     ):
         self.template = template
@@ -43,20 +44,19 @@ class BaseDataset(TorchDataset):
         self.train_setting = train_setting
         self.for_pref_modelling = for_pref_modelling
 
-        # Read Data
-        self.task_idxs, self.data = self.read_data()
+        self.dataset_dir = data_args.dataset_dir
+        self.dataset = dataset if dataset is not None else self.data_args.dataset
 
-        # Process samples
-        self.processed_samples = self.process_samples()
-        self.print_data_sample()
+        # Read Data
+        self.task_idxs, self.processed_samples = self.read_data()
 
         # # Convert samples to features
         if train_setting.lower() == "supervised":
 
             if not for_pref_modelling:
-                self.inputs, self.labels, self.attn_masks, self.input_lens = self.convert_samples_to_supervised_features()
+                self.inputs, self.labels, self.attn_masks, self.input_lens, self.formatted_prompts = self.convert_samples_to_supervised_features()
             else:
-                self.inputs, self.labels, self.attn_masks, self.input_lens = self.convert_samples_to_supervised_preference_features()
+                self.inputs, self.labels, self.attn_masks, self.input_lens, self.formatted_prompts = self.convert_samples_to_supervised_preference_features()
 
         else:
             raise ValueError(f"Unknown training setting: {train_setting}")
@@ -68,32 +68,25 @@ class BaseDataset(TorchDataset):
                     input_lens.append(v)
         else:
             input_lens = self.input_lens
+
+        # Process samples
+        self.print_data_sample()
+                    
         logger.info(f"Input Length (system + history + context + query) Stats: Min = {min(input_lens)}, Max = {max(input_lens)}, Avg = {sum(input_lens) / len(input_lens)}")
 
-    def read_data(self):
+    def read_data(self) -> List[dict]:
         """Read the raw data from the dataset.
         """
         raise NotImplementedError("read_data() method not implemented!")
-
-    def process_samples(self) -> List[dict]:
-        """
-            Process the raw data into the following format. For each sample, create the following fields:
-                "idx": The index of the sample in the dataset.
-                "_system": The system prompt to be used for the model (If not provided, default system prompt 'll be used).
-                "_prompt": The prompt to be used for the model (includes history, context and current query in chat format).
-                "_response": The response to be used for the model.
-                "_tools": The tools to be used for the model (if any).
-        """
-        raise NotImplementedError("processed_samples() method not implemented!")
 
 
     def convert_samples_to_supervised_features(self):
         """Convert the processed samples to features that can be used for supervised training."""
 
         inputs, labels, attn_masks, input_lens = [], [], [], []
-        
         pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
         stats = []
+        formatted_prompts=[]
         skipped_points = 0
         for i in range(len(self.processed_samples)):
 
@@ -101,55 +94,40 @@ class BaseDataset(TorchDataset):
             if sample is None:
                 continue
 
-            # The sample must have a response for supervised training
-            try:
-                assert len(sample['_response']) == 1
-            except AssertionError:
-                logger.error(f"Sample {sample} has no response")
-                sys.exit(-1)
-
-            messages = sample['_prompt'] + sample['_response']
+            messages = sample['input'] + [sample['output']]
 
             # Remove tags
+            # TODO: if we run models besides granite 4 this parsing logic will need to change
             for m in messages:
+                if m['role'] == Role.FUNCTION.value:
+                    m['role'] = Role.ASSISTANT.value
+                    # parsed = m['content'].split('</think>{"name"')
+                    parsed = m['content'].split('{"name"')
+                    m['content'] = "<think>" + parsed[0] + "</think>" + "<tool_call>\n" + '{"name"' + parsed[1] + "\n</tool_call>"
+                elif m['role'] == Role.OBSERVATION.value:
+                    m['role'] = Role.USER.value
                 m['content'] = m['content'].replace("<FINAL>", "").replace("</FINAL>", "")
-                if not self.data_args.enable_thinking:
-                    m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
-                    m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
+                # if not self.data_args.enable_thinking:
+                # Specifically for granite we don't need <think> or <FINAL> tags.
+                m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
+                m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
+            
+            if self.data_args.enable_thinking:
+                messages[-1]['content'] = sample['thought'] + messages[-1]['content']
 
-            system_prompt = sample['_system']
-            tools = sample['_tools']
-            tool_policy = sample['_tool_policy']
-            if tool_policy.tool_use_policy is not None:
-                system_prompt += tool_policy.tool_use_policy
+            system_prompt = sample['system']
+            tools = sample['tools']
+            assert len(tools) > 0 # Make sure you're actually passing the tool list. 
+            tool_policy = sample['tool_policy']
+            if tool_policy.tool_usage_policy is not None:
+                system_prompt += " " + tool_policy.tool_usage_policy
             if tool_policy.final_answer_policy is not None:
                 system_prompt += tool_policy.final_answer_policy
 
-            # chat_messages = []
-            # for i, message in enumerate(messages):
-            #     if i == 0:
-            #         formatted_text = self.tokenizer.apply_chat_template([message], tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
-            #     else:
-            #         formatted_text = self.tokenizer.apply_chat_template([message], tokenize=False, add_generation_prompt=False)
-            #     chat_messages.append(formatted_text)
-
-            # encoded_pairs = [(
-            #     self.tokenizer(chat_messages[i], padding=True, return_attention_mask=True, return_tensors='pt'), 
-            #     self.tokenizer(chat_messages[i+1], padding=True, return_attention_mask=True, return_tensors='pt')
-            #     ) for i in range(0, len(chat_messages), 2)]
-            # # We will start with the last turn and move towards the first turn until max_context_length is reached.
-            # if self.data_args.mask_history:
-            #     encoded_pairs = encoded_pairs[::-1]  # High priority for last turn for not encoding truncated
-
-            # if self.data_args.mask_history:
-            #     if len(messages) > 2:
-            #         text = self.tokenizer.apply_chat_template(messages[-2:], tokenize=False, add_generation_prompt=False)
-            #     else:
-            #         text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
-            # else:
-            #     text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
-
-            formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=json.loads(tools), system=system_prompt)
+            # TODO: maybe try putting the tool_usage_policy and final_answer_policy at the end of the prompt (after the tool specs)
+            formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=tools, system=system_prompt)
+            formatted_prompts.append(formatted_text)
+            # formatted_text is the final text before tokenization. check this to see what's actually getting passed into the model
             tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
 
             input_ids = tokens['input_ids'].squeeze(0)
@@ -167,23 +145,19 @@ class BaseDataset(TorchDataset):
             stats.append({
                 'input_length': len(input_ids), 
                 'domain': sample['domain'], 
-                'format': sample['format'], 
-                'type': sample['type'], 
-                'num_turns': sample['num_turns'], 
-                'num_hops': sample['num_hops'],
                 'sample_id': sample['sample_id'],
-                'guid': sample['guid']
+                # 'formatted_text': formatted_text
 
             })
         
         logger.info(f"Skipped {skipped_points} long context points out of a total of {len(input_lens)}. ")
         with open(f"stats.json", "w") as f:
             json.dump(stats, f)
-        return inputs, labels, attn_masks, input_lens
+        return inputs, labels, attn_masks, input_lens, formatted_prompts
 
     def convert_samples_to_supervised_preference_features(self):
 
-        inputs, labels, attn_masks, input_lens = [], [], [], []  # This will now be a list of dicts
+        inputs, labels, attn_masks, input_lens, formatted_prompts = [], [], [], [], []  # This will now be a list of dicts
 
         pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to preference features: ")
         for i in range(len(self.processed_samples)):
@@ -272,14 +246,7 @@ class BaseDataset(TorchDataset):
             input_lens.append(pref_input_lens)
             pbar.update()
 
-        return inputs, labels, attn_masks, input_lens
-
-    def get_sample(self, i: int):
-        """Get the sample at index i.
-        :param i:
-        :return:
-        """
-        return self.data[i]
+        return inputs, labels, attn_masks, input_lens, formatted_prompts
 
     def get_processed_sample(self, i: int):
         """Get the (processed) sample at index i.
@@ -322,15 +289,16 @@ class BaseDataset(TorchDataset):
     def print_data_sample(self):
         for _ in range(2):
             # Get a random sample from the dataset
-            random_sample = random.choice(self.processed_samples)
+            random_sample = random.choice(self.formatted_prompts)            
             if random_sample is None:
-                random_sample = random.choice(self.processed_samples)
+                random_sample = random.choice(self.formatted_prompts)
 
             logger.info(
                 "\n|======================================================================================|\n"
-                "|============================== Random Processed Sample ===============================|\n"
+                "|============================== Random Processed Sample Prompt ==========================|\n"
                 "|======================================================================================|\n"
-                f"{json.dumps(make_json_serializable(random_sample), indent=4)}"
+                f"{random_sample}"
+                # f"{json.dumps(make_json_serializable(random_sample), indent=4)}"
                 "\n|======================================================================================|\n"
             )
 
@@ -346,7 +314,8 @@ class AgentTrajectorySFTData(BaseDataset):
             tokenizer: Any,
             processor: "MMProcessor",
             data_args: "DataArguments",
-            train_setting: str
+            train_setting: str, 
+            dataset: str = None
     ):
         # Use this to control if you want to train on interactions from expert or agent or both
         self.accept_interactions_from = 'expert'  #  Possible values: expert, agent, both
@@ -357,75 +326,68 @@ class AgentTrajectorySFTData(BaseDataset):
             tokenizer=tokenizer,
             processor=processor,
             data_args=data_args,
-            train_setting=train_setting
+            train_setting=train_setting, 
+            dataset=dataset
         )
 
     def read_data(self):
 
         # Collect trajectories
-        trajectories = load_data_files(self.data_args.dataset_dir, self.data_args.dataset)
+        trajectories = load_data_files(self.dataset_dir, self.dataset)
         total_trajectories = len(trajectories)
         sample_idx = 0
         task_idxs, data = [], []
+        skipped_missing_gt = 0
 
         # Collect interactions from trajectories
         for traj in trajectories:
-            system, tools = traj['system'], traj['tools']
+            # Skip exclude GT samples
+            if "EXCLUDE_GT" in traj['sample_id']:
+                skipped_missing_gt += 1
+                continue
+            
+            system = traj['system']
+            tools = json.loads(traj['tools'])
+            random.shuffle(tools)
             tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
             tool_policy.tool_usage_policy = traj['tool_usage_policy']
             tool_policy.final_answer_policy = traj['final_answer_policy']
-
-            time_steps = list(traj['interactions'].keys())
-            time_steps = sorted(time_steps, key=lambda x: int(x))
-
-            if self.data_args.mask_history:
-                # For every partial (/full) traj., train on the last action given the state when history is masked
-                for t in time_steps:
-
-                    if self.accept_interactions_from is None or traj['interactions'][t]['actor'] == self.accept_interactions_from:
-                        # Accept all interactions or Accept interactions from a given actor
-                        data.append(
-                            {
-                                "idx": sample_idx,
-                                "input": traj['interactions'][t]["input"],
-                                "output": traj['interactions'][t]["output"],
-                                "system": system,
-                                "tools": tools,
-                                "tool_policy": tool_policy,
-                                'domain': traj['domain'], 
-                                'sample_id': traj['sample_id'], 
-                                'guid': traj['guid'], 
-                                'format': traj['format'], 
-                                'type': traj['type'], 
-                                'num_turns': traj['num_turns'], 
-                                'num_hops': traj['num_hops']
-                            }
-                        )
-                        task_idxs.append(sample_idx)
-                        sample_idx += 1
-            else:
-                # Train on the full trajectory (packed). Note. The intermediate actions in the input along with the
-                # output will be picked as target labels during multi-turn encoding
-                t = time_steps[-1]
-                data.append(
-                    {
+            cr_pair = {
                         "idx": sample_idx,
-                        "input": traj['interactions'][t]["input"],  # s_1, a_1, s_2, a_2, ..., s_{H-1}
-                        "output": traj['interactions'][t]["output"],  # a_{H-1}
+                        "input": traj["input"],
+                        "output": traj["output"],
+                        "thought": list(traj['interactions'][0].values())[0]['metadata']['thought'], 
                         "system": system,
                         "tools": tools,
                         "tool_policy": tool_policy,
                         'domain': traj['domain'], 
                         'sample_id': traj['sample_id'], 
-                        'guid': traj['guid'], 
-                        'format': traj['format'], 
-                        'type': traj['type'], 
-                        'num_turns': traj['num_turns'], 
-                        'num_hops': traj['num_hops']
                     }
-                )
-                task_idxs.append(sample_idx)
-                sample_idx += 1
+            data.append(cr_pair)
+            task_idxs.append(sample_idx)
+            sample_idx += 1
+
+            # time_steps = list(traj['interactions'].keys())
+            # time_steps = sorted(time_steps, key=lambda x: int(x))
+            
+            # for t in time_steps:
+            #     cr_pair = {
+            #             "idx": sample_idx,
+            #             "input": traj['interactions'][t]["input"],
+            #             "output": {"role": traj['interactions'][t]["output"]['role'], "content": traj['interactions'][t]["output"]['content']},
+            #             "thought": traj['interactions'][t]['metadata']['thought'],
+            #             "action_type": traj['interactions'][t]['metadata']['action'], 
+            #             "action": traj['interactions'][t]['metadata']['action_arguments'], 
+            #             "system": system,
+            #             "tools": tools,
+            #             "tool_policy": tool_policy,
+            #             'domain': traj['domain'], 
+            #             'sample_id': traj['sample_id'], 
+            #         }
+                    
+            #     data.append(cr_pair)
+            #     task_idxs.append(sample_idx)
+            #     sample_idx += 1
 
         try:
             assert len(data) > 0
@@ -438,101 +400,8 @@ class AgentTrajectorySFTData(BaseDataset):
             logger.info(f"Max samples set to {self.data_args.max_samples}")
 
         logger.info("Selected {} training samples from {} trajectories".format(len(data), total_trajectories))
+        logger.info("Skipped {} samples in MISSING GT scenario".format(skipped_missing_gt))
         return task_idxs, data
-
-    def process_samples(self) -> List[dict]:
-        processed_samples = []
-        for sample in tqdm(self.data, total=len(self.data), desc=f"Processing samples: "):
-            idx = sample["idx"]
-
-            # Get the prompt
-            prompt = []
-            for msg in sample["input"]:
-                prompt.append(msg)
-                # if msg["role"] == Role.USER.value:
-                #     # Check if it is a query that user has posed, or it is an observation from previous tool call
-                #     # This segregation will be important in multi-turn tool calling setup where user can pose queries at different time-steps
-                #     if msg["content"].lstrip().startswith("<OBSERVATION>"):
-                #         prompt.append(
-                #             {
-                #                 "role": Role.OBSERVATION.value,  # When formatted using a template, it can be different from user role based on the FM
-                #                 "content": msg["content"],
-                #             }
-                #         )
-                #     else:
-                #         prompt.append(
-                #             {
-                #                 "role": Role.USER.value,
-                #                 "content": msg["content"],
-                #             }
-                #         )
-                # elif msg["role"] == Role.ASSISTANT.value:
-                #     # FMs have special templates to call tools. The role is still of assistant's but the content is modified for tool call
-                #     # 1. Typically, the thought is put inside the special <think></think> tokens
-                #     # 2. The tool/function call is a json dict with "name" and "parameters"(used by llama) or "arguments"(used by qwen, mistral)
-                #     # 3. Models also add specific tokens like Qwen: <tool_call></tool_call> to enclose the json dict.
-                #
-                #     content = msg["content"]
-                #
-                #     # Separate the thought (this is typically done by the formatter for Role.FUNCTION)
-                #     # Even though the 'FINAL' action is Role.ASSISTANT whose formatter does not have the thought separator
-                #     # but our agent thinks before saying the final answer, so we still separate it.
-                #     regex = re.compile(r"<Thought>(.*)</Thought>", re.DOTALL)
-                #     thought = re.search(regex, content)
-                #     if thought:
-                #         content = content.replace(thought.group(0), "")
-                #
-                #     # Todo: If unintended behaviour is detected during inference, do 2,3 in the following manner
-                #     #   - The tool (API) calls should be dict with model-specific keys (refer function_formatter(s) in data_utils/tool_utils.py). Make this turn as Role.FUNCTION.value
-                #     #   - Cast Final actions Role.ASSISTANT.value (unchanged)
-                #     function_str = content
-                #
-                #     # Add back the thought
-                #     if thought:
-                #         thought = f"<think>{thought.group(0)}</think>"
-                #         function_str = thought + function_str
-                #
-                #     prompt.append(
-                #         {
-                #             "role": Role.ASSISTANT.value,
-                #             "content": function_str,
-                #         }
-                #     )
-                # else:
-                #     raise RuntimeError(f"Unrecognized role {msg['role']} during parsing trajectory data {sample}")
-
-            # Get the response
-            output = sample["output"]
-            if output is not None:
-                if isinstance(output, str):
-                    response = [{"role": Role.ASSISTANT.value, "content": output}]
-                elif isinstance(output, list) and isinstance(output[0], dict):
-                    response = output
-                elif isinstance(output, dict):
-                    response = [output]
-            else:
-                response = []
-            
-            processed_sample = {
-                "idx": idx,
-                "_system": sample['system'] if 'system' in sample.keys() and sample['system'] else "",
-				"_prompt": prompt,
-				"_response": response,
-                # For calling external tools
-                "_tools": sample['tools'] if 'tools' in sample.keys() and sample['tools'] else "",
-                "_tool_policy": sample['tool_policy'] if 'tool_policy' in sample.keys() else None,
-                'domain': sample['domain'], 
-                'sample_id': sample['sample_id'], 
-                'guid': sample.get('guid', 'null'),
-                'format': sample['format'], 
-                'type': sample['type'], 
-                'num_turns': sample['num_turns'], 
-                'num_hops': sample['num_hops']
-            }
-
-            processed_samples.append(processed_sample)
-
-        return processed_samples
 
 
 class AgentTrajectoryPreferenceData(BaseDataset):
@@ -542,7 +411,8 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             tokenizer: Any,
             processor: "MMProcessor",
             data_args: "DataArguments",
-            train_setting: str
+            train_setting: str, 
+            dataset: str = None
     ):
         # self.preference_granularity: str = 'step'  # 'step' (collected using single agent) or 'trajectory' (collected using multiple agents)
         # self.mask_suboptimal_traces: bool = True  # Used with trajectory-level preference granularity
@@ -553,7 +423,8 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             processor=processor,
             data_args=data_args,
             train_setting=train_setting,
-            for_pref_modelling=True
+            for_pref_modelling=True, 
+            dataset = dataset
         )
 
     def read_step_preferences(self):

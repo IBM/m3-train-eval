@@ -5,13 +5,15 @@ import traceback
 from collections import defaultdict
 from datetime import datetime
 import re
-from typing import List, Dict, Any, Union
+from typing import Dict, Any, Union
+from tqdm import tqdm
+import multiprocessing
+from pathlib import Path
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizerBase
-from vllm import LLM, SamplingParams
+from openai import OpenAI
 from loguru import logger
-from tqdm import tqdm
 import argparse
 
 from extras.custom import set_run_environment
@@ -23,20 +25,14 @@ from envs.tool_call_env import M3EvalEnv
 from envs.base_env import SubDomain
 
 
+# Setup vLLM endpoint
+RUNNER_TYPE = "vllm" # Set this to vllm or hf
+#RUNNER_TYPE = "hf"
 def load_model(model_name: str) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
 
     logger.info(f"Downloading {model_name} to cache location {os.environ['HF_HOME']}")
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-    # model = LLM(
-    #         model=model_name,
-    #         tokenizer=model_name,
-    #         tensor_parallel_size=1,
-    #         dtype=torch.float16,
-    #         gpu_memory_utilization=0.9,
-    #         trust_remote_code=True,
-    #         runner="generate"
-    #     )
     device=torch.device("cpu")
 
     # [Optionally] Put the model on cuda
@@ -95,7 +91,10 @@ def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any
     parsed_response["no_thought_response"] = no_thought_response
 
     # Extract tool call
-    actionic_response: Union[str, list["FunctionCall"]] = agent_template.extract_tool(no_thought_response)
+    try:
+        actionic_response: Union[str, list["FunctionCall"]] = agent_template.extract_tool(no_thought_response)
+    except:
+        actionic_response = no_thought_response
 
     if isinstance(actionic_response, str):
         if agent_template.format_function.tool_utils.tool_call_start_tag in response:
@@ -126,6 +125,210 @@ def parse_llm_response(response: str, agent_template: Template) -> Dict[str, Any
         else:
             parsed_response['thought'] = response.split(agent_template.format_function.tool_utils.tool_call_start_tag)[0]
     return parsed_response
+
+
+
+def run_single_trajectory(
+        config: dict, 
+        llm_parameters: dict, 
+        save_traj_at: str, 
+        conversation: dict, # Current conversation
+        port: str,
+        tokenizer: AutoTokenizer = None,
+        model: AutoModelForCausalLM = None, 
+        device: torch.DeviceObjType = None
+        ) -> dict:
+
+    # ######################################## Configure the Environment ######################################## #
+    agent_template = TEMPLATES[config['agent_template']]
+    sub_domain = SubDomain(
+        mode='rest',
+    )
+    scorer_llm_params={
+            "model_name_or_path": config['scorer_model_name_or_path'],
+            "max_new_tokens": config['scorer_max_new_tokens'],
+            "temperature": config['temperature'],
+            "stop_sequences": ["User Query"]
+        }
+
+    env = M3EvalEnv(
+        conversation,
+        es_config=config['db_config'],
+        api_config=config['api_config'],  # Local end point: "end_point": "http://127.0.0.1:8000",
+        horizon=config["horizon"],
+        sub_domain=sub_domain,
+        agent_template=agent_template,
+        scorer_llm_parameters=scorer_llm_params
+    )
+    if RUNNER_TYPE == "vllm":
+        client = OpenAI(base_url=f"http://localhost:{port}/v1", api_key="EMPTY")
+    
+    # ######################################## Reset the environment ######################################## #
+    metrics = defaultdict(int)  
+    try:
+        state, reward, done, env_metadata = env.reset()
+    except Exception as e:
+        logger.error(f"Environment Reset Exception for env instance {conversation['domain']}_{conversation['sample_id']}: {e}. Skipping!")
+        traceback.print_exc()
+        return metrics
+
+    agent_trajectory = {
+        'guid': env.guid,
+        'system': env.system,
+        'domain': env.domain,
+        'num_turns':env.num_turns,
+        'num_hops':env.num_hops,
+        'type':env.type,
+        'sample_id': env.sample_id,
+        'change_state': env.change_state, 
+        'tools': env.tools,
+        'interactions': {},
+        'scenarios': env.scenarios,
+        'tool_availability_policy': env.tool_policy.tool_availability_policy,
+        'tool_usage_policy': env.tool_policy.tool_usage_policy,
+        "final_answer_policy": env.tool_policy.final_answer_policy
+    }
+
+    logger.debug("Init State: \n{}".format(json.dumps(state, indent=2)))
+
+    t = 0
+    next_example=False
+    next_example_inference=False       
+    while not done:
+        logger.info(f"Current time step: {t}")
+        # ######################################## Take Action ######################################## #
+        # Only take Agentic Actions
+        logger.info("Tasking Agent to take the action")
+        try:
+            #system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + " " + env.tool_policy.tool_usage_policy
+            if env.tool_policy.tool_use_policy is not None and f"{env.tool_policy.tool_usage_policy}" not in state[0]['content']:
+                state[0]['content'] = f"{state[0]['content']} {env.tool_policy.tool_usage_policy}"
+            if RUNNER_TYPE == "hf":
+                # Huggingface
+                formatted_text = tokenizer.apply_chat_template(state, tokenize=False,
+                                                               add_generation_prompt=True,
+                                                               #tools=json.loads(env.tools),
+                                                               system="Placeholder"
+                                                               )
+                logger.info(f"(t={t}) Prompt Data: {formatted_text}")
+                inputs = tokenizer(formatted_text, padding=False, return_attention_mask=True, return_tensors='pt')
+                inputs = {k: v.to(device) for k, v in inputs.items()}
+                input_len = len(inputs["input_ids"][0])
+                with torch.no_grad():
+                    generated_ids = model.generate(
+                        input_ids=inputs["input_ids"],
+                        attention_mask=inputs["attention_mask"], 
+                        max_new_tokens=llm_parameters['max_new_tokens'],
+                        do_sample=False)
+                generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
+                logger.info(f"(t={t}) Response Data before parse: {generated_text}")
+            elif RUNNER_TYPE == "vllm":
+                messages = state.copy()
+
+                # Step 1: Prepend system prompt
+                #messages.insert(0, {"role": "system", "content": system_prompt})
+                #messages[0] = {"role": "system", "content": system_prompt}
+                log_info = "\n"
+                for m in messages:
+                    log_info += f"{m['role']}: {m['content']}\n"
+                logger.info(f"(t={t}) Prompt Data im messages: {log_info}")
+                # Step 2: Send request to vLLM server
+                response = client.chat.completions.create(
+                    model=config["model_name_or_path"],  # must match the model passed to vLLM server
+                    messages=messages,
+                    tools=json.loads(env.tools),
+                    max_tokens=llm_parameters['max_new_tokens'],
+                    temperature=llm_parameters['temperature'], 
+                    tool_choice='none' # Not using vllm tool calling capability, return tool calls as text and parse ourselves
+                )
+
+                # Step 3: Extract generated text
+                generated_text = response.choices[0].message.content
+                logger.info(f"(t={t}) Response Data before parse: {generated_text}")
+            parsed_response = parse_llm_response(generated_text, agent_template)
+
+
+        except Exception as e:
+            logger.error(f"Couldn't process example for env instance {conversation['domain']}_{conversation['sample_id']} within inference to take action task due to error {e}. Skipping!")
+            traceback.print_exc()
+            next_example_inference=True # At inference we still want to write a failed log
+            next_example=True
+            break
+
+        logger.info(f"(t={t}) Action Data: {json.dumps(parsed_response, indent=2)}")
+
+        if next_example:
+            break # Break out of the while loop because informed mode is erroring out. 
+
+        # # Trajectory contains the state-action pairs for training/evaluation
+        # - Store the state w/o system prompt.
+        # - The input should be stored before calling the step fn since in multi-turn setting, once the final answer
+        #   is generated, current state is reinit. to the summarised state after transitioning to next turn
+        curr_interaction: Dict[str, Any] = {
+            "input": copy.deepcopy(state[1:]),
+            "metadata": {
+                "thought": parsed_response["thought"],
+                "action": parsed_response["type"],
+                "action_arguments": parsed_response["value"],
+            },
+            "output": {
+                "role": parsed_response["role"],
+                "content": parsed_response["template_free_response"],
+            }
+        }
+
+        # #################################### Step through the environment #################################### #
+        state, reward, done, env_metadata = env.step(action=parsed_response) # Generally shouldn't fail as it is just getting the API or retrieval response.
+
+        curr_observation = state[-1]["content"]
+        logger.info(f"(t={t}) Observation: {json.dumps(curr_observation, indent=2)}")
+
+        # Add the observation and reward after stepping through the env.
+        curr_interaction["metadata"]["observation"] = curr_observation
+        curr_interaction["reward"] = reward  # Here the reward placeholder is added, not the actual value
+
+        if next_example:
+            break # Break out of the while loop because we couldn't verigy is agent is stuck.
+
+        # Store the current interaction in the agent trajectory
+        agent_trajectory['interactions'][t] = curr_interaction
+
+        t += 1
+
+    # ###################################### Compute metrics/Save Metadata ###################################### #
+    if not next_example_inference:
+        metrics["truncated"] += env_metadata['truncated']
+        metrics["terminated"] += env_metadata['terminated']
+        metrics["success"] += env_metadata['success']
+        # Let's store other metadata as well
+        agent_metadata = {
+            "sample_id": env.sample_id,
+            "domain": env.domain,
+            "truncated": env_metadata['truncated'],
+            "terminated": env_metadata['terminated'],
+            "success": env_metadata['success'],
+            "total_time_steps": t,
+        }
+    else:
+        metrics["terminated"] += 1
+        # Let's store other metadata as well
+        agent_metadata = {
+            "sample_id": env.sample_id,
+            "domain": env.domain,
+            "truncated": False,
+            "terminated": True,
+            "success": False,
+            "total_time_steps": t,
+        }
+    agent_trajectory["metadata"] = agent_metadata
+
+    # Save the Agent trajectory
+    logger.info(f"Saving trajectory {conversation['domain']}_{conversation['sample_id']} to {save_traj_at}")
+    with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
+        json.dump(agent_trajectory, f, indent=2)
+
+    return metrics
+
 
 
 
@@ -161,199 +364,71 @@ def run_agent(args):
     # ########################################## Configure the Agent ########################################## #
 
     llm_parameters = {
-        "model_name_or_path": config["model_name_or_path"],
+        "model_name_or_path": args.model,
         "max_new_tokens": config["max_new_tokens"],
         "temperature": config["temperature"],
         "stop_sequences": [],
     }
-    # sampling_params = SamplingParams(n=1, temperature=config["temperature"], max_tokens=config["max_new_tokens"])
+    config["model_name_or_path"] = args.model
 
+    path = Path(config['path_to_env_data'])
+    if path.is_file() and path.suffix == '.json':
+        with open(path, 'r') as f:
+            conversations = json.load(f)
+    elif path.is_dir():
+        conversations = []
+        for json_file in path.glob('*_final.json'):
+            with open(json_file, 'r') as f:
+                conversations.extend(json.load(f))
+    else:
+        raise ValueError(f"Path {config['path_to_env_data']} is neither a JSON file nor a directory")
+    
+    assert len(conversations) > 0, f"Path {config['path_to_env_data']} contains no data! "
 
+    # ########################################## Run the process pool ########################################## #
 
-    # ######################################## Configure the Environment ######################################## #
-    agent_template = TEMPLATES[config['agent_template']]
-    sub_domain = SubDomain(
-        mode='rest',
-    )
-    scorer_llm_params={
-            "model_name_or_path": config['scorer_model_name_or_path'],
-            "max_new_tokens": config['scorer_max_new_tokens'],
-            "temperature": config['temperature'],
-            "stop_sequences": ["User Query"]
-        }
-    # scorer_tokenizer, scorer_llm, scorer_device = load_model(scorer_llm_params["model_name_or_path"])
-    env = M3EvalEnv(
-        path_to_env_data=config['path_to_env_data'],
-        es_config=config['db_config'],
-        api_config=config['api_config'],  # Local end point: "end_point": "http://127.0.0.1:8000",
-        horizon=config["horizon"],
-        sub_domain=sub_domain,
-        agent_template=agent_template,
-        scorer_llm=None,
-        scorer_llm_tokenizer=None, 
-        scorer_llm_parameters=scorer_llm_params,
-        scorer_device=None
-    )
-    tokenizer, model, device = load_model(config["model_name_or_path"])
+    print(f"Launching {len(conversations)} jobs across {args.num_workers} processes...")
 
-    # ########################################## Run the Agent ########################################## #
-    metrics = defaultdict(int)
-    total_runs = len(env) # len(env)
-    env_instances_idxs: List[int] = list(range(total_runs))
+    if RUNNER_TYPE == 'hf':
+        tokenizer, model, device = load_model(args.model)
+        metrics = []
+        for conversation in tqdm(conversations):
+            traj_stats = run_single_trajectory(
+                config, llm_parameters, save_traj_at, conversation, args.port,
+                tokenizer=tokenizer, model=model, device=device
+            )
+            metrics.append(traj_stats)
 
-    for i in tqdm(env_instances_idxs, total=len(env_instances_idxs), desc='Environment instance'):
-        
-        logger.info("="*100)
-        logger.info(f"Environment Instantiated ({i})")
-        
-        # ######################################## Reset the environment ######################################## #
-        try:
-            state, reward, done, env_metadata = env.reset(inst_idx=i)
-        except Exception as e:
-            logger.error(f"Environment Reset Exception for env instance {i}: {e}. Skipping!")
-            traceback.print_exc()
-            continue
+    elif RUNNER_TYPE == 'vllm':
+        # Prepare the input argument tuples
+        if args.num_workers > 1:
+            worker_inputs = [
+                (config, llm_parameters, save_traj_at, conv, args.port)
+                for conv in conversations
+            ]
 
-        agent_trajectory = {
-            'guid': env.guid,
-            'system': env.system,
-            'domain': env.domain,
-            'num_turns':env.num_turns,
-            'num_hops':env.num_hops,
-            'type':env.type,
-            'sample_id': env.sample_id,
-            'change_state': env.change_state, 
-            'tools': env.tools,
-            'interactions': {},
-            'scenarios': env.scenarios,
-            'tool_availability_policy': env.tool_policy.tool_availability_policy,
-            'tool_usage_policy': env.tool_policy.tool_usage_policy,
-            "final_answer_policy": env.tool_policy.final_answer_policy
-        }
-
-
-        logger.debug("Init State: \n{}".format(json.dumps(state, indent=2)))
-
-        t = 0
-        next_example=False
-        next_example_inference=False       
-        while not done:
-            logger.info(f"Current time step: {t}")
-            # ######################################## Take Action ######################################## #
-            # Only take Agentic Actions
-            logger.info("Tasking Agent to take the action")
-            try:
-                system_prompt = SYSTEM_PROMPT if env.tool_policy.tool_use_policy is None else SYSTEM_PROMPT + " " + env.tool_policy.tool_usage_policy
-                formatted_text = tokenizer.apply_chat_template(state, tokenize=False, add_generation_prompt=True, tools=json.loads(env.tools), system=system_prompt)
-                
-                # Huggingface
-                inputs = tokenizer(formatted_text, padding=False, return_attention_mask=True, return_tensors='pt')
-                inputs = {k: v.to(device) for k, v in inputs.items()}
-                input_len = len(inputs["input_ids"][0])
-                with torch.no_grad():
-                    generated_ids = model.generate(
-                        input_ids=inputs["input_ids"],
-                        attention_mask=inputs["attention_mask"], 
-                        max_new_tokens=llm_parameters['max_new_tokens'],
-                        do_sample=False)
-                generated_text = tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=True)
-                
-                # vllm
-                # generated_text = model.generate(formatted_text, sampling_params=sampling_params, use_tqdm=False)
-                parsed_response = parse_llm_response(generated_text, agent_template)
-
-            except Exception as e:
-                logger.error(f"Couldn't process example for env instance {i} within inference to take action task due to error {e}. Skipping!")
-                traceback.print_exc()
-                next_example_inference=True # At inference we still want to write a failed log
-                next_example=True
-                break
-
-            logger.info(f"(t={t}) Action Data: {json.dumps(parsed_response, indent=2)}")
-
-            if next_example:
-                break # Break out of the while loop because informed mode is erroring out. 
-
-            # # Trajectory contains the state-action pairs for training/evaluation
-            # - Store the state w/o system prompt.
-            # - The input should be stored before calling the step fn since in multi-turn setting, once the final answer
-            #   is generated, current state is reinit. to the summarised state after transitioning to next turn
-            curr_interaction: Dict[str, Any] = {
-                "input": copy.deepcopy(state[1:]),
-                "metadata": {
-                    "thought": parsed_response["thought"],
-                    "action": parsed_response["type"],
-                    "action_arguments": parsed_response["value"],
-                },
-                "output": {
-                    "role": parsed_response["role"],
-                    "content": parsed_response["template_free_response"],
-                }
-            }
-
-            # #################################### Step through the environment #################################### #
-            state, reward, done, env_metadata = env.step(action=parsed_response) # Generally shouldn't fail as it is just getting the API or retrieval response.
-
-            curr_observation = state[-1]["content"]
-            logger.info(f"(t={t}) Observation: {json.dumps(curr_observation, indent=2)}")
-
-            # Add the observation and reward after stepping through the env.
-            curr_interaction["metadata"]["observation"] = curr_observation
-            curr_interaction["reward"] = reward  # Here the reward placeholder is added, not the actual value
-
-            if next_example:
-                break # Break out of the while loop because we couldn't verigy is agent is stuck.
-
-            # Store the current interaction in the agent trajectory
-            agent_trajectory['interactions'][t] = curr_interaction
-
-            t += 1
-        
-        # # Continue to the next example in for loop.
-        # if next_example:
-        #     logger.info(f"Skipping to the next example without saving anything. ")
-        #     continue
-
-        # ###################################### Compute metrics/Save Metadata ###################################### #
-        if not next_example_inference:
-            metrics["truncated"] += env_metadata['truncated']
-            metrics["terminated"] += env_metadata['terminated']
-            metrics["success"] += env_metadata['success']
-            # Let's store other metadata as well
-            agent_metadata = {
-                "sample_id": env.sample_id,
-                "domain": env.domain,
-                "truncated": env_metadata['truncated'],
-                "terminated": env_metadata['terminated'],
-                "success": env_metadata['success'],
-                "total_time_steps": t,
-            }
+            # Create a pool and execute
+            with multiprocessing.Pool(processes=args.num_workers) as pool:
+                metrics = pool.starmap(run_single_trajectory, worker_inputs)
         else:
-            metrics["terminated"] += 1
-            # Let's store other metadata as well
-            agent_metadata = {
-                "sample_id": env.sample_id,
-                "domain": env.domain,
-                "truncated": False,
-                "terminated": True,
-                "success": False,
-                "total_time_steps": t,
-            }
-        agent_trajectory["metadata"] = agent_metadata
+            for i, conv in enumerate(conversations):
+                logger.info(f"Starting conversation {i}")
+                metrics = run_single_trajectory(config, llm_parameters, save_traj_at, conv, args.port)
 
-        # Save the Agent trajectory
-        logger.info(f"Saving trajectory {i} to {save_traj_at}")
-        with open(os.path.join(save_traj_at, f"trajectory_{env.domain}_{env.sample_id}.json"), "w") as f:
-            json.dump(agent_trajectory, f, indent=2)
 
-    metrics["total_runs"] = total_runs
     logger.info("Metrics: \n{}".format(json.dumps(metrics, indent=2)))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', help="Output directory to save trajectories to", required=True)
     parser.add_argument('--input_filename', default="./eval_debug_samples.json", help="Input filename.")
+    parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--infer_config', default="config_files/evaluate_tool_calling.json", 
                         help="Config file for model training and evaluation. Default value config_files/evaluate_tool_calling.json")
+    parser.add_argument('--num_workers', '-w', type=int, default=8, help='Number of processes. If using hf inference this must be one. ')
+    parser.add_argument('--port', type=str, default="8000",
+                        help='Number of processes. If using hf inference this must be one. ')
+
     args = parser.parse_args()
     run_agent(args)

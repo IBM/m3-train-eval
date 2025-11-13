@@ -628,6 +628,11 @@ class StudentGraniteToolUtils(ToolUtils):
         return [FunctionCall(tool["name"], json.dumps(tool["arguments"], ensure_ascii=False))]
 
 
+#TODO: fix bugs
+G4_TOOL_POST = """For each tool call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+<tool_call>
+{"name": <function-name>, "arguments": <args-json-object>}
+</tool_call>. If a tool does not exist in the provided list of tools, notify the user that you do not have the ability to fulfill the request."""
 class StudentGranite4ToolUtils(StudentGraniteToolUtils):
     r"""Granite 4 tool using template [for my use case]."""
     tool_call_start_tag = "<tool_call>"
@@ -641,10 +646,10 @@ class StudentGranite4ToolUtils(StudentGraniteToolUtils):
         # [1] Create the tool availability text
         tools = ground_tool_availability(tools=tools, policy=tool_policy.tool_availability_policy)
 
-        tool_availability_text = "You are provided with function signatures within <tools></tools> XML tags:\n<tools>\n"
+        tool_availability_text = "\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n"
         for t in tools:
             tool_availability_text += json.dumps(t, ensure_ascii=False) + '\n'
-        tool_availability_text += "</tools>\n"
+        tool_availability_text += "</tools>"
 
         # [2] Create the tool usage text
         tool_use_constraints = ground_tool_usage(policy=tool_policy.tool_usage_policy)
@@ -657,7 +662,7 @@ class StudentGranite4ToolUtils(StudentGraniteToolUtils):
             "tool_use_constraints": tool_use_constraints,
             "final_answer_instructions": final_answer_instructions
         }
-        tool_usage_text = TOOL_USAGE_TEXT
+        tool_usage_text = G4_TOOL_POST # TOOL_USAGE_TEXT
         for name, value in slots.items():
             tool_usage_text = tool_usage_text.replace("{" + name + "}", value, 1)
 

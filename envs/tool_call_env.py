@@ -6,7 +6,6 @@ from typing import Dict, Any, List, Tuple, Optional, TYPE_CHECKING
 from pathlib import Path
 
 from loguru import logger
-from torch import device
 
 from agents.llm import invoke_llm
 from data_utils.utils import Role
@@ -26,7 +25,7 @@ from data_utils.utils import downsample_tools, update_retrieval_tools
 from agents.llm import get_lm
 from transformers import AutoTokenizer
 device = "auto"
-model_path = "ibm-granite/granite-3.0-8b-base"
+model_path = "ibm-granite/granite-4.0-micro"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 
@@ -159,13 +158,7 @@ class ToolCallEnv(BaseEnv):
         """Specify any additional instructions here!"""
         raise NotImplementedError()
 
-    def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
-        # To get the data for the current instance of the environment
-        if inst_idx is not None:
-            assert isinstance(inst_idx, int)
-            self.curr_instance_idx = inst_idx
-        else:
-            self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
+    def reset(self) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
 
         # Set the init params
         self.history, self.curr_turn_history = [], []
@@ -548,7 +541,7 @@ class ToolCallEnv(BaseEnv):
 class M3ToolCallEnv(ToolCallEnv):
     def __init__(
             self,
-            path_to_env_data: str,
+            conversation: dict,  # Single datapoint/conversation
             es_config: dict,
             api_config: dict,
             horizon: int,
@@ -562,7 +555,6 @@ class M3ToolCallEnv(ToolCallEnv):
             partial_credit: bool = False,
             summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
     ):
-        self.path_to_env_data = path_to_env_data
         self.es_config = es_config
         self.api_config_dict = api_config
 
@@ -579,7 +571,9 @@ class M3ToolCallEnv(ToolCallEnv):
         # Init. the document database here
         self.doc_db, self.document_collections = None, None
         self.discard_long_response = True
-        self.discard_token_n = 4096
+        self.discard_token_n = 8192
+
+        self.conversation = conversation
 
         super().__init__(
             horizon,
@@ -594,19 +588,10 @@ class M3ToolCallEnv(ToolCallEnv):
             summarise_turns_for_multi_turn
         )
 
+
+
     def load_env_data(self):
-        path = Path(self.path_to_env_data)
-        if path.is_file() and path.suffix == '.json':
-            with open(path, 'r') as f:
-                data = json.load(f)
-        elif path.is_dir():
-            data = []
-            for json_file in path.glob('*_final.json'):
-                with open(json_file, 'r') as f:
-                    data.extend(json.load(f))
-        else:
-            raise ValueError(f"Path {self.path_to_env_data} is neither a JSON file nor a directory")
-        return data
+        return [self.conversation]
 
     def setup_user_queries(self):
         curr_instance_data = self.data[self.curr_instance_idx]
@@ -1098,27 +1083,22 @@ class M3ToolCallEnv(ToolCallEnv):
 class M3EvalEnv(M3ToolCallEnv):
     def __init__(
             self,
-            path_to_env_data: str,
+            conversation: dict,
             es_config: dict,
             api_config: dict,
             horizon: int,
             sub_domain: "SubDomain",
             agent_template: "Template", 
-            scorer_llm=None,
-            scorer_llm_tokenizer=None,
             scorer_llm_parameters=None,
             partial_credit: bool = False,
             summarise_turns_for_multi_turn: bool = True,  # Saves num of tokens but may lead to context loss
-            scorer_device: device = None
     ):
-        self.scorer_llm_tokenizer = scorer_llm_tokenizer
-        self.scorer_llm_model = scorer_llm
-        self.scorer_device = scorer_device
+
         scorer_llm_obj = get_lm(scorer_llm_parameters["model_name_or_path"], parameters=scorer_llm_parameters)
 
 
         super().__init__(
-            path_to_env_data,
+            conversation,
             es_config,
             api_config,
             horizon,
@@ -1130,15 +1110,16 @@ class M3EvalEnv(M3ToolCallEnv):
             summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
     )
 
-    def reset(self, inst_idx=None) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
-        # To get the data for the current instance of the environment
-        if inst_idx is not None:
-            assert isinstance(inst_idx, int)
-            self.curr_instance_idx = inst_idx
-        else:
-            self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
+    def reset(self) -> Tuple[List[Dict[str, str]], float, bool, Dict[str, bool]]:
+        # # To get the data for the current instance of the environment
+        # if inst_idx is not None:
+        #     assert isinstance(inst_idx, int)
+        #     self.curr_instance_idx = inst_idx
+        # else:
+        #     self.curr_instance_idx = (self.curr_instance_idx + 1) % self.total_unique_instances
 
         # Set the init params
+        self.curr_instance_idx = 0 # Evaluate with only a single instance
         self.history, self.curr_turn_history = [], []
         self.curr_turn = 0
 
@@ -1266,9 +1247,9 @@ class M3EvalEnv(M3ToolCallEnv):
         self.curr_step += 1
 
     def setup_scenarios(self):
-        curr_instance_data = self.data[self.curr_instance_idx]
+        curr_instance_data = self.data[0]
         if ("scenarios" not in curr_instance_data.keys()) and ("_sc_" not in curr_instance_data["sample_id"]): # Make this more specific for only the data points without scenarios
-            curr_instance_data["scenarios"]= {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
+            curr_instance_data["scenarios"] = {"tool_use_policy": None, "policy_domain": None, "missing_api": None, "tool_availability": None}
             self.scenarios = curr_instance_data["scenarios"]
         domain=curr_instance_data["domain"]
         scenarios=curr_instance_data["scenarios"]
@@ -1290,7 +1271,7 @@ class M3EvalEnv(M3ToolCallEnv):
         final_answer_instructions += "\n                  > " + instr_insufficient_information
 
         # [2] For the case when tool responses are too long and need to be compressed/truncated in the final answer
-        curr_instance_data = self.data[self.curr_instance_idx]
+        curr_instance_data = self.data[0]
         if 'resp_cutoff_inst' in curr_instance_data and len(curr_instance_data['resp_cutoff_inst']) > 0:
             # This instr. is from envs.constants import CONDENSE_TOOL_RESPONSE_INSTRUCTION with resp_cutoff set
             # to curr_instance_data['resp_cutoff'] determined during ground-truth generation
@@ -1344,17 +1325,6 @@ class M3EvalEnv(M3ToolCallEnv):
                     partial_scoring=self.partial_credit,
                     use_sample=False,
                 )
-                # formatted_text = self.scorer_llm_tokenizer.apply_chat_template(scorer_prompt, tokenize=False, add_generation_prompt=True)
-                # inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
-                # inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
-                # input_len = len(inputs["input_ids"][0])
-                # generated_ids = self.scorer_llm_model.generate(
-                #     input_ids=inputs["input_ids"],
-                #     attention_mask=inputs["attention_mask"], 
-                #     max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
-                #     do_sample=False)
-                # # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
-                # response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
                 response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, scorer_prompt)
                 try:
                     parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
@@ -1367,17 +1337,6 @@ class M3EvalEnv(M3ToolCallEnv):
                         response=response,
                         error=error_msg,
                     )
-                    # formatted_text = self.scorer_llm_tokenizer.apply_chat_template(parser_resolver_prompt, tokenize=False, add_generation_prompt=True)
-                    # inputs = self.scorer_llm_tokenizer(formatted_text, padding=True, return_attention_mask=True, return_tensors='pt')
-                    # inputs = {k: v.to(self.scorer_device) for k, v in inputs.items()}
-                    # input_len = len(inputs["input_ids"][0])
-                    # generated_ids = self.scorer_llm_model.generate(
-                    #     input_ids=inputs["input_ids"],
-                    #     attention_mask=inputs["attention_mask"], 
-                    #     max_new_tokens=self.scorer_llm_parameters['max_new_tokens'],
-                    #     do_sample=False)
-                    # # generated_text = self.scorer_llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False) This is the full response including context/old turns
-                    # response = self.scorer_llm_tokenizer.decode(generated_ids[0][input_len:], skip_special_tokens=False)
                     response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
                     parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
 
@@ -1398,8 +1357,3 @@ class M3EvalEnv(M3ToolCallEnv):
             else:
                 reward = "{REWARD_SUCCESS_TOOL_CALL}"
                 return reward, False
-
-
-    @property
-    def curr_sample_idx(self) -> int:
-        return self.data[self.curr_instance_idx]['sample_id']
