@@ -164,6 +164,8 @@ def main(path_to_config: str):
             generating_args,
         )
     elif training_method == "GRPO":
+
+        # Setup Tool Call Environment for Trainer
         path_to_tool_config = os.path.join('config_files', 'setup_tools.json')
         with open(path_to_tool_config) as f:
             config=json.load(f)
@@ -184,6 +186,8 @@ def main(path_to_config: str):
             sub_domain=sub_domain,
             scorer_llm_parameters=scorer_llm_params
         )
+
+        # GRPO Trainer
         from trainers.grpo import Trainer
 
         trainer = Trainer(
