@@ -32,11 +32,11 @@
   "per_device_train_batch_size": 1,
   "report_to": ["tensorboard"],
   "save_only_model": true,
-  "save_steps": 1,
+  "save_steps": 500,
   "warmup_ratio": 0.1,
 
   "do_sample": false,
   "max_new_tokens": 4096, 
   "infer_dtype": "bfloat16",
-  "enable_thinking": false
+  "enable_thinking": true
 }
