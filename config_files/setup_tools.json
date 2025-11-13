@@ -86,5 +86,8 @@
         "simpson_episodes":"https://invocable-api-dgt-server-9.1gxwxi8kos9y.us-east.codeengine.appdomain.cloud",
         "university":"https://invocable-api-dgt-server-9.1gxwxi8kos9y.us-east.codeengine.appdomain.cloud"
       },
-      "env_subdomain_mode": "rest"
+      "env_subdomain_mode": "rest",
+      "scorer_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
+      "scorer_max_new_tokens": 4096,
+      "temperature": 0.0
 }
