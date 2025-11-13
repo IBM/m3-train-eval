@@ -84,23 +84,5 @@ for i in "${!MODEL_NAME[@]}"; do
         else
             echo "$INPUT_FILE_NAME does not exist."
         fi
-        
-for i in "${!MODEL_NAME[@]}"; do
-    mn="${MODEL_NAME[$i]}"
-    mfile="${MODEL_PATH[$i]}"
-    mkdir -p runs/${RUN_DATE}/${mn}
-    mkdir -p ${OUTPUT_DIR}/${mn}/trajectories/
-
-    # for ns in "${NUM_SAMPLES[@]}"; do
-    for INPUT_FILE_NAME in "${INPUT_DIR}"/*.json; do
-        # INPUT_FILE_NAME=${INPUT_DIR}/${it}_${ns}.json
-        if [ -e "$INPUT_FILE_NAME" ]; then
-            FILENAME=$(basename "$INPUT_FILE_NAME")
-            FILENAME_NO_EXT="${FILENAME%.json}"
-            LOGFILE="runs/${RUN_DATE}/${mn}/${it}/${FILENAME_NO_EXT}.log"
-            bsub -n 1 -U infusion -gpu ${GPU_STR} -R "select[hname != cccxc606] rusage[mem=64GB, cpu=4]" -J "${mn}_${FILENAME_NO_EXT}" -o ${LOGFILE} ./ccc_scripts/single_evaluation_command.sh ${mfile} ${OUTPUT_DIR}/${mn}/${INPUT_TYPE} ${INPUT_FILE_NAME} ${CONFIG_DIR}/${config}
-        else
-            echo "$INPUT_FILE_NAME does not exist."
-        fi
     done
 done
