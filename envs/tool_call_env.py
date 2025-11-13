@@ -1387,11 +1387,11 @@ class M3GRPOEnv(M3ToolCallEnv):
             summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
     )
         
-    def setup_tools(self, tools, doc_collections, domain):
+    def setup_tools(self, tools, domain):
 
         # 1. Get the tool list
-        tools: List[dict] = tools
-        self.document_collections = doc_collections
+        tools: List[dict] = [tool["function"] for tool in tools]
+        self.document_collections = ["clapnq-"+tool["name"].split("retriever_clapnq_")[1] for tool in tools if "retriever" in tool["name"]]
         self.api_config=self.api_config_dict[domain]
         index_name="clapnq-"+domain.replace("_","-")
         self.es_config["index_name"]=index_name
@@ -1401,9 +1401,6 @@ class M3GRPOEnv(M3ToolCallEnv):
             initialization_specs = None
             dataset_name = None
 
-        # 3. TODO : Remove retreivers belonging to BIRD train and RED domains. Temporary fix needs to be fixed in data. Only for Multi-turn dataset.
-        tools, self.document_collections=update_retrieval_tools(tools, doc_collections)
-
         # 5. Setup tools for API
         self.pre_setup_tools(tools, dataset_name, initialization_specs)
 
@@ -1412,4 +1409,4 @@ class M3GRPOEnv(M3ToolCallEnv):
         
         # 5. Format the list of final tools into the Google docstring format
         tools = reformat_tools(tools)
-        self.tools: str = json.dumps(tools)        
+        self.tools: str = json.dumps(tools)

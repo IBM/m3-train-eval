@@ -675,7 +675,7 @@ class AgentTrajectoryGRPOData(AgentTrajectorySFTData):
     def __getitem__(self, idx):
         """
         Returns a dictionary with fields expected by GRPOTrainer:
-            - 'id' (str)
+            - 'idx' (str)
             - 'prompt' (str)
             - 'context' (optional, dict)
             - 'output' (optional, dict)
@@ -683,6 +683,8 @@ class AgentTrajectoryGRPOData(AgentTrajectorySFTData):
         """
 
         prompt = self.formatted_prompts[idx]["prompt"]
+        domain= self.formatted_prompts[idx]["domain"]
+        tools=self.formatted_prompts[idx]["tools"]
         context = None
         output = self.labels[idx]
 
@@ -691,6 +693,8 @@ class AgentTrajectoryGRPOData(AgentTrajectorySFTData):
         return {
             "idx": self.task_idxs[idx],
             "prompt": prompt,
+            "domain": domain,
+            "tools": tools,
             "context": context,
             "output": output,
             "input_ids": input_ids,
@@ -757,7 +761,7 @@ class AgentTrajectoryGRPOData(AgentTrajectorySFTData):
             #     skipped_intermediate+=1                
             #     continue
 
-            formatted_prompts.append({"prompt":formatted_text})
+            formatted_prompts.append({"prompt":formatted_text, "domain":sample["domain"], "tools": sample["tools"]})
             inputs.append(input_ids)
             labels.append(sample["output"]["content"])
             attn_masks.append(attn_mask)
