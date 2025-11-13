@@ -346,7 +346,8 @@ class AgentTrajectorySFTData(BaseDataset):
                 continue
             
             system = traj['system']
-            tools = random.shuffle(json.loads(traj['tools']))
+            tools = json.loads(traj['tools'])
+            random.shuffle(tools)
             tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
             tool_policy.tool_usage_policy = traj['tool_usage_policy']
             tool_policy.final_answer_policy = traj['final_answer_policy']
