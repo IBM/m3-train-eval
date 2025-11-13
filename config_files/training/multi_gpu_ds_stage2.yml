@@ -1,15 +1,12 @@
 compute_environment: LOCAL_MACHINE
 debug: false
-deepspeed_config:
-  deepspeed_config_file: ./config_files/training/zero_stage2_config.json
-  zero3_init_flag: false
-distributed_type: DEEPSPEED
+distributed_type: NO
 downcast_bf16: 'no'
 enable_cpu_affinity: false
 machine_rank: 0
 main_training_function: main
 num_machines: 1
-num_processes: 4
+num_processes: 1
 rdzv_backend: static
 same_network: true
 tpu_env: []

@@ -10,6 +10,8 @@ import subprocess
 from loguru import logger
 from transformers.utils import is_flash_attn_2_available
 from transformers.utils.generic import strtobool
+from envs.tool_call_env import M3GRPOEnv
+from envs.base_env import SubDomain
 
 from hparams import get_train_args
 from extras.custom import is_rank_0, set_run_environment, make_json_serializable, gpu_supports_fa2, create_dir
@@ -161,6 +163,41 @@ def main(path_to_config: str):
             finetuning_args,
             generating_args,
         )
+    elif training_method == "GRPO":
+
+        # Setup Tool Call Environment for Trainer
+        path_to_tool_config = os.path.join('config_files', 'setup_tools.json')
+        with open(path_to_tool_config) as f:
+            config=json.load(f)
+        logger.info("Loaded the tools config from {}".format(path_to_tool_config))
+        sub_domain = SubDomain(
+            mode='rest',
+        )
+        scorer_llm_params={
+                "model_name_or_path": config['scorer_model_name_or_path'],
+                "max_new_tokens": config['scorer_max_new_tokens'],
+                "temperature": config['temperature'],
+                "stop_sequences": ["User Query"]
+            }
+        env = M3GRPOEnv(
+            es_config=config['db_config'],
+            api_config=config['api_config'],  # Local end point: "end_point": "http://127.0.0.1:8000",
+            horizon=config["horizon"],
+            sub_domain=sub_domain,
+            scorer_llm_parameters=scorer_llm_params
+        )
+
+        # GRPO Trainer
+        from trainers.grpo import Trainer
+
+        trainer = Trainer(
+            model_args,
+            data_args,
+            training_args,
+            finetuning_args,
+            generating_args,
+            env,
+        )        
     else:
         raise ValueError(f"PEFT method {training_method} currently not supported.")
 

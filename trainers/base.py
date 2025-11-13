@@ -93,6 +93,8 @@ class BaseTrainer(object):
             if self.training_args.do_eval:
                 assert self.data_args.eval_dataset is not None
                 self._build_eval_dataloader('supervised')
+            else:
+                self._build_eval_dataloader()                    
             end = time.monotonic_ns()
             logger.success(f"Building dataset done in {(end - start) / 1e6:.2f}ms")
 
@@ -277,7 +279,7 @@ class BaseTrainer(object):
     def _build_dataloader(self, setting: str):
         raise NotImplementedError()
 
-    def _build_eval_dataloader(self, setting: str):
+    def _build_eval_dataloader(self, setting: str = None):
         self.eval_dataloader = None
 
     def _build_model(self):

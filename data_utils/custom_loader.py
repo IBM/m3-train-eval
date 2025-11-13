@@ -346,7 +346,8 @@ class AgentTrajectorySFTData(BaseDataset):
                 continue
             
             system = traj['system']
-            tools = random.shuffle(json.loads(traj['tools']))
+            tools=json.loads(traj['tools'])
+            random.shuffle(tools)
             tool_policy=create_ToolPolicy(scenarios=traj["scenarios"],current_domain=traj["domain"])
             tool_policy.tool_usage_policy = traj['tool_usage_policy']
             tool_policy.final_answer_policy = traj['final_answer_policy']
@@ -642,3 +643,140 @@ class AgentTrajectoryPreferenceData(BaseDataset):
             processed_samples.append(processed_sample)
 
         return processed_samples
+    
+
+class AgentTrajectoryGRPOData(AgentTrajectorySFTData):
+
+    def __init__(
+            self,
+            template: "Template",
+            tokenizer: Any,
+            processor: "MMProcessor",
+            data_args: "DataArguments",
+            train_setting: str, 
+            dataset: str = None
+    ):
+        # Use this to control if you want to train on interactions from expert or agent or both
+        self.accept_interactions_from = 'expert'  #  Possible values: expert, agent, both
+        logger.info("Will train with interactions from '{}'".format(self.accept_interactions_from))
+
+        super().__init__(
+            template=template,
+            tokenizer=tokenizer,
+            processor=processor,
+            data_args=data_args,
+            train_setting=train_setting, 
+            dataset=dataset
+        )
+    
+    def __len__(self):
+        return len(self.formatted_prompts)
+
+    def __getitem__(self, idx):
+        """
+        Returns a dictionary with fields expected by GRPOTrainer:
+            - 'idx' (str)
+            - 'prompt' (str)
+            - 'context' (optional, dict)
+            - 'output' (optional, dict)
+            - 'input_ids' (optional if tokenizer provided)
+        """
+
+        prompt = self.formatted_prompts[idx]["prompt"]
+        domain= self.formatted_prompts[idx]["domain"]
+        tools=self.formatted_prompts[idx]["tools"]
+        context = None
+        output = self.labels[idx]
+
+        input_ids = self.inputs[idx]
+        attention_mask = self.attn_masks[idx]
+        return {
+            "idx": self.task_idxs[idx],
+            "prompt": prompt,
+            "domain": domain,
+            "tools": tools,
+            "context": context,
+            "output": output,
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+        }
+
+    def convert_samples_to_supervised_features(self):
+        """Convert the processed samples to features that can be used for supervised training."""
+
+        inputs, labels, attn_masks, input_lens, formatted_prompts = [], [], [], [], []
+        pbar = tqdm(total=len(self.processed_samples), ncols=0, desc=f"Converting examples to features: ")
+        stats = []
+        skipped_points = 0
+        skipped_intermediate=0
+        for i in range(len(self.processed_samples)):
+
+            sample = self.processed_samples[i]
+            if sample is None:
+                continue
+
+            messages = sample['input']
+
+            # Remove tags
+            # TODO: if we run models besides granite 4 this parsing logic will need to change
+            for m in messages:
+                if m['role'] == Role.FUNCTION.value:
+                    m['role'] = Role.ASSISTANT.value
+                    parsed = m['content'].split('{"name"')
+                    m['content'] = "<think>" + parsed[0] + "</think>" + "<tool_call>\n" + '{"name"' + parsed[1] + "\n</tool_call>"
+                elif m['role'] == Role.OBSERVATION.value:
+                    m['role'] = Role.USER.value
+                m['content'] = m['content'].replace("<FINAL>", "").replace("</FINAL>", "")
+                # if not self.data_args.enable_thinking:
+                # Specifically for granite we don't need <think> or <FINAL> tags.
+                m['content'] = m['content'].replace("<think>", "").replace("</think>", "")
+                m['content'] = m['content'].replace("<thought>", "").replace("</thought>", "")
+            
+            if self.data_args.enable_thinking:
+                messages[-1]['content'] = sample['thought'] + messages[-1]['content']
+
+            system_prompt = sample['system']
+            tools = sample['tools']
+            tool_policy = sample['tool_policy']
+            if tool_policy.tool_usage_policy is not None:
+                system_prompt += " " + tool_policy.tool_usage_policy
+            if tool_policy.final_answer_policy is not None:
+                system_prompt += tool_policy.final_answer_policy
+
+            # TODO: maybe try putting the tool_usage_policy and final_answer_policy at the end of the prompt (after the tool specs)
+            formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=tools, system=system_prompt)
+
+            # formatted_text is the final text before tokenization. check this to see what's actually getting passed into the model
+            tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
+
+            input_ids = tokens['input_ids'].squeeze(0)
+            attn_mask = tokens['attention_mask'].squeeze(0)
+
+            if len(input_ids) > self.data_args.cutoff_len:
+                logger.info(f"Ignoring data point of with token length: {len(input_ids)}")
+                skipped_points+=1
+                continue
+
+            # if ("<FINAL>" not in sample["output"]["content"]) or ("ToolCallSuccessful" in messages[-1]["content"]): # As being used from SFT GT only ToolCallSuccessful present
+            #     skipped_intermediate+=1                
+            #     continue
+
+            formatted_prompts.append({"prompt":formatted_text, "domain":sample["domain"], "tools": sample["tools"]})
+            inputs.append(input_ids)
+            labels.append(sample["output"]["content"])
+            attn_masks.append(attn_mask)
+            input_lens.append(len(input_ids))
+            pbar.update()
+            stats.append({
+                'input_length': len(input_ids), 
+                'domain': sample['domain'], 
+                'sample_id': sample['sample_id'],
+                # 'formatted_text': formatted_text
+
+            })
+        
+        logger.info(f"Skipped {skipped_points} long context points out of a total of {len(input_lens)}. ")
+        logger.info(f"Skipped {skipped_intermediate} to get {len(formatted_prompts)} train data points for GRPO.")        
+        with open(f"stats.json", "w") as f:
+            json.dump(stats, f)
+        return inputs, labels, attn_masks, input_lens, formatted_prompts
