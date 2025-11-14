@@ -1386,6 +1386,22 @@ class M3GRPOEnv(M3ToolCallEnv):
             partial_credit = partial_credit,
             summarise_turns_for_multi_turn = summarise_turns_for_multi_turn  # Saves num of tokens but may lead to context loss
     )
+        self._curr_query = None
+        self._curr_golden_answer = None
+
+    @property
+    def curr_query(self):
+        return self._curr_query
+
+    def set_curr_query(self, value):
+        self._curr_query = value
+
+    @property
+    def curr_golden_answer(self):
+        return self._curr_golden_answer
+
+    def set_curr_query(self, value):
+        self._curr_golden_answer = value        
         
     def setup_tools(self, tools, domain):
 
@@ -1410,3 +1426,20 @@ class M3GRPOEnv(M3ToolCallEnv):
         # 5. Format the list of final tools into the Google docstring format
         tools = reformat_tools(tools)
         self.tools: str = json.dumps(tools)
+
+    def get_observation(self, action):
+        # There was a parsing error
+        error = action["error"]
+        if error:
+            observation = f"{error}"
+            # Error could be a result of incorrect tool invocation
+        else:
+            if action["type"] == "API" or action["type"] == "RETRIEVE":
+                if "ground_truth_observation" in action:
+                    observation = f"ToolCallSuccessful: {action['ground_truth_observation']}"
+                else:
+                    # Action is a tool call since we are not taking from the ground truth
+                    observation = self.run_tool_and_get_obs(action)
+            elif action["type"] == "FINAL":
+                    observation = f"Done!"
+        return observation

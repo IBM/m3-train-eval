@@ -23,7 +23,7 @@
   "do_eval": false,
   "do_train": true,
   "val_size": 0.1, 
-  "gradient_checkpointing": true,
+  "gradient_checkpointing": false,
   "learning_rate": 3e-5,
   "lr_scheduler_type": "cosine",
   "logging_dir": "./logging/v7/lr_3e5_epoch3",
