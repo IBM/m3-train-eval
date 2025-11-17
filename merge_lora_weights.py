@@ -6,7 +6,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 import torch
 
-STEP="500"
+STEP="1500"
 OUTPUT_DIR="/proj/m3benchmark/ben/checkpoints/11-13"
 MODELS_TO_MERGE=[ # Base model , adapter, merged path
     # # lr_e5_thoughts_rank16_epoch3

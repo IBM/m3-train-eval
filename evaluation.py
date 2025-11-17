@@ -224,6 +224,11 @@ def run_single_trajectory(
                 logger.info(f"(t={t}) Response Data before parse: {generated_text}")
             elif RUNNER_TYPE == "vllm":
                 messages = state.copy()
+                for m in messages:
+                    if m['role'] == Role.FUNCTION.value:
+                        m['role'] = Role.ASSISTANT.value
+                    elif m['role'] == Role.OBSERVATION.value:
+                        m['role'] = Role.USER.value
 
                 # Step 1: Prepend system prompt
                 #messages.insert(0, {"role": "system", "content": system_prompt})

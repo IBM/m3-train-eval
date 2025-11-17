@@ -11,7 +11,7 @@
   "scorer_max_new_tokens": 4096,
 
   "max_new_tokens": 4096,
-  "is_hf_agent": true,
+  "is_hf_agent": false,
   "path_to_hf_config": "./config_files/infer_base.json", 
   "enable_thinking": true
 }

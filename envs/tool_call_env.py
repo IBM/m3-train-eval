@@ -1158,93 +1158,93 @@ class M3EvalEnv(M3ToolCallEnv):
             "success": False,
         }
     
-    def transition(self, observation, action, env_role):
+    # def transition(self, observation, action, env_role):
 
-        # ############################################ Update State ############################################ #
-        # Get the current state
-        next_state = self.curr_state
-        next_summarised_state = self.curr_summarised_state
+    #     # ############################################ Update State ############################################ #
+    #     # Get the current state
+    #     next_state = self.curr_state
+    #     next_summarised_state = self.curr_summarised_state
 
-        if action["type"] == "FINAL":  # Agent has reached the end of given turn
+    #     if action["type"] == "FINAL":  # Agent has reached the end of given turn
 
-            if not self.is_a_live_agent and self.curr_golden_answer is not None:
-                if self.final_answer_is_truncated:
-                    # To condition future reasoning on un-truncated context-response pairs.
-                    # Otherwise, entities being referred to in future reasoning could seem hallucinated
-                    final_answer = self.curr_raw_answer
-                else:
-                    final_answer = self.curr_golden_answer
+    #         if not self.is_a_live_agent and self.curr_golden_answer is not None:
+    #             if self.final_answer_is_truncated:
+    #                 # To condition future reasoning on un-truncated context-response pairs.
+    #                 # Otherwise, entities being referred to in future reasoning could seem hallucinated
+    #                 final_answer = self.curr_raw_answer
+    #             else:
+    #                 final_answer = self.curr_golden_answer
 
-            else:
-                final_answer = action["value"]
+    #         else:
+    #             final_answer = action["value"]
 
-            next_summarised_state.extend(
-                [
-                    {
-                        "role": action["role"],
-                        "content": final_answer,  # No need to include thoughts
-                    },
-                    {
-                        "role": env_role,
-                        "content": observation,  # Is a Done signal if on last turn else a new user query
-                    }
-                ]
-            )
-            # NOTE: We update the turn if agent generates the final answer (even though it might be incorrect)
-            self.curr_turn += 1
-            self.curr_summarised_state = next_summarised_state
+    #         next_summarised_state.extend(
+    #             [
+    #                 {
+    #                     "role": action["role"],
+    #                     "content": final_answer,  # No need to include thoughts
+    #                 },
+    #                 {
+    #                     "role": env_role,
+    #                     "content": observation,  # Is a Done signal if on last turn else a new user query
+    #                 }
+    #             ]
+    #         )
+    #         # NOTE: We update the turn if agent generates the final answer (even though it might be incorrect)
+    #         self.curr_turn += 1
+    #         self.curr_summarised_state = next_summarised_state
 
-            if self.summarise_turns_for_multi_turn:
-                # Agent will act on past turns summarised as context response pairs
-                self.curr_state = copy.deepcopy(next_summarised_state)
+    #         if self.summarise_turns_for_multi_turn:
+    #             # Agent will act on past turns summarised as context response pairs
+    #             self.curr_state = copy.deepcopy(next_summarised_state)
 
-            else:
-                # If we don't summarise, does not matter whether the agent is live or not, the actual predicted answer
-                # along with its thought in the state. Can't replace the predicted with golden since it won't naturally
-                # follow the agent's reasoning so far.
-                next_state.extend(
-                    [
-                        {
-                            "role": action["role"],
-                            "content": action["template_free_response"],
-                        },
-                        {
-                            "role": env_role,
-                            "content": observation,
-                        }
-                    ]
-                )
-                # Update the current state
-                self.curr_state = next_state
+    #         else:
+    #             # If we don't summarise, does not matter whether the agent is live or not, the actual predicted answer
+    #             # along with its thought in the state. Can't replace the predicted with golden since it won't naturally
+    #             # follow the agent's reasoning so far.
+    #             next_state.extend(
+    #                 [
+    #                     {
+    #                         "role": action["role"],
+    #                         "content": action["template_free_response"],
+    #                     },
+    #                     {
+    #                         "role": env_role,
+    #                         "content": observation,
+    #                     }
+    #                 ]
+    #             )
+    #             # Update the current state
+    #             self.curr_state = next_state
 
-        else:
-            next_state.extend(
-                [
-                    {
-                        "role": Role.ASSISTANT.value,
-                        "content": action["template_free_response"],
-                    },
-                    {
-                        "role": Role.USER.value,
-                        "content": observation,
-                    }
-                ]
-            )
-            # Update the current state
-            self.curr_state = next_state
+    #     else:
+    #         next_state.extend(
+    #             [
+    #                 {
+    #                     "role": Role.ASSISTANT.value,
+    #                     "content": action["template_free_response"],
+    #                 },
+    #                 {
+    #                     "role": Role.USER.value,
+    #                     "content": observation,
+    #                 }
+    #             ]
+    #         )
+    #         # Update the current state
+    #         self.curr_state = next_state
 
-        # ############################################ Update History ############################################ #
-        self.curr_turn_history.append(
-            {
-                "action": action["type"],  # str, type of action
-                "action_arguments": action["value"],  # dict or str
-                "observation": observation,  # str
-            }
-        )
-        if action["type"] == "FINAL":
-            self.history.append(copy.deepcopy(self.curr_turn_history))
-            self.curr_turn_history = []
-        self.curr_step += 1
+    #     # ############################################ Update History ############################################ #
+    #     self.curr_turn_history.append(
+    #         {
+    #             "action": action["type"],  # str, type of action
+    #             "action_arguments": action["value"],  # dict or str
+    #             "observation": observation,  # str
+    #         }
+    #     )
+    #     if action["type"] == "FINAL":
+    #         self.history.append(copy.deepcopy(self.curr_turn_history))
+    #         self.curr_turn_history = []
+    #     self.curr_step += 1
 
     def setup_scenarios(self):
         curr_instance_data = self.data[0]
@@ -1337,8 +1337,18 @@ class M3EvalEnv(M3ToolCallEnv):
                         response=response,
                         error=error_msg,
                     )
-                    response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
-                    parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+                    try:
+                        response = invoke_llm(self.scorer_llm, self.scorer_llm_parameters, parser_resolver_prompt)
+                        parsed_response = parse_scorer_response(response, partial_scoring=self.partial_credit)
+                    except ValueError as e:
+                        error_msg = str(e)
+                        logger.info("Failed to parse a second time. Returning a score of 0.")
+                        parsed_response = {
+                            "thought": "Unparseable scorer response: defaulting to Failure",
+                            "conclusion": "No",
+                            "score": 0.0,
+                            "success": False,
+                        }
 
                 logger.info(f"[External Agent Call] Agent = Final_Scorer")
                 logger.info(
