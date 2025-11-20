@@ -88,7 +88,7 @@
       },
       "env_subdomain_mode": "rest",
       "scorer_model_name_or_path": "mistralai/mixtral-8x22B-instruct-v0.1",
-      "scorer_max_new_tokens": 4096,
+      "scorer_max_new_tokens": 2048,
       "temperature": 0.0,
-      "horizon": 10      
+      "horizon": 10
 }
