@@ -1400,7 +1400,7 @@ class M3GRPOEnv(M3ToolCallEnv):
     def curr_golden_answer(self):
         return self._curr_golden_answer
 
-    def set_curr_query(self, value):
+    def set_curr_golden_answer(self, value):
         self._curr_golden_answer = value        
         
     def setup_tools(self, tools, domain):
@@ -1426,6 +1426,8 @@ class M3GRPOEnv(M3ToolCallEnv):
         # 5. Format the list of final tools into the Google docstring format
         tools = reformat_tools(tools)
         self.tools: str = json.dumps(tools)
+        logger.info(
+            f"Agent has completed setup of tools in M3GRPOEnv.")
 
     def get_observation(self, action):
         # There was a parsing error

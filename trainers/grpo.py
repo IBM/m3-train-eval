@@ -64,6 +64,7 @@ class Trainer(BaseTrainer):
         reward_fn=None,
     ):
         super().__init__(model_args, data_args, training_args, finetuning_args, generating_args)
+        print("MODEL TYPE within __init__ of GRPO after BaseTrainer __init__: ", type(self.model))
 
         # Setup Tool Call Environment
         self.env=env
@@ -76,15 +77,18 @@ class Trainer(BaseTrainer):
             num_generations=getattr(self.finetuning_args, "num_generations", 1),
             max_prompt_length=None,
             max_completion_length=getattr(self.generating_args, "max_new_tokens", 256),
+            bf16=True,
             temperature=getattr(self.generating_args, "temperature", 1.0),
             top_k=getattr(self.generating_args, "top_k", 0),
-            ds3_gather_for_generation=False,
+            # ds3_gather_for_generation=False,
             use_vllm=getattr(self.training_args, "use_vllm", False),
             loss_type="bnpo",
             num_train_epochs=self.training_args.num_train_epochs,
             logging_dir=self.training_args.logging_dir,
+            logging_steps=self.training_args.save_steps,
             per_device_train_batch_size=self.training_args.per_device_train_batch_size,
-            gradient_accumulation_steps=self.training_args.gradient_accumulation_steps,            
+            # gradient_accumulation_steps=self.training_args.gradient_accumulation_steps,
+            gradient_checkpointing=not self.model_args.disable_gradient_checkpointing,
         )
 
         # self.grpo_config = GRPOConfig(
@@ -97,8 +101,10 @@ class Trainer(BaseTrainer):
         self.reward_fn = reward_fn or self.reward_fn
 
         # Create the Hugging Face GRPO trainer
+        print("MODEL TYPE: ", type(self.model))
         self.hf_grpo_trainer = GRPOTrainer(
             model=self.model,
+            # ref_model=self.model, # Update TRL to beyond v0.19 v0.19 doesnot have reference model support for KL-based reward
             args=self.grpo_config,
             train_dataset=self.train_dataset,
             eval_dataset=getattr(self, "eval_dataset", None),
@@ -148,16 +154,13 @@ class Trainer(BaseTrainer):
 
     def reward_fn(self, prompts, completions, **kwargs) -> list[float]:
         """
-        TODO : Extend reward function for batch operation of inputs.
-        Reward function based on the ToolCallEnv. Two types of rewards
-        (1) FunctionCall construction reward.
-        (2) Final answer construction reward.
+        Reward function based on the ToolCallEnv.
         """
         self.env.setup_tools(kwargs["tools"][0], kwargs["domain"][0])
         self.env.set_curr_query(prompts[0].split("<|start_of_role|>user<|end_of_role|>")[-1].split(".<|end_of_text|>")[0]) # Same user query for a particular data sample
         self.env.set_curr_golden_answer(kwargs["output"][0])
         rewards=[]
-        for output, completion in zip(kwargs["output"],completions):
+        for completion in completions:
             action=parse_llm_response(completion,agent_template=self.agent_template)
             observation=self.env.get_observation(action)
             reward, success = self.env.get_reward(action, observation)
@@ -165,7 +168,8 @@ class Trainer(BaseTrainer):
                 rewards.append(1.0)
             else:
                 rewards.append(REWARD_MAPPING[reward])
-        return [rewards]
+        logger.info(f"TRL Reward {str(rewards)}")
+        return rewards
 
     def train(self):
         logger.info("🚀 Starting GRPO training with TRL…")
@@ -178,10 +182,12 @@ class Trainer(BaseTrainer):
     def init_foundation_model(self, is_trainable):
         logger.info(f"Initializing foundation model...")
         model = load_model(self.tokenizer, self.model_args, self.finetuning_args, is_trainable, add_valuehead=False)
+        print("MODEL TYPE within init_foundation_model: ", type(model))                
         return model
 
     def _build_model(self):
         foundation_model = self.init_foundation_model(is_trainable=True)
+        print("MODEL TYPE within _build_model in grpo.py: ", type(foundation_model))
         return foundation_model
 
         # base_model = AutoModelForCausalLM.from_pretrained(
@@ -190,7 +196,7 @@ class Trainer(BaseTrainer):
         # )
         # lora_cfg = LoraConfig(r=self.finetuning_args.lora_rank, lora_alpha=self.finetuning_args.lora_alpha)
         # model = get_peft_model(base_model, lora_cfg)        
-        return model
+        # return model
 
     @override
     def _build_dataloader(self, setting: str):
@@ -225,3 +231,12 @@ class Trainer(BaseTrainer):
     #     logger.info("Initializing trackers for GRPOTrainer...")
     #     self.accelerator.init_trackers("grpo_trainer")
 
+    def _accelerator_prepare(self):
+        # GRPOTrainer does the wrapping of the model into a deepspeed object. So, we shouldn't do it here.
+
+        if self.eval_dataloader is not None:
+            self.train_dataloader, self.eval_dataloader, self.optimizer, self.lr_scheduler = self.accelerator.prepare(
+                self.train_dataloader, self.eval_dataloader, self.optimizer, self.lr_scheduler)
+        else:
+            self.train_dataloader, self.optimizer, self.lr_scheduler = self.accelerator.prepare(
+                self.train_dataloader, self.optimizer, self.lr_scheduler)
