@@ -502,7 +502,7 @@ class BaseTrainer(object):
 
             # if (self.training_args.save_steps > 0) and (self.global_step % self.training_args.save_steps == 0) and (self.global_step != 0):
             if (self.training_args.save_steps > 0) and (int(self.global_step) %  self.training_args.save_steps == 0):
-                self.accelerator.wait_for_everyone()
+                # self.accelerator.wait_for_everyone()
                 # if not disable:
                 self._save(f"model_step_{self.global_step}")
                 # self.accelerator.wait_for_everyone()

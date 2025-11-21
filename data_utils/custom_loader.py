@@ -5,6 +5,7 @@ import sys
 from typing import Any, List, TYPE_CHECKING
 
 from loguru import logger
+import torch
 from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
 
@@ -93,7 +94,6 @@ class BaseDataset(TorchDataset):
             sample = self.processed_samples[i]
             if sample is None:
                 continue
-
             messages = sample['input'] + [sample['output']]
 
             # Remove tags
@@ -131,7 +131,22 @@ class BaseDataset(TorchDataset):
             tokens = self.tokenizer(formatted_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True)
 
             input_ids = tokens['input_ids'].squeeze(0)
-            label_ids = tokens["input_ids"].squeeze(0).clone()
+            temporary_label_ids = tokens["input_ids"].squeeze(0).clone()
+
+            if self.data_args.mask_history:
+                prompt_text = self.tokenizer.apply_chat_template(messages[:-1], tokenize=False, add_generation_prompt=False, tools=tools, system=system_prompt)
+                prompt_tokens = self.tokenizer(prompt_text, return_tensors="pt", padding=True, truncation=True, return_attention_mask=False)
+                prompt_length = len(prompt_tokens['input_ids'].squeeze(0))
+
+                padding_list = [IGNORE_INDEX] * prompt_length
+                padding_tensor = label_ids = torch.tensor(padding_list, dtype=temporary_label_ids.dtype)
+                ending = temporary_label_ids[prompt_length:].clone()
+                label_ids = torch.cat((padding_tensor, ending), dim=0)
+                logger.info(f"Masked first {prompt_length} prompt tokens out of {len(label_ids)} total tokens. ")
+            else:
+                label_ids = temporary_label_ids
+                logger.info(f"Full {len(label_ids)} tokens left unmasked. ")
+
             attn_mask = tokens['attention_mask'].squeeze(0)
             if len(input_ids) > self.data_args.cutoff_len:
                 logger.info(f"Ignoring data point of with token length: {len(input_ids)}")
@@ -297,8 +312,8 @@ class BaseDataset(TorchDataset):
                 "\n|======================================================================================|\n"
                 "|============================== Random Processed Sample Prompt ==========================|\n"
                 "|======================================================================================|\n"
-                f"{random_sample}"
-                # f"{json.dumps(make_json_serializable(random_sample), indent=4)}"
+                # f"{random_sample}"
+                f"{json.dumps(make_json_serializable(random_sample), indent=4)}"
                 "\n|======================================================================================|\n"
             )
 

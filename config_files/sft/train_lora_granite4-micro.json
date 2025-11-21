@@ -33,7 +33,7 @@
   "per_device_train_batch_size": 1,
   "report_to": ["tensorboard"],
   "save_only_model": true,
-  "save_steps": 500,
+  "save_steps": 600,
   "warmup_ratio": 0.1,
 
   "do_sample": false,
